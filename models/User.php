@@ -103,4 +103,72 @@ class User {
         }
         return $user;
     }
+
+/*     public function getByRole($roleName) {
+        $sql = "SELECT u.* FROM users u
+                INNER JOIN user_roles ur ON u.id = ur.user_id
+                INNER JOIN roles r ON ur.role_id = r.id
+                WHERE r.name = :role_name AND u.institution_id = :institution_id
+                ORDER BY u.last_name, u.first_name";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':role_name' => $roleName,
+            ':institution_id' => $_SESSION['institution_id']
+        ]);
+        return $stmt->fetchAll();
+    } */
+
+    // Agregar al final de la clase User
+
+    public function getByRole($roleName) {
+        $sql = "SELECT u.* FROM users u
+                INNER JOIN user_roles ur ON u.id = ur.user_id
+                INNER JOIN roles r ON ur.role_id = r.id
+                WHERE r.name = :role_name AND u.institution_id = :institution_id
+                ORDER BY u.last_name, u.first_name";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':role_name' => $roleName,
+            ':institution_id' => $_SESSION['institution_id']
+        ]);
+        return $stmt->fetchAll();
+    }
+
+    public function getStudentsNotEnrolled($schoolYearId) {
+        $sql = "SELECT u.* FROM users u
+                INNER JOIN user_roles ur ON u.id = ur.user_id
+                INNER JOIN roles r ON ur.role_id = r.id
+                WHERE r.name = 'estudiante' 
+                AND u.institution_id = :institution_id
+                AND u.id NOT IN (
+                    SELECT student_id FROM course_students 
+                    WHERE school_year_id = :school_year_id
+                )
+                ORDER BY u.last_name, u.first_name";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':institution_id' => $_SESSION['institution_id'],
+            ':school_year_id' => $schoolYearId
+        ]);
+        return $stmt->fetchAll();
+    }
+
+    public function getStudentCourse($studentId, $schoolYearId) {
+        $sql = "SELECT c.*, s.name as shift_name 
+                FROM courses c
+                INNER JOIN course_students cs ON c.id = cs.course_id
+                INNER JOIN shifts s ON c.shift_id = s.id
+                WHERE cs.student_id = :student_id 
+                AND cs.school_year_id = :school_year_id";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':student_id' => $studentId,
+            ':school_year_id' => $schoolYearId
+        ]);
+        return $stmt->fetch();
+    }
 }

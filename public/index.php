@@ -50,6 +50,60 @@ switch ($action) {
         $userCtrl->assignRole();
         break;
     
+    case 'attendance_register':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $attCtrl = new AttendanceController();
+        $attCtrl->register();
+        break;
+    
+    case 'get_students':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $attCtrl = new AttendanceController();
+        $attCtrl->getStudents();
+        break;
+    
+    case 'attendance_view':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $attCtrl = new AttendanceController();
+        $attCtrl->view();
+        break;
+    
+    case 'my_attendance':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $attCtrl = new AttendanceController();
+        $attCtrl->myAttendance();
+        break;
+    
+    case 'academic':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->index();
+        break;
+    
+    case 'create_course':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->createCourse();
+        break;
+    
+    case 'create_subject':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->createSubject();
+        break;
+    
+    case 'enroll_students':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->enrollStudents();
+        break;
+
+    case 'view_course_students':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->viewCourseStudents();
+        break;
+    
     default:
         header('Location: ?action=login');
 }
