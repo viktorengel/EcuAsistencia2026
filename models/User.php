@@ -1,0 +1,78 @@
+<?php
+class User {
+    private $db;
+
+    public function __construct($database) {
+        $this->db = $database->connect();
+    }
+
+    public function create($data) {
+        $sql = "INSERT INTO users (institution_id, username, email, password, first_name, last_name, dni, phone) 
+                VALUES (:institution_id, :username, :email, :password, :first_name, :last_name, :dni, :phone)";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':institution_id' => $data['institution_id'],
+            ':username' => $data['username'],
+            ':email' => $data['email'],
+            ':password' => Security::hashPassword($data['password']),
+            ':first_name' => $data['first_name'],
+            ':last_name' => $data['last_name'],
+            ':dni' => $data['dni'] ?? null,
+            ':phone' => $data['phone'] ?? null
+        ]);
+    }
+
+    public function findByEmail($email) {
+        $sql = "SELECT * FROM users WHERE email = :email AND is_active = 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':email' => $email]);
+        return $stmt->fetch();
+    }
+
+    public function findById($id) {
+        $sql = "SELECT * FROM users WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function getUserRoles($userId) {
+        $sql = "SELECT r.name FROM roles r 
+                INNER JOIN user_roles ur ON r.id = ur.role_id 
+                WHERE ur.user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function assignRole($userId, $roleId) {
+        $sql = "INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':user_id' => $userId, ':role_id' => $roleId]);
+    }
+
+    public function setResetToken($email, $token) {
+        $sql = "UPDATE users SET reset_token = :token, reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) 
+                WHERE email = :email";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':token' => $token, ':email' => $email]);
+    }
+
+    public function validateResetToken($token) {
+        $sql = "SELECT * FROM users WHERE reset_token = :token AND reset_expires > NOW()";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':token' => $token]);
+        return $stmt->fetch();
+    }
+
+    public function resetPassword($userId, $newPassword) {
+        $sql = "UPDATE users SET password = :password, reset_token = NULL, reset_expires = NULL 
+                WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':password' => Security::hashPassword($newPassword),
+            ':id' => $userId
+        ]);
+    }
+}
