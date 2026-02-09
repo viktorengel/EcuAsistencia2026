@@ -75,4 +75,32 @@ class User {
             ':id' => $userId
         ]);
     }
+
+    public function getAll() {
+        $sql = "SELECT u.*, GROUP_CONCAT(r.name) as roles 
+                FROM users u
+                LEFT JOIN user_roles ur ON u.id = ur.user_id
+                LEFT JOIN roles r ON ur.role_id = r.id
+                WHERE u.institution_id = :institution_id
+                GROUP BY u.id
+                ORDER BY u.last_name, u.first_name";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':institution_id' => $_SESSION['institution_id']]);
+        return $stmt->fetchAll();
+    }
+
+    public function removeRole($userId, $roleId) {
+        $sql = "DELETE FROM user_roles WHERE user_id = :user_id AND role_id = :role_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':user_id' => $userId, ':role_id' => $roleId]);
+    }
+
+    public function getUserWithRoles($userId) {
+        $user = $this->findById($userId);
+        if ($user) {
+            $user['roles'] = $this->getUserRoles($userId);
+        }
+        return $user;
+    }
 }

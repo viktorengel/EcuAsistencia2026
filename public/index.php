@@ -35,10 +35,19 @@ switch ($action) {
         break;
     
     case 'dashboard':
-        Security::requireLogin();
-        echo "<h1>Dashboard - Bienvenido " . $_SESSION['username'] . "</h1>";
-        echo "<p>Roles: " . implode(', ', $_SESSION['roles']) . "</p>";
-        echo "<a href='?action=logout'>Cerrar sesión</a>";
+        include BASE_PATH . '/views/dashboard/index.php';
+        break;
+    
+    case 'users':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $userCtrl = new UserController();
+        $userCtrl->index();
+        break;
+    
+    case 'assign_role':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $userCtrl = new UserController();
+        $userCtrl->assignRole();
         break;
     
     default:
