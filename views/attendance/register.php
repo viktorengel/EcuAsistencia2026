@@ -21,8 +21,10 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #f8f9fa; }
         .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
         #student-list { display: none; }
         select.status-select { width: auto; padding: 5px; }
+        .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -39,8 +41,20 @@
             <div class="success">✓ Asistencia registrada correctamente</div>
         <?php endif; ?>
 
+        <?php if(isset($_GET['error'])): ?>
+            <?php if($_GET['error'] == 'future'): ?>
+                <div class="error">✗ No se puede registrar asistencia de fechas futuras</div>
+            <?php elseif($_GET['error'] == 'toolate'): ?>
+                <div class="error">✗ Solo se puede registrar asistencia de hasta 48 horas atrás</div>
+            <?php endif; ?>
+        <?php endif; ?>
+
         <div class="card">
             <h2>Configuración</h2>
+            <div class="warning">
+                ⚠ <strong>Importante:</strong> Solo puede registrar asistencia del día actual o hasta 48 horas atrás. No se permiten fechas futuras.
+            </div>
+            
             <form id="config-form">
                 <div class="form-group">
                     <label>Curso</label>
@@ -76,7 +90,13 @@
 
                 <div class="form-group">
                     <label>Fecha</label>
-                    <input type="date" id="date" name="date" value="<?= date('Y-m-d') ?>" required>
+                    <input type="date" id="date" name="date" value="<?= date('Y-m-d') ?>" 
+                        max="<?= date('Y-m-d') ?>" 
+                        min="<?= $minDate ?>" 
+                        required>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Permitido: Desde el <?= date('d/m/Y', strtotime($minDate)) ?> hasta hoy
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -115,6 +135,53 @@
     </div>
 
     <script>
+        // Fecha mínima desde PHP
+        const minDateAllowed = '<?= $minDate ?>';
+
+        // Función mejorada para calcular horas hábiles
+        function getBusinessHoursBetween(dateStr1, dateStr2) {
+            let businessHours = 0;
+            let current = new Date(dateStr1 + 'T00:00:00');
+            let end = new Date(dateStr2 + 'T00:00:00');
+            
+            while (current < end) {
+                current.setDate(current.getDate() + 1);
+                const dayOfWeek = current.getDay(); // 0=Domingo, 6=Sábado
+                
+                // Solo contar lunes a viernes
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    businessHours += 24;
+                }
+            }
+            
+            return businessHours;
+        }
+
+        // Validar fecha en tiempo real
+        document.getElementById('date').addEventListener('change', function() {
+            const selectedDate = this.value;
+            const today = new Date().toISOString().split('T')[0];
+
+            if (selectedDate > today) {
+                alert('No se puede seleccionar una fecha futura');
+                this.value = today;
+                return;
+            }
+
+            if (selectedDate < minDateAllowed) {
+                alert('Solo puede registrar asistencia de hasta 48 horas hábiles atrás (excluyendo fines de semana)');
+                this.value = today;
+                return;
+            }
+
+            const businessHours = getBusinessHoursBetween(selectedDate, today);
+
+            if (businessHours > 48) {
+                alert('La fecha seleccionada excede las 48 horas hábiles permitidas');
+                this.value = today;
+            }
+        });
+
         function loadStudents() {
             const courseId = document.getElementById('course_id').value;
             const subjectId = document.getElementById('subject_id').value;
@@ -124,6 +191,18 @@
 
             if (!courseId || !subjectId || !shiftId || !date || !hourPeriod) {
                 alert('Complete todos los campos');
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+
+            if (date > today) {
+                alert('No se puede registrar asistencia de fechas futuras');
+                return;
+            }
+
+            if (date < minDateAllowed) {
+                alert('Solo puede registrar asistencia de hasta 48 horas hábiles atrás');
                 return;
             }
 

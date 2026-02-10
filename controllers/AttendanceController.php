@@ -24,6 +24,57 @@ class AttendanceController {
         $this->shiftModel = new Shift($db);
     }
 
+    private function isWithin48BusinessHours($date) {
+        $targetDate = new DateTime($date);
+        $today = new DateTime();
+        $today->setTime(0, 0, 0);
+        
+        // Si es el mismo día, siempre está permitido
+        if ($targetDate->format('Y-m-d') === $today->format('Y-m-d')) {
+            return true;
+        }
+        
+        // Si la fecha es futura, no permitir
+        if ($targetDate > $today) {
+            return false;
+        }
+        
+        $businessHours = 0;
+        $current = clone $targetDate;
+        
+        // Contar horas hábiles desde la fecha objetivo hasta hoy
+        while ($current < $today) {
+            $current->modify('+1 day');
+            $dayOfWeek = (int)$current->format('N'); // 1=Lunes, 7=Domingo
+            
+            // Solo contar si no es fin de semana (sábado=6, domingo=7)
+            if ($dayOfWeek < 6) {
+                $businessHours += 24;
+            }
+        }
+        
+        return $businessHours <= EDIT_ATTENDANCE_HOURS;
+    }
+
+    // Agregar nueva función para calcular fecha mínima
+    private function getMinDateAllowed() {
+        $today = new DateTime();
+        $businessHoursNeeded = EDIT_ATTENDANCE_HOURS;
+        $current = clone $today;
+        
+        while ($businessHoursNeeded > 0) {
+            $current->modify('-1 day');
+            $dayOfWeek = (int)$current->format('N');
+            
+            // Solo restar si no es fin de semana
+            if ($dayOfWeek < 6) {
+                $businessHoursNeeded -= 24;
+            }
+        }
+        
+        return $current->format('Y-m-d');
+    }
+
     public function register() {
         if (!Security::hasRole(['docente', 'autoridad'])) {
             die('Acceso denegado');
@@ -33,6 +84,7 @@ class AttendanceController {
         $subjects = $this->subjectModel->getAll();
         $shifts = $this->shiftModel->getAll();
         $activeYear = $this->schoolYearModel->getActive();
+        $minDate = $this->getMinDateAllowed();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = (int)$_POST['course_id'];
@@ -40,6 +92,18 @@ class AttendanceController {
             $shiftId = (int)$_POST['shift_id'];
             $date = $_POST['date'];
             $hourPeriod = $_POST['hour_period'];
+
+            // Validar que la fecha no sea futura
+            if (strtotime($date) > strtotime(date('Y-m-d'))) {
+                header('Location: ?action=attendance_register&error=future');
+                exit;
+            }
+
+            // Validar 48 horas excluyendo fines de semana
+            if (!$this->isWithin48BusinessHours($date)) {
+                header('Location: ?action=attendance_register&error=toolate');
+                exit;
+            }
 
             $students = $this->courseModel->getStudents($courseId);
 
