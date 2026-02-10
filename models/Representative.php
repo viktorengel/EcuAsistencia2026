@@ -7,16 +7,23 @@ class Representative {
     }
 
     public function assignStudent($representativeId, $studentId, $relationship, $isPrimary = 0) {
-        $sql = "INSERT INTO representatives (representative_id, student_id, relationship, is_primary) 
-                VALUES (:representative_id, :student_id, :relationship, :is_primary)
-                ON DUPLICATE KEY UPDATE relationship = :relationship, is_primary = :is_primary";
-        
+        $sql = "INSERT INTO representatives 
+                (representative_id, student_id, relationship, is_primary) 
+                VALUES 
+                (:rep_id, :stu_id, :rel_ins, :prim_ins)
+                ON DUPLICATE KEY UPDATE 
+                relationship = :rel_upd,
+                is_primary = :prim_upd";
+
         $stmt = $this->db->prepare($sql);
+
         return $stmt->execute([
-            ':representative_id' => $representativeId,
-            ':student_id' => $studentId,
-            ':relationship' => $relationship,
-            ':is_primary' => $isPrimary
+            ':rep_id'   => $representativeId,
+            ':stu_id'   => $studentId,
+            ':rel_ins'  => $relationship,
+            ':prim_ins' => $isPrimary,
+            ':rel_upd'  => $relationship,
+            ':prim_upd' => $isPrimary
         ]);
     }
 
