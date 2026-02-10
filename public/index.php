@@ -103,6 +103,24 @@ switch ($action) {
         $acadCtrl = new AcademicController();
         $acadCtrl->viewCourseStudents();
         break;
+
+    case 'reports':
+        require_once BASE_PATH . '/controllers/ReportController.php';
+        $reportCtrl = new ReportController();
+        $reportCtrl->index();
+        break;
+
+    case 'generate_pdf':
+        require_once BASE_PATH . '/controllers/ReportController.php';
+        $reportCtrl = new ReportController();
+        $reportCtrl->generatePDF();
+        break;
+
+    case 'generate_excel':
+        require_once BASE_PATH . '/controllers/ReportController.php';
+        $reportCtrl = new ReportController();
+        $reportCtrl->generateExcel();
+        break;
     
     default:
         header('Location: ?action=login');
