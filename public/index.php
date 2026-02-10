@@ -139,6 +139,36 @@ switch ($action) {
         $repCtrl = new RepresentativeController();
         $repCtrl->childAttendance();
         break;
+
+    case 'assignments':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $assignCtrl = new AssignmentController();
+        $assignCtrl->index();
+        break;
+
+    case 'create_assignment':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $assignCtrl = new AssignmentController();
+        $assignCtrl->assign();
+        break;
+
+    case 'set_tutor':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $assignCtrl = new AssignmentController();
+        $assignCtrl->setTutor();
+        break;
+
+    case 'remove_assignment':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $assignCtrl = new AssignmentController();
+        $assignCtrl->remove();
+        break;
+
+    case 'view_course_assignments':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $assignCtrl = new AssignmentController();
+        $assignCtrl->viewByCourse();
+        break;
     
     default:
         header('Location: ?action=login');

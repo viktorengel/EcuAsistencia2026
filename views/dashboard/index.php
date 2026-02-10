@@ -82,6 +82,13 @@
                 <p>Administrar usuarios y roles</p>
             </div>
 
+            <?php if(Security::hasRole('autoridad')): ?>
+            <div class="menu-item" onclick="location.href='?action=assignments'">
+                <h3>📚 Asignaciones Docentes</h3>
+                <p>Gestionar docentes por materia y tutores</p>
+            </div>
+            <?php endif; ?>
+
             <div class="menu-item" onclick="location.href='?action=reports'">
                 <h3>📄 Reportes</h3>
                 <p>Generar informes PDF y Excel</p>
