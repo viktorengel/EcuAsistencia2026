@@ -121,6 +121,24 @@ switch ($action) {
         $reportCtrl = new ReportController();
         $reportCtrl->generateExcel();
         break;
+
+    case 'manage_representatives':
+    require_once BASE_PATH . '/controllers/RepresentativeController.php';
+    $repCtrl = new RepresentativeController();
+    $repCtrl->manageRepresentatives();
+    break;
+
+    case 'my_children':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->myChildren();
+        break;
+
+    case 'child_attendance':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->childAttendance();
+        break;
     
     default:
         header('Location: ?action=login');

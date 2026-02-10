@@ -62,6 +62,20 @@
             </div>
             <?php endif; ?>
 
+            <?php if(Security::hasRole('representante')): ?>
+            <div class="menu-item" onclick="location.href='?action=my_children'">
+                <h3>👨‍👩‍👧‍👦 Mis Representados</h3>
+                <p>Ver estudiantes y su asistencia</p>
+            </div>
+            <?php endif; ?>
+
+            <?php if(Security::hasRole('autoridad')): ?>
+            <div class="menu-item" onclick="location.href='?action=manage_representatives'">
+                <h3>👥 Gestión Representantes</h3>
+                <p>Asignar representantes a estudiantes</p>
+            </div>
+            <?php endif; ?>
+
             <?php if(Security::hasRole('autoridad')): ?>
             <div class="menu-item" onclick="location.href='?action=users'">
                 <h3>👥 Gestión de Usuarios</h3>
