@@ -171,4 +171,32 @@ class User {
         ]);
         return $stmt->fetch();
     }
+
+    public function updateProfile($userId, $data) {
+        $sql = "UPDATE users 
+                SET first_name = :first_name, 
+                    last_name = :last_name, 
+                    phone = :phone, 
+                    email = :email,
+                    updated_at = NOW()
+                WHERE id = :id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':first_name' => $data['first_name'],
+            ':last_name' => $data['last_name'],
+            ':phone' => $data['phone'],
+            ':email' => $data['email'],
+            ':id' => $userId
+        ]);
+    }
+
+    public function updatePassword($userId, $newPassword) {
+        $sql = "UPDATE users SET password = :password WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':password' => Security::hashPassword($newPassword),
+            ':id' => $userId
+        ]);
+    }
 }

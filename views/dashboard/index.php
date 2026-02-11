@@ -43,9 +43,9 @@
 </head>
 <body>
     <div class="navbar">
-        <h1>📚 EcuAsist 2026</h1>
-        <div class="user-info">
-            <span>👤 <?= $_SESSION['username'] ?></span>
+        <h1>Dashboard - EcuAsist</h1>
+        <div>
+            <a href="?action=profile">👤 <?= $_SESSION['username'] ?></a>
             <a href="?action=logout">Cerrar sesión</a>
         </div>
     </div>

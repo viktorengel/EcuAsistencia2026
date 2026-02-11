@@ -111,4 +111,56 @@ class Attendance {
         ]);
         return $stmt->fetch();
     }
+
+    public function getFiltered($filters) {
+        $sql = "SELECT a.*, 
+                CONCAT(u.last_name, ' ', u.first_name) as student_name,
+                c.name as course_name,
+                s.name as subject_name,
+                CONCAT(t.last_name, ' ', t.first_name) as teacher_name
+                FROM attendances a
+                INNER JOIN users u ON a.student_id = u.id
+                INNER JOIN courses c ON a.course_id = c.id
+                INNER JOIN subjects s ON a.subject_id = s.id
+                INNER JOIN users t ON a.teacher_id = t.id
+                WHERE 1=1";
+        
+        $params = [];
+        
+        if (!empty($filters['course_id'])) {
+            $sql .= " AND a.course_id = :course_id";
+            $params[':course_id'] = $filters['course_id'];
+        }
+        
+        if (!empty($filters['student_id'])) {
+            $sql .= " AND a.student_id = :student_id";
+            $params[':student_id'] = $filters['student_id'];
+        }
+        
+        if (!empty($filters['subject_id'])) {
+            $sql .= " AND a.subject_id = :subject_id";
+            $params[':subject_id'] = $filters['subject_id'];
+        }
+        
+        if (!empty($filters['status'])) {
+            $sql .= " AND a.status = :status";
+            $params[':status'] = $filters['status'];
+        }
+        
+        if (!empty($filters['start_date'])) {
+            $sql .= " AND a.date >= :start_date";
+            $params[':start_date'] = $filters['start_date'];
+        }
+        
+        if (!empty($filters['end_date'])) {
+            $sql .= " AND a.date <= :end_date";
+            $params[':end_date'] = $filters['end_date'];
+        }
+        
+        $sql .= " ORDER BY a.date DESC, u.last_name, u.first_name";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
 }

@@ -171,6 +171,36 @@ switch ($action) {
         $assignCtrl = new AssignmentController();
         $assignCtrl->viewByCourse();
         break;
+
+    case 'profile':
+        require_once BASE_PATH . '/controllers/ProfileController.php';
+        $profileCtrl = new ProfileController();
+        $profileCtrl->view();
+        break;
+
+    case 'edit_profile':
+        require_once BASE_PATH . '/controllers/ProfileController.php';
+        $profileCtrl = new ProfileController();
+        $profileCtrl->edit();
+        break;
+
+    case 'change_password':
+        require_once BASE_PATH . '/controllers/ProfileController.php';
+        $profileCtrl = new ProfileController();
+        $profileCtrl->changePassword();
+        break;
+
+    case 'search_students':
+        require_once BASE_PATH . '/controllers/SearchController.php';
+        $searchCtrl = new SearchController();
+        $searchCtrl->searchStudents();
+        break;
+
+    case 'export_student_list':
+        require_once BASE_PATH . '/controllers/ExportController.php';
+        $exportCtrl = new ExportController();
+        $exportCtrl->exportStudentList();
+        break;
     
     default:
         header('Location: ?action=login');
