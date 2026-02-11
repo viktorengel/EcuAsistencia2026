@@ -35,7 +35,9 @@ switch ($action) {
         break;
     
     case 'dashboard':
-        include BASE_PATH . '/views/dashboard/index.php';
+        require_once BASE_PATH . '/controllers/DashboardController.php';
+        $dash = new DashboardController();
+        $dash->index();
         break;
     
     case 'users':
@@ -97,73 +99,73 @@ switch ($action) {
         $acadCtrl = new AcademicController();
         $acadCtrl->enrollStudents();
         break;
-
+    
     case 'view_course_students':
         require_once BASE_PATH . '/controllers/AcademicController.php';
         $acadCtrl = new AcademicController();
         $acadCtrl->viewCourseStudents();
         break;
-
+    
     case 'reports':
         require_once BASE_PATH . '/controllers/ReportController.php';
         $reportCtrl = new ReportController();
         $reportCtrl->index();
         break;
-
+    
     case 'generate_pdf':
         require_once BASE_PATH . '/controllers/ReportController.php';
         $reportCtrl = new ReportController();
         $reportCtrl->generatePDF();
         break;
-
+    
     case 'generate_excel':
         require_once BASE_PATH . '/controllers/ReportController.php';
         $reportCtrl = new ReportController();
         $reportCtrl->generateExcel();
         break;
-
+    
     case 'manage_representatives':
-    require_once BASE_PATH . '/controllers/RepresentativeController.php';
-    $repCtrl = new RepresentativeController();
-    $repCtrl->manageRepresentatives();
-    break;
-
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->manageRepresentatives();
+        break;
+    
     case 'my_children':
         require_once BASE_PATH . '/controllers/RepresentativeController.php';
         $repCtrl = new RepresentativeController();
         $repCtrl->myChildren();
         break;
-
+    
     case 'child_attendance':
         require_once BASE_PATH . '/controllers/RepresentativeController.php';
         $repCtrl = new RepresentativeController();
         $repCtrl->childAttendance();
         break;
-
+    
     case 'assignments':
         require_once BASE_PATH . '/controllers/AssignmentController.php';
         $assignCtrl = new AssignmentController();
         $assignCtrl->index();
         break;
-
+    
     case 'create_assignment':
         require_once BASE_PATH . '/controllers/AssignmentController.php';
         $assignCtrl = new AssignmentController();
         $assignCtrl->assign();
         break;
-
+    
     case 'set_tutor':
         require_once BASE_PATH . '/controllers/AssignmentController.php';
         $assignCtrl = new AssignmentController();
         $assignCtrl->setTutor();
         break;
-
+    
     case 'remove_assignment':
         require_once BASE_PATH . '/controllers/AssignmentController.php';
         $assignCtrl = new AssignmentController();
         $assignCtrl->remove();
         break;
-
+    
     case 'view_course_assignments':
         require_once BASE_PATH . '/controllers/AssignmentController.php';
         $assignCtrl = new AssignmentController();
