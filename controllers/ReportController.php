@@ -83,12 +83,12 @@ class ReportController {
         $html = '<table border="1" cellpadding="4">
                     <thead>
                         <tr style="background-color: #007bff; color: white; font-weight: bold;">
-                            <th width="10%">Fecha</th>
-                            <th width="25%">Estudiante</th>
-                            <th width="20%">Asignatura</th>
-                            <th width="15%">Hora</th>
-                            <th width="12%">Estado</th>
-                            <th width="18%">Observación</th>
+                            <th width="16.666666%">Fecha</th>
+                            <th width="16.66666%">Estudiante</th>
+                            <th width="16.66666%">Asignatura</th>
+                            <th width="16.66666%">Hora</th>
+                            <th width="16.66666%">Estado</th>
+                            <th width="16.66666%">Observación</th>
                         </tr>
                     </thead>
                     <tbody>';
