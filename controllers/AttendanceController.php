@@ -170,4 +170,69 @@ class AttendanceController {
 
         include BASE_PATH . '/views/attendance/my_attendance.php';
     }
+
+    public function calendar() {
+        if (!Security::hasRole(['docente', 'autoridad', 'inspector'])) {
+            die('Acceso denegado');
+        }
+
+        $courses = $this->courseModel->getAll();
+        
+        if (isset($_GET['course_id'])) {
+            $courseId = (int)$_GET['course_id'];
+            $month = $_GET['month'] ?? date('Y-m');
+            
+            list($year, $monthNum) = explode('-', $month);
+            
+            $monthNames = [
+                '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
+                '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
+                '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+            ];
+            
+            $monthName = $monthNames[$monthNum];
+            
+            // Calcular mes anterior y siguiente
+            $prevMonth = date('Y-m', strtotime($month . '-01 -1 month'));
+            $nextMonth = date('Y-m', strtotime($month . '-01 +1 month'));
+            
+            // Generar calendario
+            $firstDay = date('w', strtotime($year . '-' . $monthNum . '-01'));
+            $daysInMonth = date('t', strtotime($year . '-' . $monthNum . '-01'));
+            
+            $calendarDays = [];
+            
+            // Días vacíos al inicio
+            for ($i = 0; $i < $firstDay; $i++) {
+                $calendarDays[] = ['day' => '', 'classes' => ''];
+            }
+            
+            // Días del mes
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $date = $year . '-' . $monthNum . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
+                $dayOfWeek = date('w', strtotime($date));
+                
+                $classes = [];
+                if ($date == date('Y-m-d')) $classes[] = 'today';
+                if ($dayOfWeek == 0 || $dayOfWeek == 6) $classes[] = 'weekend';
+                
+                // Obtener estadísticas de asistencia del día
+                $attendance = $this->attendanceModel->getDayStats($courseId, $date);
+                
+                if ($attendance && $attendance['total'] > 0) {
+                    $classes[] = 'has-attendance';
+                }
+                
+                $calendarDays[] = [
+                    'day' => $day,
+                    'classes' => implode(' ', $classes),
+                    'attendance' => $attendance
+                ];
+            }
+            
+            include BASE_PATH . '/views/attendance/calendar.php';
+        } else {
+            include BASE_PATH . '/views/attendance/calendar.php';
+        }
+    }
 }

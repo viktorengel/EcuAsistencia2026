@@ -163,4 +163,23 @@ class Attendance {
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
+
+    public function getDayStats($courseId, $date) {
+        $sql = "SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'presente' THEN 1 ELSE 0 END) as presente,
+                SUM(CASE WHEN status = 'ausente' THEN 1 ELSE 0 END) as ausente,
+                SUM(CASE WHEN status = 'tardanza' THEN 1 ELSE 0 END) as tardanza
+                FROM attendances 
+                WHERE course_id = :course_id AND date = :date";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':course_id' => $courseId,
+            ':date' => $date
+        ]);
+        
+        $result = $stmt->fetch();
+        return $result['total'] > 0 ? $result : null;
+    }
 }

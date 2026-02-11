@@ -141,6 +141,20 @@
             </div>
             <?php endif; ?>
 
+            <?php if(Security::hasRole('autoridad')): ?>
+            <div class="menu-item purple" onclick="location.href='?action=stats'">
+                <h3>📈 Estadísticas</h3>
+                <p>Análisis y métricas de asistencia</p>
+            </div>
+            <?php endif; ?>
+
+            <?php if(Security::hasRole(['docente', 'autoridad'])): ?>
+            <div class="menu-item orange" onclick="location.href='?action=attendance_calendar'">
+                <h3>📅 Calendario</h3>
+                <p>Vista mensual de asistencias</p>
+            </div>
+            <?php endif; ?>
+
             <?php if(Security::hasRole('estudiante')): ?>
             <div class="menu-item" onclick="location.href='?action=my_attendance'">
                 <h3>📋 Mi Asistencia</h3>

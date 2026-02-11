@@ -202,6 +202,18 @@ switch ($action) {
         $exportCtrl->exportStudentList();
         break;
     
+    case 'stats':
+        require_once BASE_PATH . '/controllers/StatsController.php';
+        $statsCtrl = new StatsController();
+        $statsCtrl->index();
+        break;
+
+    case 'attendance_calendar':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $attCtrl = new AttendanceController();
+        $attCtrl->calendar();
+        break;
+
     default:
         header('Location: ?action=login');
 }
