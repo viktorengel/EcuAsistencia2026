@@ -106,6 +106,8 @@ class ReportController {
         }
 
         $html .= '</tbody></table>';
+        
+        $pdf->SetFont('helvetica','',9);
 
         $pdf->writeHTML($html, true, false, true, false, '');
         
