@@ -38,6 +38,20 @@ class ReportController {
         $courses = $this->courseModel->getAll();
         $subjects = $this->subjectModel->getAll();
         
+        $data = [];
+        $course = null;
+        $startDate = null;
+        $endDate = null;
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['preview'])) {
+            $courseId = (int)$_POST['course_id'];
+            $startDate = $_POST['start_date'];
+            $endDate = $_POST['end_date'];
+            
+            $data = $this->attendanceModel->getReportData($courseId, $startDate, $endDate);
+            $course = $this->getCourseInfo($courseId);
+        }
+        
         include BASE_PATH . '/views/reports/index.php';
     }
 
