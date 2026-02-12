@@ -212,4 +212,14 @@ class User {
         ]);
         return $stmt->fetch();
     }
+
+    public function getUserRoleIds($userId) {
+        $sql = "SELECT r.id FROM roles r 
+                INNER JOIN user_roles ur ON r.id = ur.role_id 
+                WHERE ur.user_id = :user_id
+                ORDER BY r.name";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
 }

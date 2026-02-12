@@ -36,7 +36,10 @@
     <div class="container">
         <div class="card">
             <?php if(isset($_GET['success'])): ?>
-                <div class="success">Rol asignado correctamente</div>
+                <div class="success">✓ Rol asignado correctamente</div>
+            <?php endif; ?>
+            <?php if(isset($_GET['removed'])): ?>
+                <div class="success">✓ Rol eliminado correctamente</div>
             <?php endif; ?>
 
             <h2>Usuarios Registrados</h2>
@@ -60,23 +63,35 @@
                         <td><?= $user['dni'] ?? '-' ?></td>
                         <td>
                             <?php if($user['roles']): ?>
-                                <?php foreach(explode(',', $user['roles']) as $role): ?>
-                                    <span class="badge"><?= ucfirst($role) ?></span>
+                                <?php 
+                                $userRoles = explode(',', $user['roles']);
+                                $userRoleIds = $this->userModel->getUserRoleIds($user['id']);
+                                foreach($userRoles as $index => $role): 
+                                    $roleId = $userRoleIds[$index] ?? null;
+                                ?>
+                                    <span class="badge">
+                                        <?= ucfirst($role) ?>
+                                        <form method="POST" action="?action=remove_role" style="display: inline;" onsubmit="return confirm('¿Eliminar el rol <?= ucfirst($role) ?>?')">
+                                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                                            <input type="hidden" name="role_id" value="<?= $roleId ?>">
+                                            <button type="submit" class="btn-remove-role">×</button>
+                                        </form>
+                                    </span>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <em>Sin roles</em>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <form method="POST" action="?action=assign_role" style="display: inline-flex;">
+                            <form method="POST" action="?action=assign_role" style="display: inline-flex; gap: 5px;">
                                 <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                                <select name="role_id" required>
+                                <select name="role_id" required style="padding: 5px;">
                                     <option value="">Seleccionar...</option>
                                     <?php foreach($roles as $role): ?>
                                         <option value="<?= $role['id'] ?>"><?= ucfirst($role['name']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="submit">Asignar</button>
+                                <button type="submit" style="padding: 5px 10px;">Asignar</button>
                             </form>
                         </td>
                     </tr>
@@ -84,6 +99,32 @@
                 </tbody>
             </table>
         </div>
+        <style>
+            .badge {
+                display: inline-block;
+                background: #28a745;
+                color: white;
+                padding: 3px 8px;
+                border-radius: 3px;
+                font-size: 11px;
+                margin: 2px;
+                position: relative;
+            }
+            .btn-remove-role {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                padding: 0;
+                margin-left: 5px;
+                line-height: 1;
+            }
+            .btn-remove-role:hover {
+                color: #ff0000;
+            }
+        </style>
     </div>
 </body>
 </html>

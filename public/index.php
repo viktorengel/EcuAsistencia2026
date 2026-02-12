@@ -262,6 +262,12 @@ switch ($action) {
         $backupCtrl->cleanup();
         break;
 
+    case 'remove_role':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $userCtrl = new UserController();
+        $userCtrl->removeRole();
+        break;
+
     default:
         header('Location: ?action=login');
 }

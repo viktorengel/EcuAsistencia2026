@@ -29,9 +29,9 @@
 </head>
 <body>
     <div class="navbar">
-        <h1>Dashboard - EcuAsist</h1>
+        <h1>Configuración Académica</h1>
         <div>
-            <a href="?action=profile">👤 <?= $_SESSION['username'] ?></a>
+            <a href="?action=dashboard">← Dashboard</a>
             <a href="?action=logout">Cerrar sesión</a>
         </div>
     </div>

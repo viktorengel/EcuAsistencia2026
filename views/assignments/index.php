@@ -35,7 +35,7 @@
     <div class="navbar">
         <h1>Asignaciones Docentes</h1>
         <div>
-            <a href="?action=academic">← Configuración Académica</a>
+            <a href="?action=dashboard">← Dashboard</a>
             <a href="?action=logout">Cerrar sesión</a>
         </div>
     </div>
