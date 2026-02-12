@@ -213,6 +213,54 @@ switch ($action) {
         $attCtrl = new AttendanceController();
         $attCtrl->calendar();
         break;
+    
+    case 'submit_justification':
+        require_once BASE_PATH . '/controllers/JustificationController.php';
+        $justCtrl = new JustificationController();
+        $justCtrl->submit();
+        break;
+
+    case 'my_justifications':
+        require_once BASE_PATH . '/controllers/JustificationController.php';
+        $justCtrl = new JustificationController();
+        $justCtrl->myJustifications();
+        break;
+
+    case 'pending_justifications':
+        require_once BASE_PATH . '/controllers/JustificationController.php';
+        $justCtrl = new JustificationController();
+        $justCtrl->pending();
+        break;
+
+    case 'review_justification':
+        require_once BASE_PATH . '/controllers/JustificationController.php';
+        $justCtrl = new JustificationController();
+        $justCtrl->review();
+        break;
+
+    case 'backups':
+        require_once BASE_PATH . '/controllers/BackupController.php';
+        $backupCtrl = new BackupController();
+        $backupCtrl->index();
+        break;
+
+    case 'create_backup':
+        require_once BASE_PATH . '/controllers/BackupController.php';
+        $backupCtrl = new BackupController();
+        $backupCtrl->create();
+        break;
+
+    case 'download_backup':
+        require_once BASE_PATH . '/controllers/BackupController.php';
+        $backupCtrl = new BackupController();
+        $backupCtrl->download();
+        break;
+
+    case 'cleanup_backups':
+        require_once BASE_PATH . '/controllers/BackupController.php';
+        $backupCtrl = new BackupController();
+        $backupCtrl->cleanup();
+        break;
 
     default:
         header('Location: ?action=login');

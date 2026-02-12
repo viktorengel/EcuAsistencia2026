@@ -21,9 +21,18 @@
         .badge-tardanza { background: #ffc107; color: #333; }
         .badge-justificado { background: #17a2b8; }
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card { color: white; padding: 20px; border-radius: 8px; text-align: center; }
         .stat-number { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
         .stat-label { font-size: 14px; opacity: 0.9; }
+        .btn-justify {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .btn-justify:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -75,6 +84,7 @@
                         <th>Hora</th>
                         <th>Estado</th>
                         <th>Observación</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,8 +101,24 @@
                             </span>
                         </td>
                         <td><?= $att['observation'] ?: '-' ?></td>
+                        <td>
+                            <?php if($att['status'] === 'ausente'): ?>
+                                <a href="?action=submit_justification&attendance_id=<?= $att['id'] ?>" 
+                                   class="btn-justify">
+                                    Justificar
+                                </a>
+                            <?php else: ?>
+                                -
+                            <?php endif; ?>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
+
+                    <?php if(empty($attendances)): ?>
+                        <tr>
+                            <td colspan="8" style="text-align:center;">No hay registros de asistencia.</td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>

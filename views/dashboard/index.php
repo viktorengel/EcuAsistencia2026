@@ -162,11 +162,32 @@
             </div>
             <?php endif; ?>
 
+            <?php if(Security::hasRole('estudiante')): ?>
+            <div class="menu-item green" onclick="location.href='?action=my_justifications'">
+                <h3>📝 Mis Justificaciones</h3>
+                <p>Justificar ausencias</p>
+            </div>
+            <?php endif; ?>
+
+            <?php if(Security::hasRole(['autoridad', 'inspector'])): ?>
+            <div class="menu-item orange" onclick="location.href='?action=pending_justifications'">
+                <h3>✅ Revisar Justificaciones</h3>
+                <p>Aprobar o rechazar justificaciones</p>
+            </div>
+            <?php endif; ?>
+
             <?php if(Security::hasRole('autoridad')): ?>
             <div class="menu-item orange" onclick="location.href='?action=users'">
                 <h3>👥 Gestión de Usuarios</h3>
                 <p>Administrar usuarios y roles</p>
             </div>
+
+            <?php if(Security::hasRole('autoridad')): ?>
+            <div class="menu-item purple" onclick="location.href='?action=backups'">
+                <h3>💾 Respaldos</h3>
+                <p>Gestionar respaldos de base de datos</p>
+            </div>
+            <?php endif; ?>
 
             <div class="menu-item purple" onclick="location.href='?action=reports'">
                 <h3>📄 Reportes</h3>
