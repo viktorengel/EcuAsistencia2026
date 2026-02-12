@@ -64,28 +64,58 @@ class TeacherAssignment {
     }
 
     public function setTutor($courseId, $teacherId, $schoolYearId) {
-        // Primero quitar tutor actual del curso
+        // Verificar si el docente ya es tutor de otro curso en el mismo año lectivo
+        $checkSql = "SELECT c.name 
+                    FROM teacher_assignments ta
+                    INNER JOIN courses c ON ta.course_id = c.id
+                    WHERE ta.teacher_id = :teacher_id 
+                    AND ta.school_year_id = :school_year_id 
+                    AND ta.is_tutor = 1
+                    AND ta.course_id != :course_id";
+        
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([
+            ':teacher_id' => $teacherId,
+            ':school_year_id' => $schoolYearId,
+            ':course_id' => $courseId
+        ]);
+        
+        $existingTutor = $checkStmt->fetch();
+        
+        if ($existingTutor) {
+            return [
+                'success' => false,
+                'message' => 'Este docente ya es tutor del curso: ' . $existingTutor['name']
+            ];
+        }
+        
+        // Quitar tutor actual del curso
         $sql1 = "UPDATE teacher_assignments 
-                 SET is_tutor = 0 
-                 WHERE course_id = :course_id AND school_year_id = :school_year_id";
+                SET is_tutor = 0 
+                WHERE course_id = :course_id AND school_year_id = :school_year_id";
         $stmt1 = $this->db->prepare($sql1);
         $stmt1->execute([
             ':course_id' => $courseId,
             ':school_year_id' => $schoolYearId
         ]);
 
-        // Luego asignar nuevo tutor
+        // Asignar nuevo tutor
         $sql2 = "UPDATE teacher_assignments 
-                 SET is_tutor = 1 
-                 WHERE course_id = :course_id 
-                 AND teacher_id = :teacher_id 
-                 AND school_year_id = :school_year_id";
+                SET is_tutor = 1 
+                WHERE course_id = :course_id 
+                AND teacher_id = :teacher_id 
+                AND school_year_id = :school_year_id";
         $stmt2 = $this->db->prepare($sql2);
-        return $stmt2->execute([
+        $result = $stmt2->execute([
             ':course_id' => $courseId,
             ':teacher_id' => $teacherId,
             ':school_year_id' => $schoolYearId
         ]);
+        
+        return [
+            'success' => $result,
+            'message' => 'Tutor asignado correctamente'
+        ];
     }
 
     public function remove($assignmentId) {

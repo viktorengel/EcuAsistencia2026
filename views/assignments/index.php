@@ -14,6 +14,7 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 15px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
@@ -45,6 +46,9 @@
         <?php endif; ?>
         <?php if(isset($_GET['tutor_success'])): ?>
             <div class="success">✓ Tutor asignado correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['tutor_error'])): ?>
+            <div class="error">✗ <?= htmlspecialchars($_GET['tutor_error']) ?></div>
         <?php endif; ?>
         <?php if(isset($_GET['removed'])): ?>
             <div class="success">✓ Asignación eliminada</div>

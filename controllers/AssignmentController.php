@@ -61,8 +61,13 @@ class AssignmentController {
             $courseId = (int)$_POST['course_id'];
             $teacherId = (int)$_POST['teacher_id'];
 
-            $this->assignmentModel->setTutor($courseId, $teacherId, $activeYear['id']);
-            header('Location: ?action=assignments&tutor_success=1');
+            $result = $this->assignmentModel->setTutor($courseId, $teacherId, $activeYear['id']);
+            
+            if ($result['success']) {
+                header('Location: ?action=assignments&tutor_success=1');
+            } else {
+                header('Location: ?action=assignments&tutor_error=' . urlencode($result['message']));
+            }
             exit;
         }
     }
