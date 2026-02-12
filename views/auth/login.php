@@ -15,6 +15,7 @@
         .error { color: red; margin-bottom: 10px; }
         .success { color: green; margin-bottom: 10px; }
         a { color: #007bff; text-decoration: none; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -26,10 +27,17 @@
         <?php if(isset($_GET['registered'])): ?>
             <p class="success">Registro exitoso. Inicie sesión.</p>
         <?php endif; ?>
+        <?php if(isset($_GET['reset'])): ?>
+            <p class="success">Contraseña restablecida. Inicie sesión.</p>
+        <?php endif; ?>
+        
+        <div class="info">
+            💡 Puede ingresar con su <strong>usuario</strong> o <strong>correo electrónico</strong>
+        </div>
         
         <form method="POST">
             <input type="hidden" name="csrf_token" value="<?= Security::generateToken() ?>">
-            <input type="email" name="email" placeholder="Correo electrónico" required>
+            <input type="text" name="email" placeholder="Usuario o Correo Electrónico" required autofocus>
             <input type="password" name="password" placeholder="Contraseña" required>
             <button type="submit">Ingresar</button>
         </form>

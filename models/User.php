@@ -199,4 +199,17 @@ class User {
             ':id' => $userId
         ]);
     }
+
+    public function findByEmailOrUsername($emailOrUsername) {
+        $sql = "SELECT * FROM users 
+                WHERE (email = :email OR username = :username) 
+                AND is_active = 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':email' => $emailOrUsername,
+            ':username' => $emailOrUsername
+        ]);
+        return $stmt->fetch();
+    }
 }

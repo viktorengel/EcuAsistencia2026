@@ -43,10 +43,11 @@ class AuthController {
                 die('Token inválido');
             }
 
-            $email = Security::sanitize($_POST['email']);
+            $emailOrUsername = Security::sanitize($_POST['email']);
             $password = $_POST['password'];
 
-            $user = $this->userModel->findByEmail($email);
+            // Buscar por email O username
+            $user = $this->userModel->findByEmailOrUsername($emailOrUsername);
 
             if ($user && Security::verifyPassword($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['id'];
