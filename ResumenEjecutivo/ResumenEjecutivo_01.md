@@ -349,7 +349,6 @@ DELETE FROM representatives;
 
 🏁 ESTADO ACTUAL DEL PROYECTO
 Versión: v1.0 - Sistema completo y funcional
-Tokens usados: ~176k/190k (92.7%)
 Módulos completados: 15/15
 Bugs críticos: 0
 Listo para: Producción (tras ajustes de config)
