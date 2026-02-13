@@ -8,10 +8,10 @@ define('EDIT_ATTENDANCE_HOURS', 48);
 // SMTP Config
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
-define('SMTP_USER', 'tu-email@gmail.com');
-define('SMTP_PASS', 'tu-password-app');
+define('SMTP_USER', 'viktorengel@gmail.com');
+define('SMTP_PASS', 'Orktvi.5/*83gM');
 define('SMTP_FROM', 'noreply@ecuasist.edu.ec');
-define('SMTP_NAME', 'EcuAsist 2026');
+define('SMTP_NAME', 'EcuAsist2026');
 
 require_once BASE_PATH . '/config/database.php';
 require_once BASE_PATH . '/helpers/Security.php';
