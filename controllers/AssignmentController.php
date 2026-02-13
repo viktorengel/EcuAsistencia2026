@@ -77,6 +77,28 @@ class AssignmentController {
         }
     }
 
+    public function removeTutor() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $activeYear = $this->schoolYearModel->getActive();
+            $courseId = (int)$_POST['course_id'];
+            
+            $db = new Database();
+            $sql = "UPDATE teacher_assignments 
+                    SET is_tutor = 0 
+                    WHERE course_id = :course_id 
+                    AND school_year_id = :school_year_id";
+            
+            $stmt = $db->connect()->prepare($sql);
+            $stmt->execute([
+                ':course_id' => $courseId,
+                ':school_year_id' => $activeYear['id']
+            ]);
+            
+            header('Location: ?action=assignments&tutor_removed=1');
+            exit;
+        }
+    }
+
     public function remove() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $assignmentId = (int)$_POST['assignment_id'];

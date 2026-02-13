@@ -159,6 +159,13 @@ switch ($action) {
         $assignCtrl = new AssignmentController();
         $assignCtrl->setTutor();
         break;
+
+    case 'remove_tutor':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $controller = new AssignmentController();
+        $controller->removeTutor();
+        break;
+
     
     case 'remove_assignment':
         require_once BASE_PATH . '/controllers/AssignmentController.php';

@@ -58,6 +58,10 @@
             <div class="error">✗ <?= htmlspecialchars($_GET['error']) ?></div>
         <?php endif; ?>
 
+        <?php if(isset($_GET['tutor_removed'])): ?>
+            <div class="success">✓ Tutor eliminado correctamente</div>
+        <?php endif; ?>
+
         <div class="grid">
             <!-- Asignar Docente -->
             <div class="card">
@@ -128,10 +132,27 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
-
                     <button type="submit" class="btn-primary">Asignar Tutor</button>
                 </form>
             </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+                    <h3 style="margin-bottom: 15px;">Quitar Tutor</h3>
+                    <form method="POST" action="?action=remove_tutor">
+                        <div class="form-group">
+                            <label>Curso</label>
+                            <select name="course_id" required>
+                                <option value="">Seleccionar...</option>
+                                <?php foreach($courses as $course): ?>
+                                    <option value="<?= $course['id'] ?>">
+                                        <?= $course['name'] ?> - <?= $course['shift_name'] ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-danger" onclick="return confirm('¿Quitar tutor de este curso?')">Quitar Tutor</button>
+                    </form>
+
         </div>
 
         <!-- Lista de Asignaciones -->
