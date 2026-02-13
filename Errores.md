@@ -1,8 +1,7 @@
-En el Dashboard el mensaje Bienvenido, viktorengel, esta usando el nombre de usuario, me gustaria que aparezca su nombre y Apellido
-Quiero póder importar desde excel o csv los datos de los estudiantes, docentes, asignaturas, etc
-Fáta módulo para Recuperación de contraseña
-Que sucede si un usuario docente se le elimina el rol en el modulo de tutor, veo que sigue apareciendo.
 Varios docentes no pueden dictar la misma asignatura en el mismo curso
+Falta módulo para Recuperación de contraseña
+Quiero póder importar desde excel o csv los datos de los estudiantes, docentes, asignaturas, etc
+Que sucede si un usuario docente se le elimina el rol en el modulo de tutor, veo que sigue apareciendo.
 Al eliminar la asignación de un docente de una asignatura tambien se borra la tutoria
 Quiero registrar la asistencia hoy 12/02/2026 a las 0:21 pero me muestra este mensaje: ⚠ Importante: Solo puede registrar asistencia del día actual o hasta 48 horas atrás. No se permiten fechas futuras.
 Hay un error al registrar la asistencia, el sistema esta registrando de manera repetiviva la asistencia el mismo dia a la misma hora.
