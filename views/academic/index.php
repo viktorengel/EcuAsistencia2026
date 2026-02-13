@@ -14,6 +14,7 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 20px; }
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 15px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
@@ -42,6 +43,10 @@
         <?php endif; ?>
         <?php if(isset($_GET['subject_success'])): ?>
             <div class="success">✓ Asignatura creada correctamente</div>
+        <?php endif; ?>
+
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'no_active_year'): ?>
+            <div class="error">✗ No hay un año lectivo activo</div>
         <?php endif; ?>
 
         <div class="grid">
@@ -89,14 +94,9 @@
                         <input type="text" name="name" id="course_name" readonly style="background: #f0f0f0;">
                     </div>
                     <div class="form-group">
-                        <label>Año Lectivo</label>
-                        <select name="school_year_id" required>
-                            <?php foreach($schoolYears as $year): ?>
-                                <option value="<?= $year['id'] ?>" <?= $year['is_active'] ? 'selected' : '' ?>>
-                                    <?= $year['name'] ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label>Año Lectivo Activo</label>
+                        <input type="text" value="<?= $schoolYears[0]['name'] ?? 'No hay año activo' ?>" readonly style="background: #f0f0f0;">
+                        <input type="hidden" name="school_year_id" value="<?= $schoolYears[0]['id'] ?? '' ?>">
                     </div>
                     <button type="submit">Crear Curso</button>
                 </form>
