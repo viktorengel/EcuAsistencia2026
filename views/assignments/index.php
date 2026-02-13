@@ -54,6 +54,10 @@
             <div class="success">✓ Asignación eliminada</div>
         <?php endif; ?>
 
+        <?php if(isset($_GET['error'])): ?>
+            <div class="error">✗ <?= htmlspecialchars($_GET['error']) ?></div>
+        <?php endif; ?>
+
         <div class="grid">
             <!-- Asignar Docente -->
             <div class="card">

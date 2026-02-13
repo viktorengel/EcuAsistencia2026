@@ -7,12 +7,41 @@ class TeacherAssignment {
     }
 
     public function assign($data) {
+        // Verificar si ya existe asignación curso-materia
+        $checkSql = "SELECT ta.id, CONCAT(u.last_name, ' ', u.first_name) as teacher_name
+                    FROM teacher_assignments ta
+                    INNER JOIN users u ON ta.teacher_id = u.id
+                    WHERE ta.course_id = :course_id 
+                    AND ta.subject_id = :subject_id 
+                    AND ta.school_year_id = :school_year_id";
+        
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([
+            ':course_id' => $data[':course_id'],
+            ':subject_id' => $data[':subject_id'],
+            ':school_year_id' => $data[':school_year_id']
+        ]);
+        
+        $existing = $checkStmt->fetch();
+        
+        if ($existing) {
+            return [
+                'success' => false,
+                'message' => 'La materia ya está asignada a: ' . $existing['teacher_name']
+            ];
+        }
+        
         $sql = "INSERT INTO teacher_assignments 
                 (teacher_id, course_id, subject_id, school_year_id, is_tutor) 
                 VALUES (:teacher_id, :course_id, :subject_id, :school_year_id, :is_tutor)";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($data);
+        $result = $stmt->execute($data);
+        
+        return [
+            'success' => $result,
+            'message' => 'Asignación creada correctamente'
+        ];
     }
 
     public function getByTeacher($teacherId) {

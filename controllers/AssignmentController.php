@@ -49,8 +49,13 @@ class AssignmentController {
                 ':is_tutor' => 0
             ];
 
-            $this->assignmentModel->assign($data);
-            header('Location: ?action=assignments&success=1');
+            $result = $this->assignmentModel->assign($data);
+            
+            if ($result['success']) {
+                header('Location: ?action=assignments&success=1');
+            } else {
+                header('Location: ?action=assignments&error=' . urlencode($result['message']));
+            }
             exit;
         }
     }
