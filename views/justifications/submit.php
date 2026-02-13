@@ -22,13 +22,7 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Justificar Ausencia</h1>
-        <div>
-            <a href="?action=my_justifications">← Mis Justificaciones</a>
-            <a href="?action=logout">Cerrar sesión</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <div class="card">

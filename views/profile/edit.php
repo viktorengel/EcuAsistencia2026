@@ -22,12 +22,7 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Editar Perfil</h1>
-        <div>
-            <a href="?action=profile">← Volver</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <div class="card">

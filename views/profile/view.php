@@ -27,13 +27,7 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Mi Perfil</h1>
-        <div>
-            <a href="?action=dashboard">← Dashboard</a>
-            <a href="?action=logout">Cerrar sesión</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <?php if(isset($_GET['success'])): ?>

@@ -42,13 +42,7 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Dashboard - EcuAsist</h1>
-        <div>
-            <a href="?action=profile">👤 <?= $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] ?></a>
-            <a href="?action=logout">Cerrar sesión</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <div class="welcome-card">
