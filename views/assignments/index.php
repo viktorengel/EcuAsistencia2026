@@ -108,10 +108,10 @@
             <!-- Asignar Tutor -->
             <div class="card">
                 <h2>Asignar Docente Tutor</h2>
-                <form method="POST" action="?action=set_tutor">
+                <form method="POST" action="?action=set_tutor" id="tutorForm">
                     <div class="form-group">
                         <label>Curso</label>
-                        <select name="course_id" required>
+                        <select name="course_id" id="course_tutor" required>
                             <option value="">Seleccionar...</option>
                             <?php foreach($courses as $course): ?>
                                 <option value="<?= $course['id'] ?>">
@@ -123,18 +123,48 @@
 
                     <div class="form-group">
                         <label>Docente Tutor</label>
-                        <select name="teacher_id" required>
-                            <option value="">Seleccionar...</option>
-                            <?php foreach($teachers as $teacher): ?>
-                                <option value="<?= $teacher['id'] ?>">
-                                    <?= $teacher['last_name'] . ' ' . $teacher['first_name'] ?>
-                                </option>
-                            <?php endforeach; ?>
+                        <select name="teacher_id" id="teacher_tutor" required>
+                            <option value="">Primero seleccione un curso...</option>
                         </select>
                     </div>
+
                     <button type="submit" class="btn-primary">Asignar Tutor</button>
                 </form>
             </div>
+
+            <script>
+            document.getElementById('course_tutor').addEventListener('change', function() {
+                const courseId = this.value;
+                const teacherSelect = document.getElementById('teacher_tutor');
+                
+                teacherSelect.innerHTML = '<option value="">Cargando...</option>';
+                
+                if (!courseId) {
+                    teacherSelect.innerHTML = '<option value="">Primero seleccione un curso...</option>';
+                    return;
+                }
+                
+                fetch('?action=get_course_teachers&course_id=' + courseId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            teacherSelect.innerHTML = '<option value="">No hay docentes asignados a este curso</option>';
+                        } else {
+                            teacherSelect.innerHTML = '<option value="">Seleccionar...</option>';
+                            data.forEach(teacher => {
+                                const option = document.createElement('option');
+                                option.value = teacher.teacher_id;
+                                option.textContent = teacher.teacher_name;
+                                teacherSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        teacherSelect.innerHTML = '<option value="">Error al cargar docentes</option>';
+                        console.error('Error:', error);
+                    });
+            });
+            </script>
 
             <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
                     <h3 style="margin-bottom: 15px;">Quitar Tutor</h3>

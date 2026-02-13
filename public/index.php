@@ -166,6 +166,11 @@ switch ($action) {
         $controller->removeTutor();
         break;
 
+    case 'get_course_teachers':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $controller = new AssignmentController();
+        $controller->getCourseTeachers();
+        break;
     
     case 'remove_assignment':
         require_once BASE_PATH . '/controllers/AssignmentController.php';

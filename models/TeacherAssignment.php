@@ -9,11 +9,11 @@ class TeacherAssignment {
     public function assign($data) {
         // Verificar si ya existe asignación curso-materia
         $checkSql = "SELECT ta.id, CONCAT(u.last_name, ' ', u.first_name) as teacher_name
-                    FROM teacher_assignments ta
-                    INNER JOIN users u ON ta.teacher_id = u.id
-                    WHERE ta.course_id = :course_id 
-                    AND ta.subject_id = :subject_id 
-                    AND ta.school_year_id = :school_year_id";
+                     FROM teacher_assignments ta
+                     INNER JOIN users u ON ta.teacher_id = u.id
+                     WHERE ta.course_id = :course_id 
+                     AND ta.subject_id = :subject_id 
+                     AND ta.school_year_id = :school_year_id";
         
         $checkStmt = $this->db->prepare($checkSql);
         $checkStmt->execute([
@@ -128,18 +128,33 @@ class TeacherAssignment {
             ':school_year_id' => $schoolYearId
         ]);
 
-        // Asignar nuevo tutor
-        $sql2 = "UPDATE teacher_assignments 
-                SET is_tutor = 1 
-                WHERE course_id = :course_id 
-                AND teacher_id = :teacher_id 
-                AND school_year_id = :school_year_id";
-        $stmt2 = $this->db->prepare($sql2);
-        $result = $stmt2->execute([
+        // Verificar si docente tiene asignación en el curso
+        $checkAssignment = "SELECT id FROM teacher_assignments 
+                           WHERE course_id = :course_id 
+                           AND teacher_id = :teacher_id 
+                           AND school_year_id = :school_year_id 
+                           LIMIT 1";
+        $stmt = $this->db->prepare($checkAssignment);
+        $stmt->execute([
             ':course_id' => $courseId,
             ':teacher_id' => $teacherId,
             ':school_year_id' => $schoolYearId
         ]);
+        $existing = $stmt->fetch();
+        
+        if ($existing) {
+            // Actualizar asignación existente
+            $sql2 = "UPDATE teacher_assignments 
+                    SET is_tutor = 1 
+                    WHERE id = :id";
+            $stmt2 = $this->db->prepare($sql2);
+            $result = $stmt2->execute([':id' => $existing['id']]);
+        } else {
+            return [
+                'success' => false,
+                'message' => 'El docente debe tener al menos una asignatura en el curso antes de ser tutor'
+            ];
+        }
         
         return [
             'success' => $result,
@@ -148,9 +163,27 @@ class TeacherAssignment {
     }
 
     public function remove($assignmentId) {
+        // Verificar si es tutor antes de eliminar
+        $checkSql = "SELECT is_tutor FROM teacher_assignments WHERE id = :id";
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([':id' => $assignmentId]);
+        $assignment = $checkStmt->fetch();
+        
+        if ($assignment && $assignment['is_tutor'] == 1) {
+            return [
+                'success' => false,
+                'message' => 'No se puede eliminar: este docente es tutor del curso. Quite primero la tutoría.'
+            ];
+        }
+        
         $sql = "DELETE FROM teacher_assignments WHERE id = :id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':id' => $assignmentId]);
+        $result = $stmt->execute([':id' => $assignmentId]);
+        
+        return [
+            'success' => $result,
+            'message' => 'Asignación eliminada correctamente'
+        ];
     }
 
     public function getAll() {

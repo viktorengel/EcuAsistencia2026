@@ -14,11 +14,6 @@ class AssignmentController {
     private $userModel;
 
     public function __construct() {
-        Security::requireLogin();
-        if (!Security::hasRole('autoridad')) {
-            die('Acceso denegado');
-        }
-
         $db = new Database();
         $this->assignmentModel = new TeacherAssignment($db);
         $this->courseModel = new Course($db);
@@ -28,6 +23,11 @@ class AssignmentController {
     }
 
     public function index() {
+        Security::requireLogin();
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
         $courses = $this->courseModel->getAll();
         $subjects = $this->subjectModel->getAll();
         $teachers = $this->userModel->getByRole('docente');
@@ -38,6 +38,11 @@ class AssignmentController {
     }
 
     public function assign() {
+        Security::requireLogin();
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $activeYear = $this->schoolYearModel->getActive();
 
@@ -61,6 +66,11 @@ class AssignmentController {
     }
 
     public function setTutor() {
+        Security::requireLogin();
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $activeYear = $this->schoolYearModel->getActive();
             $courseId = (int)$_POST['course_id'];
@@ -78,6 +88,11 @@ class AssignmentController {
     }
 
     public function removeTutor() {
+        Security::requireLogin();
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $activeYear = $this->schoolYearModel->getActive();
             $courseId = (int)$_POST['course_id'];
@@ -100,15 +115,30 @@ class AssignmentController {
     }
 
     public function remove() {
+        Security::requireLogin();
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $assignmentId = (int)$_POST['assignment_id'];
-            $this->assignmentModel->remove($assignmentId);
-            header('Location: ?action=assignments&removed=1');
+            $result = $this->assignmentModel->remove($assignmentId);
+            
+            if ($result['success']) {
+                header('Location: ?action=assignments&removed=1');
+            } else {
+                header('Location: ?action=assignments&error=' . urlencode($result['message']));
+            }
             exit;
         }
     }
 
     public function viewByCourse() {
+        Security::requireLogin();
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
         $courseId = (int)($_GET['course_id'] ?? 0);
         
         if (!$courseId) {
@@ -125,5 +155,38 @@ class AssignmentController {
         $tutor = $this->assignmentModel->getTutorByCourse($courseId, $activeYear['id']);
 
         include BASE_PATH . '/views/assignments/view_course.php';
+    }
+
+    public function getCourseTeachers() {
+        // No verificar roles para AJAX
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'No autenticado']);
+            exit;
+        }
+        
+        $courseId = (int)($_GET['course_id'] ?? 0);
+        
+        if (!$courseId) {
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        
+        $sql = "SELECT DISTINCT ta.teacher_id, 
+                CONCAT(u.last_name, ' ', u.first_name) as teacher_name
+                FROM teacher_assignments ta
+                INNER JOIN users u ON ta.teacher_id = u.id
+                WHERE ta.course_id = :course_id
+                ORDER BY u.last_name, u.first_name";
+        
+        $db = new Database();
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([':course_id' => $courseId]);
+        $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        header('Content-Type: application/json');
+        echo json_encode($teachers);
+        exit;
     }
 }
