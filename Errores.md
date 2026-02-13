@@ -1,4 +1,3 @@
-Varios docentes no pueden dictar la misma asignatura en el mismo curso
 Falta módulo para Recuperación de contraseña
 Quiero póder importar desde excel o csv los datos de los estudiantes, docentes, asignaturas, etc
 Que sucede si un usuario docente se le elimina el rol en el modulo de tutor, veo que sigue apareciendo.
