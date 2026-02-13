@@ -40,6 +40,18 @@ class UserController {
             $userId = (int)$_POST['user_id'];
             $roleId = (int)$_POST['role_id'];
             
+            // Verificar si el rol es "docente"
+            $db = new Database();
+            $stmt = $db->connect()->prepare("SELECT name FROM roles WHERE id = :role_id");
+            $stmt->execute([':role_id' => $roleId]);
+            $role = $stmt->fetch();
+            
+            if ($role && $role['name'] === 'docente') {
+                // Eliminar asignaciones de materias
+                $stmt = $db->connect()->prepare("DELETE FROM teacher_assignments WHERE teacher_id = :user_id");
+                $stmt->execute([':user_id' => $userId]);
+            }
+            
             $this->userModel->removeRole($userId, $roleId);
             header('Location: ?action=users&removed=1');
             exit;
