@@ -235,4 +235,35 @@ class AttendanceController {
             include BASE_PATH . '/views/attendance/calendar.php';
         }
     }
+
+    public function getCourseSubjects() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'No autenticado']);
+            exit;
+        }
+        
+        $courseId = (int)($_GET['course_id'] ?? 0);
+        
+        if (!$courseId) {
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        
+        $sql = "SELECT DISTINCT ta.subject_id, s.name as subject_name
+                FROM teacher_assignments ta
+                INNER JOIN subjects s ON ta.subject_id = s.id
+                WHERE ta.course_id = :course_id
+                ORDER BY s.name";
+        
+        $db = new Database();
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([':course_id' => $courseId]);
+        $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        header('Content-Type: application/json');
+        echo json_encode($subjects);
+        exit;
+    }
 }

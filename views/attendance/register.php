@@ -61,8 +61,11 @@
                     <select id="course_id" name="course_id" required>
                         <option value="">Seleccionar curso...</option>
                         <?php foreach($courses as $course): ?>
-                            <option value="<?= $course['id'] ?>">
-                                <?= $course['name'] ?> - <?= $course['shift_name'] ?>
+                            <option value="<?= $course['id'] ?>" 
+                                    data-shift="<?= $course['shift_id'] ?>"
+                                    data-shift-name="<?= $course['shift_name'] ?>"
+                                    data-level="<?= $course['grade_level'] ?>">
+                                <?= $course['name'] ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -71,21 +74,14 @@
                 <div class="form-group">
                     <label>Asignatura</label>
                     <select id="subject_id" name="subject_id" required>
-                        <option value="">Seleccionar asignatura...</option>
-                        <?php foreach($subjects as $subject): ?>
-                            <option value="<?= $subject['id'] ?>"><?= $subject['name'] ?></option>
-                        <?php endforeach; ?>
+                        <option value="">Primero seleccione un curso...</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label>Jornada</label>
-                    <select id="shift_id" name="shift_id" required>
-                        <option value="">Seleccionar jornada...</option>
-                        <?php foreach($shifts as $shift): ?>
-                            <option value="<?= $shift['id'] ?>"><?= ucfirst($shift['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="text" id="shift_name" readonly style="background: #f0f0f0;">
+                    <input type="hidden" id="shift_id" name="shift_id">
                 </div>
 
                 <div class="form-group">
@@ -101,7 +97,9 @@
 
                 <div class="form-group">
                     <label>Hora/Período</label>
-                    <input type="text" id="hour_period" name="hour_period" placeholder="Ej: 1ra hora, 08:00-09:00" required>
+                    <select id="hour_period" name="hour_period" required>
+                        <option value="">Primero seleccione un curso...</option>
+                    </select>
                 </div>
 
                 <button type="button" onclick="loadStudents()">Cargar Estudiantes</button>
@@ -135,10 +133,67 @@
     </div>
 
     <script>
-        // Fecha mínima desde PHP
         const minDateAllowed = '<?= $minDate ?>';
 
-        // Función mejorada para calcular horas hábiles
+        // Al cambiar curso: cargar jornada, asignaturas y horas
+        document.getElementById('course_id').addEventListener('change', function() {
+            const courseId = this.value;
+            const selectedOption = this.options[this.selectedIndex];
+            const shiftId = selectedOption.getAttribute('data-shift');
+            const shiftName = selectedOption.getAttribute('data-shift-name');
+            const gradeLevel = selectedOption.getAttribute('data-level');
+            
+            // Limpiar selects
+            document.getElementById('subject_id').innerHTML = '<option value="">Cargando...</option>';
+            document.getElementById('hour_period').innerHTML = '<option value="">Seleccionar...</option>';
+            
+            if (!courseId) {
+                document.getElementById('shift_name').value = '';
+                document.getElementById('shift_id').value = '';
+                document.getElementById('subject_id').innerHTML = '<option value="">Primero seleccione un curso...</option>';
+                document.getElementById('hour_period').innerHTML = '<option value="">Primero seleccione un curso...</option>';
+                return;
+            }
+            
+            // Establecer jornada
+            document.getElementById('shift_name').value = shiftName.charAt(0).toUpperCase() + shiftName.slice(1);
+            document.getElementById('shift_id').value = shiftId;
+            
+            // Cargar asignaturas del curso
+            fetch('?action=get_course_subjects&course_id=' + courseId)
+                .then(response => response.json())
+                .then(subjects => {
+                    const subjectSelect = document.getElementById('subject_id');
+                    if (subjects.length === 0) {
+                        subjectSelect.innerHTML = '<option value="">No hay asignaturas asignadas</option>';
+                    } else {
+                        subjectSelect.innerHTML = '<option value="">Seleccionar...</option>';
+                        subjects.forEach(subject => {
+                            const option = document.createElement('option');
+                            option.value = subject.subject_id;
+                            option.textContent = subject.subject_name;
+                            subjectSelect.appendChild(option);
+                        });
+                    }
+                });
+            
+            // Determinar número de horas según nivel
+            let totalHours = 7; // Por defecto EGB y BGU
+            if (gradeLevel.includes('Técnico')) {
+                totalHours = 8;
+            }
+            
+            // Llenar select de horas
+            const hourSelect = document.getElementById('hour_period');
+            hourSelect.innerHTML = '<option value="">Seleccionar...</option>';
+            for (let i = 1; i <= totalHours; i++) {
+                const option = document.createElement('option');
+                option.value = i + 'ra hora';
+                option.textContent = i + 'ra hora';
+                hourSelect.appendChild(option);
+            }
+        });
+
         function getBusinessHoursBetween(dateStr1, dateStr2) {
             let businessHours = 0;
             let current = new Date(dateStr1 + 'T00:00:00');
@@ -146,9 +201,8 @@
             
             while (current < end) {
                 current.setDate(current.getDate() + 1);
-                const dayOfWeek = current.getDay(); // 0=Domingo, 6=Sábado
+                const dayOfWeek = current.getDay();
                 
-                // Solo contar lunes a viernes
                 if (dayOfWeek !== 0 && dayOfWeek !== 6) {
                     businessHours += 24;
                 }
@@ -157,7 +211,6 @@
             return businessHours;
         }
 
-        // Validar fecha en tiempo real
         document.getElementById('date').addEventListener('change', function() {
             const selectedDate = this.value;
             const today = new Date().toISOString().split('T')[0];

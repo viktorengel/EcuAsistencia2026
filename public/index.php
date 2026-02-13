@@ -280,6 +280,12 @@ switch ($action) {
         $userCtrl->removeRole();
         break;
 
+    case 'get_course_subjects':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $controller = new AttendanceController();
+        $controller->getCourseSubjects();
+        break;
+
     default:
         header('Location: ?action=login');
 }
