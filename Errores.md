@@ -9,6 +9,3 @@ al momento de registar la asistencia A Un docente se le debe de mostrar unicamen
 No hay el módulo para justificar las faltas
 Falta agregar un menú en la parte superior para accerder a cada unos de los módulos
 El año lectivo en el módulo de Configuración Académica parece que está de más ya que debe haber algún sitio donde se preestablesca en que año lectivo se esta trabajando actualmente.
-El nombre del curso debe generarse automaticamente en funcion al jornada, nivel y paralelo
-Los niveles debe estar prestablecido solo para seleccionar
-Los paralelos deben estar prestablecido solo para seleccionar

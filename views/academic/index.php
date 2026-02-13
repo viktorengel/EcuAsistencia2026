@@ -48,26 +48,45 @@
             <!-- Crear Curso -->
             <div class="card">
                 <h2>Crear Curso</h2>
-                <form method="POST" action="?action=create_course">
-                    <div class="form-group">
-                        <label>Nombre del Curso</label>
-                        <input type="text" name="name" placeholder="Ej: Octavo A" required>
-                    </div>
+                <form method="POST" action="?action=create_course" id="courseForm">
                     <div class="form-group">
                         <label>Nivel</label>
-                        <input type="text" name="grade_level" placeholder="Ej: Octavo" required>
+                        <select name="grade_level" id="grade_level" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="8vo EGB">8vo EGB</option>
+                            <option value="9no EGB">9no EGB</option>
+                            <option value="10mo EGB">10mo EGB</option>
+                            <option value="1ro BGU">1ro BGU</option>
+                            <option value="2do BGU">2do BGU</option>
+                            <option value="3ro BGU">3ro BGU</option>
+                            <option value="1ro Técnico">1ro Técnico</option>
+                            <option value="2do Técnico">2do Técnico</option>
+                            <option value="3ro Técnico">3ro Técnico</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Paralelo</label>
-                        <input type="text" name="parallel" placeholder="Ej: A" required>
+                        <select name="parallel" id="parallel" required>
+                            <option value="">Seleccionar...</option>
+                            <?php foreach(range('A', 'Z') as $letter): ?>
+                                <option value="<?= $letter ?>"><?= $letter ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Jornada</label>
-                        <select name="shift_id" required>
+                        <select name="shift_id" id="shift_id" required>
+                            <option value="">Seleccionar...</option>
                             <?php foreach($shifts as $shift): ?>
-                                <option value="<?= $shift['id'] ?>"><?= ucfirst($shift['name']) ?></option>
+                                <option value="<?= $shift['id'] ?>" data-shift="<?= $shift['name'] ?>">
+                                    <?= ucfirst($shift['name']) ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Curso (generado automáticamente)</label>
+                        <input type="text" name="name" id="course_name" readonly style="background: #f0f0f0;">
                     </div>
                     <div class="form-group">
                         <label>Año Lectivo</label>
@@ -82,6 +101,25 @@
                     <button type="submit">Crear Curso</button>
                 </form>
             </div>
+
+            <script>
+            function generateCourseName() {
+                const level = document.getElementById('grade_level').value;
+                const parallel = document.getElementById('parallel').value;
+                const shiftSelect = document.getElementById('shift_id');
+                const shiftOption = shiftSelect.options[shiftSelect.selectedIndex];
+                const shiftName = shiftOption ? shiftOption.getAttribute('data-shift') : '';
+                
+                if (level && parallel && shiftName) {
+                    const courseName = `${level} "${parallel}" - ${shiftName.charAt(0).toUpperCase() + shiftName.slice(1)}`;
+                    document.getElementById('course_name').value = courseName;
+                }
+            }
+            
+            document.getElementById('grade_level').addEventListener('change', generateCourseName);
+            document.getElementById('parallel').addEventListener('change', generateCourseName);
+            document.getElementById('shift_id').addEventListener('change', generateCourseName);
+            </script>
 
             <!-- Crear Asignatura -->
             <div class="card">
