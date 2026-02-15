@@ -7,6 +7,42 @@ class Attendance {
     }
 
     public function create($data) {
+        // Verificar si ya existe registro
+        $checkSql = "SELECT id FROM attendances 
+                     WHERE student_id = :student_id 
+                     AND course_id = :course_id 
+                     AND subject_id = :subject_id 
+                     AND date = :date 
+                     AND hour_period = :hour_period";
+        
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([
+            ':student_id' => $data[':student_id'],
+            ':course_id' => $data[':course_id'],
+            ':subject_id' => $data[':subject_id'],
+            ':date' => $data[':date'],
+            ':hour_period' => $data[':hour_period']
+        ]);
+        
+        $existing = $checkStmt->fetch();
+        
+        if ($existing) {
+            // Ya existe, actualizar en lugar de insertar
+            $updateSql = "UPDATE attendances 
+                         SET status = :status, 
+                             observation = :observation,
+                             updated_at = NOW()
+                         WHERE id = :id";
+            
+            $updateStmt = $this->db->prepare($updateSql);
+            return $updateStmt->execute([
+                ':status' => $data[':status'],
+                ':observation' => $data[':observation'],
+                ':id' => $existing['id']
+            ]);
+        }
+        
+        // No existe, insertar nuevo
         $sql = "INSERT INTO attendances 
                 (student_id, course_id, subject_id, teacher_id, school_year_id, shift_id, date, hour_period, status, observation) 
                 VALUES (:student_id, :course_id, :subject_id, :teacher_id, :school_year_id, :shift_id, :date, :hour_period, :status, :observation)";
