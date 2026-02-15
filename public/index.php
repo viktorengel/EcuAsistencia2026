@@ -286,6 +286,12 @@ switch ($action) {
         $controller->getCourseSubjects();
         break;
 
+case 'get_teacher_course_subjects':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $controller = new AttendanceController();
+        $controller->getTeacherCourseSubjects();
+        break;
+
     default:
         header('Location: ?action=login');
 }

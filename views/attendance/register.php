@@ -153,8 +153,8 @@
             document.getElementById('shift_name').value = shiftName.charAt(0).toUpperCase() + shiftName.slice(1);
             document.getElementById('shift_id').value = shiftId;
             
-            // Cargar asignaturas del curso
-            fetch('?action=get_course_subjects&course_id=' + courseId)
+            // Cargar asignaturas del curso (solo las que el docente dicta)
+            fetch('?action=get_teacher_course_subjects&course_id=' + courseId)
                 .then(response => response.json())
                 .then(subjects => {
                     const subjectSelect = document.getElementById('subject_id');
