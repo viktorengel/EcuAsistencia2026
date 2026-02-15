@@ -84,4 +84,89 @@ class ScheduleController {
             exit;
         }
     }
+
+    public function getCourseSubjectsSchedule() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        
+        $courseId = (int)($_GET['course_id'] ?? 0);
+        
+        if (!$courseId) {
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        
+        // Obtener asignaturas con sus docentes asignados al curso
+        $sql = "SELECT DISTINCT ta.subject_id, s.name as subject_name, 
+                ta.teacher_id, CONCAT(u.last_name, ' ', u.first_name) as teacher_name
+                FROM teacher_assignments ta
+                INNER JOIN subjects s ON ta.subject_id = s.id
+                INNER JOIN users u ON ta.teacher_id = u.id
+                WHERE ta.course_id = :course_id
+                ORDER BY s.name";
+        
+        $db = new Database();
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([':course_id' => $courseId]);
+        $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        header('Content-Type: application/json');
+        echo json_encode($subjects);
+        exit;
+    }
+
+    public function checkScheduleConflict() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['exists' => false]);
+            exit;
+        }
+        
+        $courseId = (int)($_GET['course_id'] ?? 0);
+        $day = $_GET['day'] ?? '';
+        $period = (int)($_GET['period'] ?? 0);
+        
+        if (!$courseId || !$day || !$period) {
+            header('Content-Type: application/json');
+            echo json_encode(['exists' => false]);
+            exit;
+        }
+        
+        $db = new Database();
+        $activeYear = $this->schoolYearModel->getActive();
+        
+        $sql = "SELECT s.name as subject_name, CONCAT(u.last_name, ' ', u.first_name) as teacher_name
+                FROM class_schedule cs
+                INNER JOIN subjects s ON cs.subject_id = s.id
+                INNER JOIN users u ON cs.teacher_id = u.id
+                WHERE cs.course_id = :course_id 
+                AND cs.day_of_week = :day 
+                AND cs.period_number = :period
+                AND cs.school_year_id = :school_year_id
+                LIMIT 1";
+        
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([
+            ':course_id' => $courseId,
+            ':day' => $day,
+            ':period' => $period,
+            ':school_year_id' => $activeYear['id']
+        ]);
+        
+        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        $result = [
+            'exists' => $existing ? true : false,
+            'subject_name' => $existing['subject_name'] ?? null,
+            'teacher_name' => $existing['teacher_name'] ?? null
+        ];
+        
+        header('Content-Type: application/json');
+        echo json_encode($result);
+        exit;
+    }
 }

@@ -203,7 +203,7 @@
                             <td>
                                 <form method="POST" action="?action=remove_assignment" style="display: inline;">
                                     <input type="hidden" name="assignment_id" value="<?= $assignment['id'] ?>">
-                                    <button type="submit" class="btn-danger" onclick="return confirm('¿Eliminar asignación?')">
+                                    <button type="submit" class="btn-danger" onclick="confirmDeleteAssignment(event, '<?= $assignment['teacher_name'] ?>', '<?= $assignment['course_name'] ?>', '<?= $assignment['subject_name'] ?>')">
                                         Eliminar
                                     </button>
                                 </form>
@@ -215,5 +215,51 @@
             </table>
         </div>
     </div>
+
+    <script>
+    function confirmDeleteAssignment(event, teacherName, courseName, subjectName) {
+        event.preventDefault();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Asignación</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">
+                ¿Está seguro de eliminar esta asignación?<br><br>
+                <strong>Docente:</strong> ${teacherName}<br>
+                <strong>Curso:</strong> ${courseName}<br>
+                <strong>Asignatura:</strong> ${subjectName}
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelDeleteBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmDeleteBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sí, Eliminar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const form = event.target.closest('form');
+        
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+            form.submit();
+        };
+        
+        document.getElementById('cancelDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+        };
+        
+        return false;
+    }
+    </script>
 </body>
 </html>

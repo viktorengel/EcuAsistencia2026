@@ -48,10 +48,10 @@
         <div class="grid">
             <div class="card">
                 <h2>Agregar Clase al Horario</h2>
-                <form method="POST">
+                <form method="POST" id="scheduleForm">
                     <div class="form-group">
                         <label>Día de la Semana</label>
-                        <select name="day_of_week" required>
+                        <select name="day_of_week" id="day_of_week" required>
                             <option value="">Seleccionar...</option>
                             <option value="lunes">Lunes</option>
                             <option value="martes">Martes</option>
@@ -64,7 +64,7 @@
 
                     <div class="form-group">
                         <label>Número de Hora</label>
-                        <select name="period_number" required>
+                        <select name="period_number" id="period_number" required>
                             <option value="">Seleccionar...</option>
                             <?php 
                             $maxHours = strpos($course['grade_level'], 'Técnico') !== false ? 8 : 7;
@@ -77,28 +77,121 @@
 
                     <div class="form-group">
                         <label>Asignatura</label>
-                        <select name="subject_id" required>
+                        <select name="subject_id" id="subject_id" required>
                             <option value="">Seleccionar...</option>
-                            <?php foreach($subjects as $subject): ?>
-                                <option value="<?= $subject['id'] ?>"><?= $subject['name'] ?></option>
-                            <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label>Docente</label>
-                        <select name="teacher_id" required>
-                            <option value="">Seleccionar...</option>
-                            <?php foreach($teachers as $teacher): ?>
-                                <option value="<?= $teacher['id'] ?>">
-                                    <?= $teacher['last_name'] . ' ' . $teacher['first_name'] ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label>Docente Asignado</label>
+                        <input type="text" id="teacher_name" readonly style="background: #f0f0f0;" placeholder="Se asignará automáticamente">
+                        <input type="hidden" name="teacher_id" id="teacher_id">
                     </div>
 
-                    <button type="submit">Agregar Clase</button>
+                    <button type="submit" id="submitBtn" disabled style="background: #6c757d;">Agregar Clase</button>
                 </form>
+
+                <script>
+                const courseId = <?= $course['id'] ?>;
+                
+                // Cargar asignaturas del curso al cargar la página
+                fetch('?action=get_course_subjects_schedule&course_id=' + courseId)
+                    .then(response => response.json())
+                    .then(data => {
+                        const subjectSelect = document.getElementById('subject_id');
+                        if (data.length === 0) {
+                            subjectSelect.innerHTML = '<option value="">No hay asignaturas asignadas a este curso</option>';
+                        } else {
+                            subjectSelect.innerHTML = '<option value="">Seleccionar...</option>';
+                            data.forEach(item => {
+                                const option = document.createElement('option');
+                                option.value = item.subject_id;
+                                option.textContent = item.subject_name;
+                                option.setAttribute('data-teacher-id', item.teacher_id);
+                                option.setAttribute('data-teacher-name', item.teacher_name);
+                                subjectSelect.appendChild(option);
+                            });
+                        }
+                    });
+                
+                // Al seleccionar asignatura, mostrar docente automáticamente
+                document.getElementById('subject_id').addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const teacherId = selectedOption.getAttribute('data-teacher-id');
+                    const teacherName = selectedOption.getAttribute('data-teacher-name');
+                    
+                    if (teacherId && teacherName) {
+                        document.getElementById('teacher_id').value = teacherId;
+                        document.getElementById('teacher_name').value = teacherName;
+                        checkFormComplete();
+                        
+                    } else {
+                        document.getElementById('teacher_id').value = '';
+                        document.getElementById('teacher_name').value = '';
+                        document.getElementById('submitBtn').disabled = true;
+                        document.getElementById('submitBtn').style.background = '#6c757d';
+                    }
+                });
+                
+                document.getElementById('day_of_week').addEventListener('change', checkFormComplete);
+                document.getElementById('period_number').addEventListener('change', checkFormComplete);
+                
+                function checkFormComplete() {
+                    const day = document.getElementById('day_of_week').value;
+                    const period = document.getElementById('period_number').value;
+                    const subject = document.getElementById('subject_id').value;
+                    const teacher = document.getElementById('teacher_id').value;
+                    
+                    const btn = document.getElementById('submitBtn');
+                    if (day && period && subject && teacher) {
+                        btn.disabled = false;
+                        btn.style.background = '#28a745';
+                    } else {
+                        btn.disabled = true;
+                        btn.style.background = '#6c757d';
+                    }
+                }
+                document.getElementById('day_of_week').addEventListener('change', checkExistingSchedule);
+                document.getElementById('period_number').addEventListener('change', checkExistingSchedule);
+                
+                function checkExistingSchedule() {
+                    const day = document.getElementById('day_of_week').value;
+                    const period = document.getElementById('period_number').value;
+                    
+                    if (!day || !period) return;
+                    
+                    fetch('?action=check_schedule_conflict&course_id=' + courseId + '&day=' + day + '&period=' + period)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.exists) {
+                                showWarning(`⚠️ Esta hora ya está ocupada con ${data.subject_name} (${data.teacher_name}). Debe eliminarla antes de agregar otra.`);
+                                document.getElementById('submitBtn').disabled = true;
+                                document.getElementById('submitBtn').style.background = '#6c757d';
+                            }
+                        });
+                }
+                
+                function showWarning(message) {
+                    // Remover advertencia anterior si existe
+                    const existingWarning = document.getElementById('scheduleWarning');
+                    if (existingWarning) {
+                        existingWarning.remove();
+                    }
+                    
+                    const warning = document.createElement('div');
+                    warning.id = 'scheduleWarning';
+                    warning.style.cssText = 'background: #fff3cd; color: #856404; padding: 12px; border-radius: 4px; margin-top: 15px; border-left: 4px solid #ffc107;';
+                    warning.innerHTML = message;
+                    
+                    document.getElementById('scheduleForm').appendChild(warning);
+                    
+                    setTimeout(() => {
+                        warning.style.transition = 'opacity 0.5s';
+                        warning.style.opacity = '0';
+                        setTimeout(() => warning.remove(), 500);
+                    }, 4000);
+                }
+                </script>
             </div>
 
             <div class="card">

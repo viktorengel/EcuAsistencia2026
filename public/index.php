@@ -328,6 +328,18 @@ switch ($action) {
         $controller->checkCourseTutor();
         break;
 
+    case 'get_course_subjects_schedule':
+        require_once BASE_PATH . '/controllers/ScheduleController.php';
+        $controller = new ScheduleController();
+        $controller->getCourseSubjectsSchedule();
+        break;
+
+    case 'check_schedule_conflict':
+        require_once BASE_PATH . '/controllers/ScheduleController.php';
+        $controller = new ScheduleController();
+        $controller->checkScheduleConflict();
+        break;
+
     default:
         header('Location: ?action=login');
 }
