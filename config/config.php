@@ -3,7 +3,8 @@ session_start();
 
 // Zona horaria Ecuador
 date_default_timezone_set('America/Guayaquil');
-define('BASE_PATH', dirname(__DIR__));
+//define('BASE_PATH', dirname(__DIR__));
+define('BASE_PATH', __DIR__ . '/..');
 define('BASE_URL', 'http://localhost/ecuasistencia2026');
 define('EDIT_ATTENDANCE_HOURS', 48);
 

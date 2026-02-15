@@ -340,6 +340,30 @@ switch ($action) {
         $controller->checkScheduleConflict();
         break;
 
+    case 'institution':
+        require_once BASE_PATH . '/controllers/InstitutionController.php';
+        $controller = new InstitutionController();
+        $controller->index();
+        break;
+        
+    case 'update_institution':
+        require_once BASE_PATH . '/controllers/InstitutionController.php';
+        $controller = new InstitutionController();
+        $controller->update();
+        break;
+        
+    case 'assign_institution_shift':
+        require_once BASE_PATH . '/controllers/InstitutionController.php';
+        $controller = new InstitutionController();
+        $controller->assignShift();
+        break;
+        
+    case 'remove_institution_shift':
+        require_once BASE_PATH . '/controllers/InstitutionController.php';
+        $controller = new InstitutionController();
+        $controller->removeShift();
+        break;        
+
     default:
         header('Location: ?action=login');
 }
