@@ -30,7 +30,8 @@ class UserController {
             $roleId = (int)$_POST['role_id'];
             
             $this->userModel->assignRole($userId, $roleId);
-            header('Location: ?action=users&success=1');
+            $filter = isset($_GET['filter_role']) ? '&filter_role=' . $_GET['filter_role'] : '';
+            header('Location: ?action=users&success=1' . $filter);
             exit;
         }
     }
@@ -53,7 +54,8 @@ class UserController {
             }
             
             $this->userModel->removeRole($userId, $roleId);
-            header('Location: ?action=users&removed=1');
+            $filter = isset($_GET['filter_role']) ? '&filter_role=' . $_GET['filter_role'] : '';
+            header('Location: ?action=users&removed=1' . $filter);
             exit;
         }
     }
