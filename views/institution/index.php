@@ -16,6 +16,7 @@
         button:hover { background: #0056b3; }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 15px; }
         h2 { margin-bottom: 20px; color: #333; }
         .badge {
             display: inline-block;
@@ -52,42 +53,35 @@
         <?php if(isset($_GET['shift_removed'])): ?>
             <div class="success">✓ Jornada eliminada correctamente</div>
         <?php endif; ?>
-        
-        <div class="grid">
-            <div class="form-group">
-                <label>Nombre de la Institución *</label>
-                <input type="text" name="name" value="<?= $institution['name'] ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label>Logo de la Institución</label>
-                <?php if(isset($institution['logo_path']) && $institution['logo_path']): ?>
-                    <img src="<?= BASE_URL ?>/<?= $institution['logo_path'] ?>" style="max-width: 150px; margin-bottom: 10px; display: block;">
-                <?php endif; ?>
-                <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg">
-                <small style="color: #666; display: block; margin-top: 5px;">Formatos: PNG, JPG - Tamaño recomendado: 300x300px</small>
-            </div>
-
-            <div class="form-group">
-                <label>Código AMIE</label>
-                <input type="text" name="amie_code" value="<?= $institution['amie_code'] ?? '' ?>" placeholder="Ej: 01H00001">
-            </div>
-        </div>
-
-        <div class="grid">
 
         <div class="card">
             <h2>📋 Información de la Institución</h2>
             <form method="POST" action="?action=update_institution" enctype="multipart/form-data">
-                <div class="grid">
+                <div class="grid-3">
                     <div class="form-group">
                         <label>Nombre de la Institución *</label>
                         <input type="text" name="name" value="<?= $institution['name'] ?>" required>
                     </div>
 
                     <div class="form-group">
+                        <label>Logo de la Institución</label>
+                        <?php if(isset($institution['logo_path']) && $institution['logo_path']): ?>
+                            <img src="<?= BASE_URL ?>/<?= $institution['logo_path'] ?>" style="max-width: 150px; margin-bottom: 10px; display: block; border: 1px solid #ddd; padding: 5px; border-radius: 4px;">
+                        <?php endif; ?>
+                        <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg">
+                        <small style="color: #666; display: block; margin-top: 5px;">PNG, JPG - 300x300px recomendado</small>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
                         <label>Código AMIE</label>
                         <input type="text" name="amie_code" value="<?= $institution['amie_code'] ?? '' ?>" placeholder="Ej: 01H00001">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombre del Director/Rector</label>
+                        <input type="text" name="director_name" value="<?= $institution['director_name'] ?? '' ?>">
                     </div>
 
                     <div class="form-group">
@@ -147,12 +141,7 @@
 
                     <div class="form-group">
                         <label>Sitio Web</label>
-                        <input type="text" name="website" id="website" value="<?= $institution['website'] ?? '' ?>" placeholder="Ej: www.institucion.com o institucion.com">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nombre del Director/Rector</label>
-                        <input type="text" name="director_name" value="<?= $institution['director_name'] ?? '' ?>">
+                        <input type="text" name="website" id="website" value="<?= $institution['website'] ?? '' ?>" placeholder="Ej: www.iepomasqui.com">
                     </div>
                 </div>
 
@@ -201,73 +190,31 @@
     </div>
 
     <script>
-    function confirmRemoveShift(event, shiftName) {
-        event.preventDefault();
-        
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        
-        modalContent.innerHTML = `
-            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Jornada</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">
-                ¿Está seguro de eliminar la jornada <strong>${shiftName}</strong> de esta institución?<br><br>
-                <em>Nota: Los cursos asignados a esta jornada no se eliminarán.</em>
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="confirmBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Sí, Eliminar
-                </button>
-            </div>
-        `;
-        
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        
-        const form = event.target;
-        
-        document.getElementById('confirmBtn').onclick = function() {
-            document.body.removeChild(modal);
-            form.submit();
-        };
-        
-        document.getElementById('cancelBtn').onclick = function() {
-            document.body.removeChild(modal);
-        };
-        
-        return false;
-    }
-
-        const cities = {
-        'Azuay': ['Cuenca', 'Gualaceo', 'Paute', 'Sigsig', 'Girón', 'Santa Isabel', 'Nabón', 'Oña', 'Pucará', 'San Fernando', 'Chordeleg', 'El Pan', 'Guachapala', 'Camilo Ponce Enríquez', 'Sevilla de Oro'],
-        'Bolívar': ['Guaranda', 'San Miguel', 'Chillanes', 'Chimbo', 'Echeandía', 'Caluma', 'Las Naves'],
-        'Cañar': ['Azogues', 'Biblián', 'Cañar', 'La Troncal', 'El Tambo', 'Déleg', 'Suscal'],
-        'Carchi': ['Tulcán', 'Bolívar', 'Espejo', 'Mira', 'Montúfar', 'San Pedro de Huaca'],
-        'Chimborazo': ['Riobamba', 'Alausí', 'Colta', 'Chambo', 'Chunchi', 'Guamote', 'Guano', 'Pallatanga', 'Penipe', 'Cumandá'],
-        'Cotopaxi': ['Latacunga', 'La Maná', 'Pangua', 'Pujilí', 'Salcedo', 'Saquisilí', 'Sigchos'],
-        'El Oro': ['Machala', 'Arenillas', 'Atahualpa', 'Balsas', 'Chilla', 'El Guabo', 'Huaquillas', 'Marcabelí', 'Pasaje', 'Piñas', 'Portovelo', 'Santa Rosa', 'Zaruma', 'Las Lajas'],
-        'Esmeraldas': ['Esmeraldas', 'Eloy Alfaro', 'Muisne', 'Quinindé', 'San Lorenzo', 'Atacames', 'Rioverde', 'La Concordia'],
-        'Galápagos': ['Puerto Baquerizo Moreno', 'Puerto Ayora', 'Puerto Villamil'],
-        'Guayas': ['Guayaquil', 'Durán', 'Milagro', 'Daule', 'Samborondón', 'Balao', 'Balzar', 'Colimes', 'El Empalme', 'El Triunfo', 'Naranjal', 'Naranjito', 'Palestina', 'Pedro Carbo', 'Santa Lucía', 'Yaguachi', 'Playas', 'Simón Bolívar', 'Coronel Marcelino Maridueña', 'Lomas de Sargentillo', 'Nobol', 'General Antonio Elizalde', 'Isidro Ayora'],
-        'Imbabura': ['Ibarra', 'Antonio Ante', 'Cotacachi', 'Otavalo', 'Pimampiro', 'San Miguel de Urcuquí'],
-        'Loja': ['Loja', 'Calvas', 'Catamayo', 'Celica', 'Chaguarpamba', 'Espíndola', 'Gonzanamá', 'Macará', 'Paltas', 'Puyango', 'Saraguro', 'Sozoranga', 'Zapotillo', 'Pindal', 'Quilanga', 'Olmedo'],
-        'Los Ríos': ['Babahoyo', 'Baba', 'Montalvo', 'Puebloviejo', 'Quevedo', 'Urdaneta', 'Ventanas', 'Vinces', 'Palenque', 'Buena Fe', 'Valencia', 'Mocache', 'Quinsaloma'],
-        'Manabí': ['Portoviejo', 'Bolívar', 'Chone', 'El Carmen', 'Flavio Alfaro', 'Jipijapa', 'Junín', 'Manta', 'Montecristi', 'Paján', 'Pichincha', 'Rocafuerte', 'Santa Ana', 'Sucre', 'Tosagua', 'Veinticuatro de Mayo', 'Pedernales', 'Olmedo', 'Puerto López', 'Jama', 'Jaramijó', 'San Vicente'],
-        'Morona Santiago': ['Macas', 'Gualaquiza', 'Limón Indanza', 'Palora', 'Santiago', 'Sucúa', 'Huamboya', 'San Juan Bosco', 'Taisha', 'Logroño', 'Pablo Sexto', 'Tiwintza'],
-        'Napo': ['Tena', 'Archidona', 'El Chaco', 'Quijos', 'Carlos Julio Arosemena Tola'],
-        'Orellana': ['Francisco de Orellana (Coca)', 'Aguarico', 'La Joya de los Sachas', 'Loreto'],
-        'Pastaza': ['Puyo', 'Arajuno', 'Mera', 'Santa Clara'],
+    const cities = {
         'Pichincha': ['Quito', 'Cayambe', 'Mejía', 'Pedro Moncayo', 'Rumiñahui', 'San Miguel de los Bancos', 'Pedro Vicente Maldonado', 'Puerto Quito'],
-        'Santa Elena': ['Santa Elena', 'La Libertad', 'Salinas'],
+        'Guayas': ['Guayaquil', 'Durán', 'Milagro', 'Daule', 'Samborondón', 'Balao', 'Balzar', 'Colimes', 'El Empalme', 'El Triunfo', 'Naranjal', 'Naranjito', 'Palestina', 'Pedro Carbo', 'Santa Lucía', 'Yaguachi', 'Playas', 'Simón Bolívar', 'Coronel Marcelino Maridueña', 'Lomas de Sargentillo', 'Nobol', 'General Antonio Elizalde', 'Isidro Ayora'],
+        'Azuay': ['Cuenca', 'Gualaceo', 'Paute', 'Sigsig', 'Girón', 'Santa Isabel', 'Nabón', 'Oña', 'Pucará', 'San Fernando', 'Chordeleg', 'El Pan', 'Guachapala', 'Camilo Ponce Enríquez', 'Sevilla de Oro'],
+        'Manabí': ['Portoviejo', 'Manta', 'Chone', 'El Carmen', 'Flavio Alfaro', 'Jipijapa', 'Junín', 'Montecristi', 'Paján', 'Pichincha', 'Rocafuerte', 'Santa Ana', 'Sucre', 'Tosagua', 'Veinticuatro de Mayo', 'Pedernales', 'Bolívar', 'Olmedo', 'Puerto López', 'Jama', 'Jaramijó', 'San Vicente'],
+        'El Oro': ['Machala', 'Pasaje', 'Santa Rosa', 'Huaquillas', 'Arenillas', 'Atahualpa', 'Balsas', 'Chilla', 'El Guabo', 'Marcabelí', 'Piñas', 'Portovelo', 'Zaruma', 'Las Lajas'],
+        'Los Ríos': ['Babahoyo', 'Quevedo', 'Baba', 'Montalvo', 'Puebloviejo', 'Urdaneta', 'Ventanas', 'Vinces', 'Palenque', 'Buena Fe', 'Valencia', 'Mocache', 'Quinsaloma'],
+        'Tungurahua': ['Ambato', 'Baños de Agua Santa', 'Pelileo', 'Píllaro', 'Cevallos', 'Mocha', 'Patate', 'Quero', 'Tisaleo'],
+        'Esmeraldas': ['Esmeraldas', 'Quinindé', 'Atacames', 'Eloy Alfaro', 'Muisne', 'San Lorenzo', 'Rioverde', 'La Concordia'],
+        'Chimborazo': ['Riobamba', 'Alausí', 'Guano', 'Colta', 'Chambo', 'Chunchi', 'Guamote', 'Pallatanga', 'Penipe', 'Cumandá'],
+        'Imbabura': ['Ibarra', 'Otavalo', 'Cotacachi', 'Antonio Ante', 'Pimampiro', 'San Miguel de Urcuquí'],
+        'Cotopaxi': ['Latacunga', 'La Maná', 'Pujilí', 'Salcedo', 'Saquisilí', 'Pangua', 'Sigchos'],
         'Santo Domingo de los Tsáchilas': ['Santo Domingo'],
-        'Sucumbíos': ['Nueva Loja (Lago Agrio)', 'Gonzalo Pizarro', 'Putumayo', 'Shushufindi', 'Sucumbíos', 'Cascales', 'Cuyabeno'],
-        'Tungurahua': ['Ambato', 'Baños de Agua Santa', 'Cevallos', 'Mocha', 'Patate', 'Quero', 'Pelileo', 'Píllaro', 'Tisaleo'],
-        'Zamora Chinchipe': ['Zamora', 'Chinchipe', 'Nangaritza', 'Yacuambi', 'Yantzaza', 'El Pangui', 'Centinela del Cóndor', 'Palanda', 'Paquisha']
+        'Santa Elena': ['La Libertad', 'Salinas', 'Santa Elena'],
+        'Loja': ['Loja', 'Catamayo', 'Macará', 'Saraguro', 'Calvas', 'Celica', 'Chaguarpamba', 'Espíndola', 'Gonzanamá', 'Paltas', 'Puyango', 'Sozoranga', 'Zapotillo', 'Pindal', 'Quilanga', 'Olmedo'],
+        'Cañar': ['Azogues', 'Cañar', 'La Troncal', 'Biblián', 'El Tambo', 'Déleg', 'Suscal'],
+        'Sucumbíos': ['Nueva Loja (Lago Agrio)', 'Shushufindi', 'Gonzalo Pizarro', 'Putumayo', 'Sucumbíos', 'Cascales', 'Cuyabeno'],
+        'Orellana': ['Francisco de Orellana (Coca)', 'La Joya de los Sachas', 'Aguarico', 'Loreto'],
+        'Carchi': ['Tulcán', 'Montúfar', 'Bolívar', 'Espejo', 'Mira', 'San Pedro de Huaca'],
+        'Bolívar': ['Guaranda', 'San Miguel', 'Chillanes', 'Chimbo', 'Echeandía', 'Caluma', 'Las Naves'],
+        'Napo': ['Tena', 'Archidona', 'El Chaco', 'Quijos', 'Carlos Julio Arosemena Tola'],
+        'Pastaza': ['Puyo', 'Mera', 'Arajuno', 'Santa Clara'],
+        'Morona Santiago': ['Macas', 'Gualaquiza', 'Sucúa', 'Limón Indanza', 'Palora', 'Santiago', 'Huamboya', 'San Juan Bosco', 'Taisha', 'Logroño', 'Pablo Sexto', 'Tiwintza'],
+        'Zamora Chinchipe': ['Zamora', 'Yantzaza', 'Chinchipe', 'Nangaritza', 'Yacuambi', 'El Pangui', 'Centinela del Cóndor', 'Palanda', 'Paquisha'],
+        'Galápagos': ['Puerto Baquerizo Moreno', 'Puerto Ayora', 'Puerto Villamil']
     };
 
     const currentCity = '<?= $institution['city'] ?? '' ?>';
@@ -304,19 +251,58 @@
         });
     }
 
-    // Autocompletar URL del sitio web
+    // Autocompletar URL
     document.getElementById('website').addEventListener('blur', function() {
         let url = this.value.trim();
         
         if (url && !url.match(/^https?:\/\//)) {
-            // Si no tiene www, agregarlo
             if (!url.startsWith('www.')) {
                 url = 'www.' + url;
             }
-            // Agregar https://
             this.value = 'https://' + url;
         }
     });
+
+    function confirmRemoveShift(event, shiftName) {
+        event.preventDefault();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Jornada</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">
+                ¿Está seguro de eliminar la jornada <strong>${shiftName}</strong> de esta institución?
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sí, Eliminar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const form = event.target;
+        
+        document.getElementById('confirmBtn').onclick = function() {
+            document.body.removeChild(modal);
+            form.submit();
+        };
+        
+        document.getElementById('cancelBtn').onclick = function() {
+            document.body.removeChild(modal);
+        };
+        
+        return false;
+    }
     </script>
 </body>
 </html>

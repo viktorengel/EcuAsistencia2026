@@ -20,9 +20,6 @@ class Institution {
     }
 
     public function update($id, $data) {
-        // Solo actualizar logo si se proporcionó uno nuevo
-        $logoUpdate = $data['logo_path'] ? ', logo_path = :logo_path' : '';
-        
         $sql = "UPDATE institutions SET 
                 name = :name,
                 address = :address,
@@ -32,11 +29,17 @@ class Institution {
                 email = :email,
                 director_name = :director_name,
                 amie_code = :amie_code,
-                website = :website" . $logoUpdate . ",
+                website = :website,
+                logo_path = :logo_path,
                 updated_at = NOW()
                 WHERE id = :id";
         
-        $params = [
+        // Obtener logo actual si no se proporciona uno nuevo
+        $currentInstitution = $this->getById($id);
+        $logoPath = $data['logo_path'] ?? $currentInstitution['logo_path'];
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
             ':id' => $id,
             ':name' => $data['name'],
             ':address' => $data['address'],
@@ -46,15 +49,9 @@ class Institution {
             ':email' => $data['email'],
             ':director_name' => $data['director_name'],
             ':amie_code' => $data['amie_code'],
-            ':website' => $data['website']
-        ];
-        
-        if ($data['logo_path']) {
-            $params[':logo_path'] = $data['logo_path'];
-        }
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+            ':website' => $data['website'],
+            ':logo_path' => $logoPath
+        ]);
     }
 
     public function getShifts($institutionId) {
