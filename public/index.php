@@ -286,10 +286,34 @@ switch ($action) {
         $controller->getCourseSubjects();
         break;
 
-case 'get_teacher_course_subjects':
+    case 'get_teacher_course_subjects':
+            require_once BASE_PATH . '/controllers/AttendanceController.php';
+            $controller = new AttendanceController();
+            $controller->getTeacherCourseSubjects();
+            break;
+
+    case 'schedules':
+            require_once BASE_PATH . '/controllers/ScheduleController.php';
+            $controller = new ScheduleController();
+            $controller->index();
+            break;
+            
+    case 'manage_schedule':
+        require_once BASE_PATH . '/controllers/ScheduleController.php';
+        $controller = new ScheduleController();
+        $controller->manageCourse();
+        break;
+        
+    case 'delete_schedule_class':
+        require_once BASE_PATH . '/controllers/ScheduleController.php';
+        $controller = new ScheduleController();
+        $controller->deleteClass();
+        break;
+        
+    case 'get_schedule_info':
         require_once BASE_PATH . '/controllers/AttendanceController.php';
         $controller = new AttendanceController();
-        $controller->getTeacherCourseSubjects();
+        $controller->getScheduleInfo();
         break;
 
     default:

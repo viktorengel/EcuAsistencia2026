@@ -1,3 +1,3 @@
 Quiero póder importar desde excel o csv los datos de los estudiantes, docentes, asignaturas, etc
-Hay un error al registrar la asistencia, el sistema esta registrando de manera repetiviva la asistencia el mismo dia a la misma hora.
-al momento de registar la asistencia A Un docente se le debe de mostrar unicamente los cursos que dicta clases, las asignaturas que ha sido asignado, jornada no me veo conveniente que se visualice en el módulo Registrar Asistencia y Hora/Período deberia ser un selector, debe haber un módulo en la configuración del sistema que se pueda registrar cuantas horas o periodos debe tener por especialidad o por jornada.
+
+, jornada no me veo conveniente que se visualice en el módulo Registrar Asistencia y Hora/Período deberia ser un selector, debe haber un módulo en la configuración del sistema que se pueda registrar cuantas horas o periodos debe tener por especialidad o por jornada.

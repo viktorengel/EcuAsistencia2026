@@ -108,6 +108,9 @@ $current_page = $_GET['action'] ?? 'dashboard';
                     <a href="?action=backups" class="<?= $current_page == 'backups' ? 'active' : '' ?>">
                         💾 Respaldos
                     </a>
+                    <a href="?action=schedules" class="<?= $current_page == 'schedules' ? 'active' : '' ?>">
+                        📅 Horarios de Clases
+                    </a>
                 </div>
             </div>
             <?php endif; ?>

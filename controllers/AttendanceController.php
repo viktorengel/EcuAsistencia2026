@@ -85,22 +85,24 @@ class AttendanceController {
             $date = $_POST['date'];
             $today = date('Y-m-d');
 
-            // Validar fecha no futura
             if (strtotime($date) > strtotime($today)) {
                 header('Location: ?action=attendance_register&error=future');
                 exit;
             }
 
-            // Validar 48 horas hábiles
             if (!$this->isWithin48BusinessHours($date)) {
                 header('Location: ?action=attendance_register&error=toolate');
                 exit;
             }
 
-            $courseId = (int)$_POST['course_id'];
-            $subjectId = (int)$_POST['subject_id'];
-            $shiftId = (int)$_POST['shift_id'];
-            $hourPeriod = Security::sanitize($_POST['hour_period']);
+            $scheduleId = (int)$_POST['schedule_id'];
+            
+            // Obtener datos del horario
+            $db = new Database();
+            $sql = "SELECT * FROM class_schedule WHERE id = :id";
+            $stmt = $db->connect()->prepare($sql);
+            $stmt->execute([':id' => $scheduleId]);
+            $scheduleData = $stmt->fetch();
 
             foreach ($_POST as $key => $value) {
                 if (strpos($key, 'status_') === 0) {
@@ -110,13 +112,13 @@ class AttendanceController {
 
                     $data = [
                         ':student_id' => $studentId,
-                        ':course_id' => $courseId,
-                        ':subject_id' => $subjectId,
+                        ':course_id' => $scheduleData['course_id'],
+                        ':subject_id' => $scheduleData['subject_id'],
                         ':teacher_id' => $_SESSION['user_id'],
                         ':school_year_id' => $activeYear['id'],
-                        ':shift_id' => $shiftId,
+                        ':shift_id' => 1, // Obtener del curso
                         ':date' => $date,
-                        ':hour_period' => $hourPeriod,
+                        ':hour_period' => $scheduleData['period_number'] . 'ra hora',
                         ':status' => $status,
                         ':observation' => $observation
                     ];
@@ -129,16 +131,14 @@ class AttendanceController {
             exit;
         }
 
-        // Si es autoridad: todos los cursos
-        // Si es docente: solo sus cursos asignados
-        if (Security::hasRole('autoridad')) {
-            $courses = $this->courseModel->getAll();
-        } else {
-            $courses = $this->getTeacherCourses($_SESSION['user_id']);
-        }
+        // Obtener clases del docente para hoy
+        $activeYear = $this->schoolYearModel->getActive();
         
-        $subjects = $this->subjectModel->getAll();
-        $shifts = $this->shiftModel->getAll();
+        $db = new Database();
+        require_once BASE_PATH . '/models/ClassSchedule.php';
+        $scheduleModel = new ClassSchedule($db);
+        
+        $todayClasses = $scheduleModel->getTeacherScheduleToday($_SESSION['user_id'], $activeYear['id']);
         $minDate = $this->calculateMinDate();
 
         include BASE_PATH . '/views/attendance/register.php';
@@ -356,6 +356,33 @@ class AttendanceController {
         
         header('Content-Type: application/json');
         echo json_encode($subjects);
+        exit;
+    }
+
+    public function getScheduleInfo() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'No autenticado']);
+            exit;
+        }
+        
+        $scheduleId = (int)($_GET['schedule_id'] ?? 0);
+        
+        if (!$scheduleId) {
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        
+        $sql = "SELECT * FROM class_schedule WHERE id = :id";
+        
+        $db = new Database();
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([':id' => $scheduleId]);
+        $schedule = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        header('Content-Type: application/json');
+        echo json_encode($schedule);
         exit;
     }
 }
