@@ -82,54 +82,137 @@
 
         <div class="card">
             <h2>Asignaciones Docente-Materia</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Docente</th>
-                        <th>Curso</th>
-                        <th>Asignatura</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($assignments as $assignment): ?>
-                    <tr>
-                        <td><?= $assignment['teacher_name'] ?></td>
-                        <td><?= $assignment['course_name'] ?></td>
-                        <td><?= $assignment['subject_name'] ?></td>
-                        <td>
-                            <form method="POST" action="?action=remove_assignment" style="display: inline;">
-                                <input type="hidden" name="assignment_id" value="<?= $assignment['id'] ?>">
-                                <button type="submit" class="btn-danger" onclick="return confirm('¿Eliminar asignación?')">
-                                    Eliminar
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="card">
-            <h2>Ver Asignaciones por Curso</h2>
-            <form method="GET" action="">
-                <input type="hidden" name="action" value="view_course_assignments">
-                <div style="display: flex; gap: 10px; align-items: flex-end;">
-                    <div style="flex: 1;">
-                        <label>Seleccionar Curso</label>
-                        <select name="course_id" required>
-                            <option value="">Seleccionar...</option>
+            
+            <!-- Filtros -->
+            <form method="GET" action="" style="margin-bottom: 20px;">
+                <input type="hidden" name="action" value="assignments">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 15px; align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Filtrar por Curso</label>
+                        <select name="filter_course" onchange="this.form.submit()">
+                            <option value="">Todos los cursos</option>
                             <?php foreach($courses as $course): ?>
-                                <option value="<?= $course['id'] ?>">
-                                    <?= $course['name'] ?> - <?= $course['shift_name'] ?>
+                                <option value="<?= $course['id'] ?>" <?= (isset($_GET['filter_course']) && $_GET['filter_course'] == $course['id']) ? 'selected' : '' ?>>
+                                    <?= $course['name'] ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button type="submit" style="background: #007bff;">Ver Detalle</button>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Filtrar por Asignatura</label>
+                        <select name="filter_subject" onchange="this.form.submit()">
+                            <option value="">Todas las asignaturas</option>
+                            <?php foreach($subjects as $subject): ?>
+                                <option value="<?= $subject['id'] ?>" <?= (isset($_GET['filter_subject']) && $_GET['filter_subject'] == $subject['id']) ? 'selected' : '' ?>>
+                                    <?= $subject['name'] ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Filtrar por Docente</label>
+                        <select name="filter_teacher" onchange="this.form.submit()">
+                            <option value="">Todos los docentes</option>
+                            <?php foreach($teachers as $teacher): ?>
+                                <option value="<?= $teacher['id'] ?>" <?= (isset($_GET['filter_teacher']) && $_GET['filter_teacher'] == $teacher['id']) ? 'selected' : '' ?>>
+                                    <?= $teacher['last_name'] . ' ' . $teacher['first_name'] ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <?php if(isset($_GET['filter_course']) || isset($_GET['filter_subject']) || isset($_GET['filter_teacher'])): ?>
+                    <div>
+                        <a href="?action=assignments" style="padding: 10px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
+                            Limpiar
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </form>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Curso</th>
+                        <th>Asignatura</th>
+                        <th>Docente</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    // Aplicar filtros
+                    $filteredAssignments = $assignments;
+                    
+                    if(isset($_GET['filter_course']) && $_GET['filter_course'] != '') {
+                        $filterCourseId = (int)$_GET['filter_course'];
+                        $courseName = '';
+                        foreach($courses as $c) {
+                            if($c['id'] == $filterCourseId) {
+                                $courseName = $c['name'];
+                                break;
+                            }
+                        }
+                        $filteredAssignments = array_filter($filteredAssignments, function($a) use ($courseName) {
+                            return $a['course_name'] == $courseName;
+                        });
+                    }
+                    
+                    if(isset($_GET['filter_subject']) && $_GET['filter_subject'] != '') {
+                        $filterSubjectId = (int)$_GET['filter_subject'];
+                        $subjectName = '';
+                        foreach($subjects as $s) {
+                            if($s['id'] == $filterSubjectId) {
+                                $subjectName = $s['name'];
+                                break;
+                            }
+                        }
+                        $filteredAssignments = array_filter($filteredAssignments, function($a) use ($subjectName) {
+                            return $a['subject_name'] == $subjectName;
+                        });
+                    }
+                    
+                    if(isset($_GET['filter_teacher']) && $_GET['filter_teacher'] != '') {
+                        $filterTeacherId = (int)$_GET['filter_teacher'];
+                        $teacherName = '';
+                        foreach($teachers as $t) {
+                            if($t['id'] == $filterTeacherId) {
+                                $teacherName = $t['last_name'] . ' ' . $t['first_name'];
+                                break;
+                            }
+                        }
+                        $filteredAssignments = array_filter($filteredAssignments, function($a) use ($teacherName) {
+                            return $a['teacher_name'] == $teacherName;
+                        });
+                    }
+                    ?>
+                    
+                    <?php if(empty($filteredAssignments)): ?>
+                        <tr>
+                            <td colspan="4" style="text-align:center;">No hay asignaciones que coincidan con los filtros</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach($filteredAssignments as $assignment): ?>
+                        <tr>
+                            <td><?= $assignment['course_name'] ?></td>
+                            <td><?= $assignment['subject_name'] ?></td>
+                            <td><?= $assignment['teacher_name'] ?></td>
+                            <td>
+                                <form method="POST" action="?action=remove_assignment" style="display: inline;">
+                                    <input type="hidden" name="assignment_id" value="<?= $assignment['id'] ?>">
+                                    <button type="submit" class="btn-danger" onclick="return confirm('¿Eliminar asignación?')">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </body>
