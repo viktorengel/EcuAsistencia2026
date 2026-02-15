@@ -14,6 +14,7 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 20px; }
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 15px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
@@ -28,13 +29,7 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Configuración Académica</h1>
-        <div>
-            <a href="?action=dashboard">← Dashboard</a>
-            <a href="?action=logout">Cerrar sesión</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <?php if(isset($_GET['course_success'])): ?>
@@ -44,44 +39,76 @@
             <div class="success">✓ Asignatura creada correctamente</div>
         <?php endif; ?>
 
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'no_active_year'): ?>
+            <div class="error">✗ No hay un año lectivo activo</div>
+        <?php endif; ?>
+
         <div class="grid">
             <!-- Crear Curso -->
             <div class="card">
                 <h2>Crear Curso</h2>
-                <form method="POST" action="?action=create_course">
-                    <div class="form-group">
-                        <label>Nombre del Curso</label>
-                        <input type="text" name="name" placeholder="Ej: Octavo A" required>
-                    </div>
+                <form method="POST" action="?action=create_course" id="courseForm">
                     <div class="form-group">
                         <label>Nivel</label>
-                        <input type="text" name="grade_level" placeholder="Ej: Octavo" required>
+                        <select name="grade_level" id="grade_level" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="8vo EGB">8vo EGB</option>
+                            <option value="9no EGB">9no EGB</option>
+                            <option value="10mo EGB">10mo EGB</option>
+                            <option value="1ro BGU">1ro BGU</option>
+                            <option value="2do BGU">2do BGU</option>
+                            <option value="3ro BGU">3ro BGU</option>
+                            <option value="1ro Técnico">1ro Técnico</option>
+                            <option value="2do Técnico">2do Técnico</option>
+                            <option value="3ro Técnico">3ro Técnico</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Paralelo</label>
-                        <input type="text" name="parallel" placeholder="Ej: A" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Jornada</label>
-                        <select name="shift_id" required>
-                            <?php foreach($shifts as $shift): ?>
-                                <option value="<?= $shift['id'] ?>"><?= ucfirst($shift['name']) ?></option>
+                        <select name="parallel" id="parallel" required>
+                            <option value="">Seleccionar...</option>
+                            <?php foreach(range('A', 'Z') as $letter): ?>
+                                <option value="<?= $letter ?>"><?= $letter ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Año Lectivo</label>
-                        <select name="school_year_id" required>
-                            <?php foreach($schoolYears as $year): ?>
-                                <option value="<?= $year['id'] ?>" <?= $year['is_active'] ? 'selected' : '' ?>>
-                                    <?= $year['name'] ?>
+                        <label>Jornada</label>
+                        <select name="shift_id" id="shift_id" required>
+                            <option value="">Seleccionar...</option>
+                            <?php foreach($shifts as $shift): ?>
+                                <option value="<?= $shift['id'] ?>" data-shift="<?= $shift['name'] ?>">
+                                    <?= ucfirst($shift['name']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Nombre del Curso (generado automáticamente)</label>
+                        <input type="text" name="name" id="course_name" readonly style="background: #f0f0f0;">
+                    </div>
                     <button type="submit">Crear Curso</button>
                 </form>
             </div>
+
+            <script>
+            function generateCourseName() {
+                const level = document.getElementById('grade_level').value;
+                const parallel = document.getElementById('parallel').value;
+                const shiftSelect = document.getElementById('shift_id');
+                const shiftOption = shiftSelect.options[shiftSelect.selectedIndex];
+                const shiftName = shiftOption ? shiftOption.getAttribute('data-shift') : '';
+                
+                if (level && parallel && shiftName) {
+                    const courseName = `${level} "${parallel}" - ${shiftName.charAt(0).toUpperCase() + shiftName.slice(1)}`;
+                    document.getElementById('course_name').value = courseName;
+                }
+            }
+            
+            document.getElementById('grade_level').addEventListener('change', generateCourseName);
+            document.getElementById('parallel').addEventListener('change', generateCourseName);
+            document.getElementById('shift_id').addEventListener('change', generateCourseName);
+            </script>
 
             <!-- Crear Asignatura -->
             <div class="card">
@@ -111,7 +138,6 @@
                         <th>Nivel</th>
                         <th>Paralelo</th>
                         <th>Jornada</th>
-                        <th>Año Lectivo</th>
                         <th>Acción</th>
                     </tr>
                 </thead>
@@ -123,7 +149,6 @@
                         <td><?= $course['grade_level'] ?></td>
                         <td><?= $course['parallel'] ?></td>
                         <td><?= ucfirst($course['shift_name']) ?></td>
-                        <td><?= $course['year_name'] ?></td>
                         <td>
                             <button onclick="location.href='?action=view_course_students&course_id=<?= $course['id'] ?>'" 
                                     style="padding: 5px 10px; font-size: 12px;">

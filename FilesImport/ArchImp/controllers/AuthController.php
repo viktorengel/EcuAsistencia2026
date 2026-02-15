@@ -52,6 +52,8 @@ class AuthController {
             if ($user && Security::verifyPassword($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['first_name'] = $user['first_name'];
+                $_SESSION['last_name'] = $user['last_name'];
                 $_SESSION['institution_id'] = $user['institution_id'];
                 $_SESSION['roles'] = $this->userModel->getUserRoles($user['id']);
 

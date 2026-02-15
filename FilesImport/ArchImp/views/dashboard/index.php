@@ -42,17 +42,11 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Dashboard - EcuAsist</h1>
-        <div>
-            <a href="?action=profile">👤 <?= $_SESSION['username'] ?></a>
-            <a href="?action=logout">Cerrar sesión</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <div class="welcome-card">
-            <h2>Bienvenido, <?= $_SESSION['username'] ?></h2>
+            <h2>Bienvenido, <?= $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] ?></h2>
             <p>Roles asignados: 
                 <?php foreach($_SESSION['roles'] as $role): ?>
                     <span class="badge"><?= ucfirst($role) ?></span>

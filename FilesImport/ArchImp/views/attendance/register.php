@@ -7,14 +7,11 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .navbar { background: #007bff; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { font-size: 24px; }
-        .navbar a { color: white; text-decoration: none; margin-left: 20px; }
         .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 12px 30px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #0056b3; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -25,16 +22,16 @@
         #student-list { display: none; }
         select.status-select { width: auto; padding: 5px; }
         .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
+        .class-card { border: 1px solid #ddd; padding: 15px; border-radius: 4px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s; }
+        .class-card:hover { background: #f8f9fa; border-color: #007bff; }
+        .class-card.selected { background: #e7f3ff; border-color: #007bff; }
+        .class-info { display: flex; justify-content: space-between; align-items: center; }
+        .class-details h3 { color: #007bff; margin-bottom: 5px; }
+        .class-details p { color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Registrar Asistencia</h1>
-        <div>
-            <a href="?action=dashboard">← Dashboard</a>
-            <a href="?action=logout">Cerrar sesión</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <?php if(isset($_GET['success'])): ?>
@@ -50,44 +47,44 @@
         <?php endif; ?>
 
         <div class="card">
-            <h2>Configuración</h2>
+            <h2>Mis Clases de Hoy</h2>
             <div class="warning">
-                ⚠ <strong>Importante:</strong> Solo puede registrar asistencia del día actual o hasta 48 horas atrás. No se permiten fechas futuras.
+                ⚠ <strong>Importante:</strong> Solo puede registrar asistencia del día actual o hasta 48 horas atrás.
             </div>
-            
+
+            <?php if(empty($todayClasses)): ?>
+                <p style="color: #666; text-align: center; padding: 30px;">
+                    No tienes clases programadas para hoy según tu horario.
+                </p>
+            <?php else: ?>
+                <div id="classes-list">
+                    <?php foreach($todayClasses as $class): ?>
+                    <div class="class-card" onclick="selectClass(<?= $class['id'] ?>, '<?= $class['course_name'] ?>', '<?= $class['subject_name'] ?>', <?= $class['period_number'] ?>)">
+                        <div class="class-info">
+                            <div class="class-details">
+                                <h3><?= $class['period_number'] ?>ra hora - <?= $class['subject_name'] ?></h3>
+                                <p>Curso: <?= $class['course_name'] ?></p>
+                            </div>
+                            <div>
+                                <button type="button" style="padding: 8px 15px; font-size: 14px;">
+                                    Tomar Asistencia
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="card" id="date-selector" style="display: none;">
+            <h2>Seleccionar Fecha</h2>
             <form id="config-form">
+                <input type="hidden" id="schedule_id" name="schedule_id">
                 <div class="form-group">
-                    <label>Curso</label>
-                    <select id="course_id" name="course_id" required>
-                        <option value="">Seleccionar curso...</option>
-                        <?php foreach($courses as $course): ?>
-                            <option value="<?= $course['id'] ?>">
-                                <?= $course['name'] ?> - <?= $course['shift_name'] ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <label>Clase Seleccionada</label>
+                    <input type="text" id="selected_class_info" readonly style="background: #f0f0f0;">
                 </div>
-
-                <div class="form-group">
-                    <label>Asignatura</label>
-                    <select id="subject_id" name="subject_id" required>
-                        <option value="">Seleccionar asignatura...</option>
-                        <?php foreach($subjects as $subject): ?>
-                            <option value="<?= $subject['id'] ?>"><?= $subject['name'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Jornada</label>
-                    <select id="shift_id" name="shift_id" required>
-                        <option value="">Seleccionar jornada...</option>
-                        <?php foreach($shifts as $shift): ?>
-                            <option value="<?= $shift['id'] ?>"><?= ucfirst($shift['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
                 <div class="form-group">
                     <label>Fecha</label>
                     <input type="date" id="date" name="date" value="<?= date('Y-m-d') ?>" 
@@ -98,22 +95,13 @@
                         Permitido: Desde el <?= date('d/m/Y', strtotime($minDate)) ?> hasta hoy
                     </small>
                 </div>
-
-                <div class="form-group">
-                    <label>Hora/Período</label>
-                    <input type="text" id="hour_period" name="hour_period" placeholder="Ej: 1ra hora, 08:00-09:00" required>
-                </div>
-
                 <button type="button" onclick="loadStudents()">Cargar Estudiantes</button>
             </form>
         </div>
 
         <form method="POST" id="student-list">
-            <input type="hidden" name="course_id" id="course_id_hidden">
-            <input type="hidden" name="subject_id" id="subject_id_hidden">
-            <input type="hidden" name="shift_id" id="shift_id_hidden">
+            <input type="hidden" name="schedule_id" id="schedule_id_hidden">
             <input type="hidden" name="date" id="date_hidden">
-            <input type="hidden" name="hour_period" id="hour_period_hidden">
 
             <div class="card">
                 <h2>Lista de Estudiantes</h2>
@@ -135,29 +123,29 @@
     </div>
 
     <script>
-        // Fecha mínima desde PHP
         const minDateAllowed = '<?= $minDate ?>';
+        let selectedScheduleId = null;
 
-        // Función mejorada para calcular horas hábiles
-        function getBusinessHoursBetween(dateStr1, dateStr2) {
-            let businessHours = 0;
-            let current = new Date(dateStr1 + 'T00:00:00');
-            let end = new Date(dateStr2 + 'T00:00:00');
+        function selectClass(scheduleId, courseName, subjectName, periodNumber) {
+            selectedScheduleId = scheduleId;
             
-            while (current < end) {
-                current.setDate(current.getDate() + 1);
-                const dayOfWeek = current.getDay(); // 0=Domingo, 6=Sábado
-                
-                // Solo contar lunes a viernes
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    businessHours += 24;
-                }
-            }
+            // Remover selección anterior
+            document.querySelectorAll('.class-card').forEach(card => {
+                card.classList.remove('selected');
+            });
             
-            return businessHours;
+            // Seleccionar actual
+            event.currentTarget.classList.add('selected');
+            
+            // Mostrar selector de fecha
+            document.getElementById('date-selector').style.display = 'block';
+            document.getElementById('schedule_id').value = scheduleId;
+            document.getElementById('selected_class_info').value = periodNumber + 'ra hora - ' + subjectName + ' (' + courseName + ')';
+            
+            // Ocultar lista de estudiantes
+            document.getElementById('student-list').style.display = 'none';
         }
 
-        // Validar fecha en tiempo real
         document.getElementById('date').addEventListener('change', function() {
             const selectedDate = this.value;
             const today = new Date().toISOString().split('T')[0];
@@ -169,90 +157,74 @@
             }
 
             if (selectedDate < minDateAllowed) {
-                alert('Solo puede registrar asistencia de hasta 48 horas hábiles atrás (excluyendo fines de semana)');
-                this.value = today;
-                return;
-            }
-
-            const businessHours = getBusinessHoursBetween(selectedDate, today);
-
-            if (businessHours > 48) {
-                alert('La fecha seleccionada excede las 48 horas hábiles permitidas');
+                alert('Solo puede registrar asistencia de hasta 48 horas hábiles atrás');
                 this.value = today;
             }
         });
 
         function loadStudents() {
-            const courseId = document.getElementById('course_id').value;
-            const subjectId = document.getElementById('subject_id').value;
-            const shiftId = document.getElementById('shift_id').value;
+            const scheduleId = document.getElementById('schedule_id').value;
             const date = document.getElementById('date').value;
-            const hourPeriod = document.getElementById('hour_period').value;
 
-            if (!courseId || !subjectId || !shiftId || !date || !hourPeriod) {
+            if (!scheduleId || !date) {
                 alert('Complete todos los campos');
                 return;
             }
 
-            const today = new Date().toISOString().split('T')[0];
-
-            if (date > today) {
-                alert('No se puede registrar asistencia de fechas futuras');
-                return;
-            }
-
-            if (date < minDateAllowed) {
-                alert('Solo puede registrar asistencia de hasta 48 horas hábiles atrás');
-                return;
-            }
-
-            document.getElementById('course_id_hidden').value = courseId;
-            document.getElementById('subject_id_hidden').value = subjectId;
-            document.getElementById('shift_id_hidden').value = shiftId;
+            document.getElementById('schedule_id_hidden').value = scheduleId;
             document.getElementById('date_hidden').value = date;
-            document.getElementById('hour_period_hidden').value = hourPeriod;
 
-            const formData = new FormData();
-            formData.append('course_id', courseId);
+            // Obtener course_id del horario
+            fetch('?action=get_schedule_info&schedule_id=' + scheduleId)
+                .then(response => response.json())
+                .then(scheduleData => {
+                    const formData = new FormData();
+                    formData.append('course_id', scheduleData.course_id);
 
-            fetch('?action=get_students', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(students => {
-                if (students.length === 0) {
-                    alert('No hay estudiantes matriculados en este curso');
-                    return;
-                }
+                    return fetch('?action=get_students', {
+                        method: 'POST',
+                        body: formData
+                    });
+                })
+                .then(response => response.json())
+                .then(students => {
+                    if (students.length === 0) {
+                        alert('No hay estudiantes matriculados en este curso');
+                        return;
+                    }
 
-                const tbody = document.querySelector('#students-table tbody');
-                tbody.innerHTML = '';
+                    const tbody = document.querySelector('#students-table tbody');
+                    tbody.innerHTML = '';
 
-                students.forEach((student, index) => {
-                    const row = `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${student.last_name} ${student.first_name}</td>
-                            <td>${student.dni || '-'}</td>
-                            <td>
-                                <select name="status_${student.id}" class="status-select">
-                                    <option value="presente" selected>Presente</option>
-                                    <option value="ausente">Ausente</option>
-                                    <option value="tardanza">Tardanza</option>
-                                    <option value="justificado">Justificado</option>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="text" name="obs_${student.id}" placeholder="Opcional" style="width: 100%;">
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
+                    students.forEach((student, index) => {
+                        const row = `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${student.last_name} ${student.first_name}</td>
+                                <td>${student.dni || '-'}</td>
+                                <td>
+                                    <select name="status_${student.id}" class="status-select">
+                                        <option value="presente" selected>Presente</option>
+                                        <option value="ausente">Ausente</option>
+                                        <option value="tardanza">Tardanza</option>
+                                        <option value="justificado">Justificado</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" name="obs_${student.id}" placeholder="Opcional" style="width: 100%;">
+                                </td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+
+                    document.getElementById('student-list').style.display = 'block';
+                    document.getElementById('student-list').scrollIntoView({ behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cargar estudiantes');
                 });
-
-                document.getElementById('student-list').style.display = 'block';
-            });
         }
     </script>
 </body>

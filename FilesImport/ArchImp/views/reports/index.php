@@ -40,13 +40,7 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Generación de Reportes</h1>
-        <div>
-            <a href="?action=dashboard">← Dashboard</a>
-            <a href="?action=logout">Cerrar sesión</a>
-        </div>
-    </div>
+    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
     <div class="container">
         <div class="info">

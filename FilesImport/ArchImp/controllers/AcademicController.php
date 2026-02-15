@@ -38,9 +38,16 @@ class AcademicController {
 
     public function createCourse() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $activeYear = $this->schoolYearModel->getActive();
+            
+            if (!$activeYear) {
+                header('Location: ?action=academic&error=no_active_year');
+                exit;
+            }
+            
             $data = [
                 ':institution_id' => $_SESSION['institution_id'],
-                ':school_year_id' => (int)$_POST['school_year_id'],
+                ':school_year_id' => $activeYear['id'],
                 ':name' => Security::sanitize($_POST['name']),
                 ':grade_level' => Security::sanitize($_POST['grade_level']),
                 ':parallel' => Security::sanitize($_POST['parallel']),
