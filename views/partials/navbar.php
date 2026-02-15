@@ -99,7 +99,10 @@ $current_page = $_GET['action'] ?? 'dashboard';
                         🏫 Configuración Académica
                     </a>
                     <a href="?action=assignments" class="<?= $current_page == 'assignments' ? 'active' : '' ?>">
-                        📚 Asignaciones Docentes
+                        📚 Asignar Docente-Materia
+                    </a>
+                    <a href="?action=tutor_management" class="<?= $current_page == 'tutor_management' ? 'active' : '' ?>">
+                        👨‍🏫 Asignar Docente Tutor
                     </a>
                     <a href="?action=manage_representatives" class="<?= $current_page == 'manage_representatives' ? 'active' : '' ?>">
                         👨‍👩‍👧‍👦 Gestión Representantes

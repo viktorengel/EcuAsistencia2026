@@ -316,6 +316,18 @@ switch ($action) {
         $controller->getScheduleInfo();
         break;
 
+    case 'tutor_management':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $controller = new AssignmentController();
+        $controller->tutorManagement();
+        break;
+
+    case 'check_course_tutor':
+        require_once BASE_PATH . '/controllers/AssignmentController.php';
+        $controller = new AssignmentController();
+        $controller->checkCourseTutor();
+        break;
+
     default:
         header('Location: ?action=login');
 }

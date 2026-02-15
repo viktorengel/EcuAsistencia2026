@@ -79,9 +79,9 @@ class AssignmentController {
             $result = $this->assignmentModel->setTutor($courseId, $teacherId, $activeYear['id']);
             
             if ($result['success']) {
-                header('Location: ?action=assignments&tutor_success=1');
+                header('Location: ?action=tutor_management&tutor_success=1');
             } else {
-                header('Location: ?action=assignments&tutor_error=' . urlencode($result['message']));
+                header('Location: ?action=tutor_management&tutor_error=' . urlencode($result['message']));
             }
             exit;
         }
@@ -109,7 +109,7 @@ class AssignmentController {
                 ':school_year_id' => $activeYear['id']
             ]);
             
-            header('Location: ?action=assignments&tutor_removed=1');
+            header('Location: ?action=tutor_management&tutor_removed=1');
             exit;
         }
     }
@@ -158,7 +158,6 @@ class AssignmentController {
     }
 
     public function getCourseTeachers() {
-        // No verificar roles para AJAX
         if (!isset($_SESSION['user_id'])) {
             header('Content-Type: application/json');
             echo json_encode(['error' => 'No autenticado']);
@@ -173,20 +172,91 @@ class AssignmentController {
             exit;
         }
         
+        // Obtener año lectivo activo
+        $db = new Database();
+        $sqlYear = "SELECT id FROM school_years WHERE is_active = 1 LIMIT 1";
+        $stmtYear = $db->connect()->query($sqlYear);
+        $activeYear = $stmtYear->fetch();
+        
+        if (!$activeYear) {
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        
+        // Solo docentes del curso que:
+        // 1. NO son tutores de otro curso
+        // 2. NO son tutores del curso actual
         $sql = "SELECT DISTINCT ta.teacher_id, 
                 CONCAT(u.last_name, ' ', u.first_name) as teacher_name
                 FROM teacher_assignments ta
                 INNER JOIN users u ON ta.teacher_id = u.id
                 WHERE ta.course_id = :course_id
+                AND ta.teacher_id NOT IN (
+                    SELECT teacher_id 
+                    FROM teacher_assignments 
+                    WHERE is_tutor = 1 
+                    AND school_year_id = :school_year_id
+                )
                 ORDER BY u.last_name, u.first_name";
         
-        $db = new Database();
         $stmt = $db->connect()->prepare($sql);
-        $stmt->execute([':course_id' => $courseId]);
+        $stmt->execute([
+            ':course_id' => $courseId,
+            ':school_year_id' => $activeYear['id']
+        ]);
         $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         header('Content-Type: application/json');
         echo json_encode($teachers);
+        exit;
+    }
+
+    public function tutorManagement() {
+        $courses = $this->courseModel->getAll();
+        $assignments = $this->assignmentModel->getAll();
+
+        include BASE_PATH . '/views/assignments/tutor.php';
+    }
+
+    public function checkCourseTutor() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(null);
+            exit;
+        }
+        
+        $courseId = (int)($_GET['course_id'] ?? 0);
+        
+        if (!$courseId) {
+            header('Content-Type: application/json');
+            echo json_encode(null);
+            exit;
+        }
+        
+        $db = new Database();
+        require_once BASE_PATH . '/models/SchoolYear.php';
+        $yearModel = new SchoolYear($db);
+        $activeYear = $yearModel->getActive();
+        
+        $sql = "SELECT CONCAT(u.last_name, ' ', u.first_name) as tutor_name
+                FROM teacher_assignments ta
+                INNER JOIN users u ON ta.teacher_id = u.id
+                WHERE ta.course_id = :course_id 
+                AND ta.school_year_id = :school_year_id 
+                AND ta.is_tutor = 1
+                LIMIT 1";
+        
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([
+            ':course_id' => $courseId,
+            ':school_year_id' => $activeYear['id']
+        ]);
+        
+        $tutor = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        header('Content-Type: application/json');
+        echo json_encode($tutor);
         exit;
     }
 }
