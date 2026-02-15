@@ -87,11 +87,6 @@
                         <label>Nombre del Curso (generado automáticamente)</label>
                         <input type="text" name="name" id="course_name" readonly style="background: #f0f0f0;">
                     </div>
-                    <div class="form-group">
-                        <label>Año Lectivo Activo</label>
-                        <input type="text" value="<?= $schoolYears[0]['name'] ?? 'No hay año activo' ?>" readonly style="background: #f0f0f0;">
-                        <input type="hidden" name="school_year_id" value="<?= $schoolYears[0]['id'] ?? '' ?>">
-                    </div>
                     <button type="submit">Crear Curso</button>
                 </form>
             </div>
@@ -143,7 +138,6 @@
                         <th>Nivel</th>
                         <th>Paralelo</th>
                         <th>Jornada</th>
-                        <th>Año Lectivo</th>
                         <th>Acción</th>
                     </tr>
                 </thead>
@@ -155,7 +149,6 @@
                         <td><?= $course['grade_level'] ?></td>
                         <td><?= $course['parallel'] ?></td>
                         <td><?= ucfirst($course['shift_name']) ?></td>
-                        <td><?= $course['year_name'] ?></td>
                         <td>
                             <button onclick="location.href='?action=view_course_students&course_id=<?= $course['id'] ?>'" 
                                     style="padding: 5px 10px; font-size: 12px;">
