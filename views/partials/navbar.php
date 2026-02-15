@@ -2,7 +2,7 @@
 $current_page = $_GET['action'] ?? 'dashboard';
 ?>
 <style>
-    .main-navbar { background: #007bff; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .main-navbar { background: #007bff; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
     .navbar-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
     .navbar-brand { font-size: 24px; font-weight: bold; padding: 15px 0; }
     .navbar-menu { display: flex; gap: 20px; align-items: center; }
