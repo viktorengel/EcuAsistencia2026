@@ -91,7 +91,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>#</th>
                         <th>Nombre Completo</th>
                         <th>Email</th>
                         <th>Cédula</th>
@@ -121,9 +121,12 @@
                             <td colspan="6" style="text-align:center;">No hay usuarios con este rol</td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach($filteredUsers as $user): ?>
+                         <?php 
+                        $counter = 1;
+                        foreach($filteredUsers as $user): 
+                        ?>
                         <tr>
-                            <td><?= $user['id'] ?></td>
+                            <td><?= $counter++ ?></td>
                             <td><?= $user['last_name'] . ' ' . $user['first_name'] ?></td>
                             <td><?= $user['email'] ?></td>
                             <td><?= $user['dni'] ?? '-' ?></td>
