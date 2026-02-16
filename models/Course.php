@@ -117,4 +117,15 @@ class Course {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':id' => $id]);
     }
+
+    public function unenrollStudent($studentId, $schoolYearId) {
+        $sql = "DELETE FROM course_students 
+                WHERE student_id = :student_id AND school_year_id = :school_year_id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':student_id' => $studentId,
+            ':school_year_id' => $schoolYearId
+        ]);
+    }
 }

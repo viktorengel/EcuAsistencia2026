@@ -31,7 +31,7 @@ Funcionalidad: Crear/editar/eliminar usuarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 7 | Asignar docente-materia a curso |  | Primero seleccionar el curso y de ahi de acuerdo a las asignaturas asignar los docentes
-| 8 | ✅Eliminar asignación docente-materia |  |
+| 8 | ✅Eliminar asignación docente-materia | ✅ Implementado |
 | 9 | Asignar docente tutor a curso | ✅ Implementado |
 | 10 | Quitar docente tutor de curso | ✅ Implementado |
 
@@ -39,7 +39,7 @@ Funcionalidad: Crear/editar/eliminar usuarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 11 | Matricular estudiantes a cursos | ✅ Implementado | mejorar
-| 12 | Retirar estudiante de curso |  |
+| 12 | Retirar estudiante de curso | ✅ Implementado | ✗ No se puede eliminar la asignatura porque tiene asignaciones docentes
 
 ### Horarios
 | # | Funcionalidad | Estado |

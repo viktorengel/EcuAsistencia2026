@@ -436,6 +436,12 @@ switch ($action) {
         $controller->deleteSubject();
         break;
 
+    case 'unenroll_student':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->unenrollStudent();
+        break;
+
     default:
         header('Location: ?action=login');
 }

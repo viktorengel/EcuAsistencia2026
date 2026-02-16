@@ -245,6 +245,35 @@ class AcademicController {
         include BASE_PATH . '/views/academic/enroll.php';
     }
 
+    public function unenrollStudent() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $studentId = (int)$_POST['student_id'];
+            $activeYear = $this->schoolYearModel->getActive();
+
+            if (!$activeYear) {
+                header('Location: ?action=enroll_students&error=no_active_year');
+                exit;
+            }
+
+            // Verificar que el estudiante existe y está matriculado
+            $course = $this->userModel->getStudentCourse($studentId, $activeYear['id']);
+            
+            if (!$course) {
+                header('Location: ?action=enroll_students&error=not_enrolled');
+                exit;
+            }
+
+            // Retirar estudiante
+            if ($this->courseModel->unenrollStudent($studentId, $activeYear['id'])) {
+                header('Location: ?action=enroll_students&unenrolled=1');
+                exit;
+            } else {
+                header('Location: ?action=enroll_students&error=unenroll_failed');
+                exit;
+            }
+        }
+    }
+
     public function viewCourseStudents() {
         $courseId = (int)($_GET['course_id'] ?? 0);
         
