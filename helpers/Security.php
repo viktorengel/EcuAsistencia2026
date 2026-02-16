@@ -39,4 +39,40 @@ class Security {
         $roleNames = (array) $roleNames;
         return count(array_intersect($roleNames, $_SESSION['roles'])) > 0;
     }
+
+    public static function startSession($rememberMe = false) {
+        if ($rememberMe) {
+            // Sesión de 7 días
+            $lifetime = 7 * 24 * 60 * 60; // 7 días
+        } else {
+            // Sesión expira al cerrar navegador
+            $lifetime = 0;
+        }
+        
+        session_set_cookie_params([
+            'lifetime' => $lifetime,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+        
+        session_start();
+        
+        // Regenerar ID por seguridad
+        if (!isset($_SESSION['initiated'])) {
+            session_regenerate_id(true);
+            $_SESSION['initiated'] = true;
+        }
+        
+        // Timeout de inactividad (30 minutos)
+        if (isset($_SESSION['last_activity']) && 
+            (time() - $_SESSION['last_activity'] > 1800)) {
+            session_unset();
+            session_destroy();
+            return false;
+        }
+        
+        $_SESSION['last_activity'] = time();
+        return true;
+    }
 }

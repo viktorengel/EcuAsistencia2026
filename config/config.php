@@ -18,3 +18,31 @@ define('SMTP_NAME', 'EcuAsist2026');
 
 require_once BASE_PATH . '/config/database.php';
 require_once BASE_PATH . '/helpers/Security.php';
+
+// Sesión dura 24 horas
+ini_set('session.gc_maxlifetime', 86400);
+
+// Cookie de sesión dura 24 horas (no expira al cerrar navegador)
+session_set_cookie_params([
+    'lifetime' => 86400,  // 24 horas
+    'path' => '/',
+    'domain' => '',
+    'secure' => false,    // true si usas HTTPS
+    'httponly' => true,   // Protección XSS
+    'samesite' => 'Lax'   // Protección CSRF
+]);
+
+session_start();
+
+// Timeout de INACTIVIDAD: 30 minutos
+$inactive_timeout = 1800; // 30 minutos en segundos
+
+if (isset($_SESSION['last_activity']) && 
+    (time() - $_SESSION['last_activity'] > $inactive_timeout)) {
+    session_unset();
+    session_destroy();
+    header('Location: ?action=login&timeout=1');
+    exit;
+}
+
+$_SESSION['last_activity'] = time();
