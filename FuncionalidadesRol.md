@@ -157,9 +157,9 @@ Funcionalidad: Crear/editar/eliminar usuarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 1 | Ver sus clases programadas del día |  |
-| 2 | Registrar asistencia en sus clases |  |
-| 3 | Editar asistencia de sus clases (48h) |  |
-| 4 | Ver asistencias que registró |  |
+| 2 | Registrar asistencia en sus clases | ✅ Implementado | error solo debe ser en sus clases
+| 3 | Editar asistencia de sus clases (48h) | ✅ Implementado | No se retorna la asistencia marcada
+| 4 | Ver asistencias que registró | ✅ Implementado | Error se ven todas, solo deberia ver las de el
 
 ### Como Tutor del Curso
 | # | Funcionalidad | Estado |
@@ -183,8 +183,8 @@ Funcionalidad: Crear/editar/eliminar usuarios
 |---|---------------|--------|
 | 14 | Ver dashboard con métricas de su curso |  |
 | 15 | Buscar estudiantes de su curso |  |
-| 16 | Editar su propio perfil |  |
-| 17 | Cambiar su propia contraseña |  |
+| 16 | Editar su propio perfil | ✅ Implementado |
+| 17 | Cambiar su propia contraseña | ✅ Implementado |
 
 **Total Docente Tutor: 15/17 ✅ (2 pendientes)**
 
@@ -215,8 +215,8 @@ Funcionalidad: Crear/editar/eliminar usuarios
 | 9 | Ver estadísticas de sus cursos |  |
 | 10 | Ver dashboard con sus métricas |  |
 | 11 | Buscar estudiantes de sus cursos |  |
-| 12 | Editar su propio perfil |  |
-| 13 | Cambiar su propia contraseña |  |
+| 12 | Editar su propio perfil | ✅ Implementado |
+| 13 | Cambiar su propia contraseña | ✅ Implementado |
 
 **Total Docente: 13/13 ✅**
 

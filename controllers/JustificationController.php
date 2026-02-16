@@ -23,6 +23,12 @@ class JustificationController {
         $attendanceId = (int)$_GET['attendance_id'];
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Verificar si ya existe una justificación para esta asistencia
+            if ($this->justificationModel->existsByAttendance($attendanceId)) {
+                header('Location: ?action=my_attendance&error=already_justified');
+                exit;
+            }
+
             $documentPath = null;
 
             // Subir documento si existe
@@ -51,6 +57,12 @@ class JustificationController {
 
             $this->justificationModel->create($data);
             header('Location: ?action=my_justifications&success=1');
+            exit;
+        }
+
+        // Verificar si ya existe justificación antes de mostrar el formulario
+        if ($this->justificationModel->existsByAttendance($attendanceId)) {
+            header('Location: ?action=my_attendance&error=already_justified');
             exit;
         }
 
