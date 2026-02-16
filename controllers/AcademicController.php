@@ -74,6 +74,149 @@ class AcademicController {
         }
     }
 
+    // ============================================
+    // CRUD CURSOS
+    // ============================================
+
+    public function editCourse() {
+        $courseId = (int)$_GET['id'];
+        $course = $this->courseModel->findById($courseId);
+
+        if (!$course || $course['institution_id'] != $_SESSION['institution_id']) {
+            header('Location: ?action=academic&error=course_not_found');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $shifts = $this->shiftModel->getAll();
+            include BASE_PATH . '/views/academic/course_edit.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'id' => $courseId,
+                'name' => Security::sanitize($_POST['name']),
+                'grade_level' => Security::sanitize($_POST['grade_level']),
+                'parallel' => Security::sanitize($_POST['parallel']),
+                'shift_id' => (int)$_POST['shift_id']
+            ];
+
+            if ($this->courseModel->update($data)) {
+                header('Location: ?action=academic&course_updated=1');
+                exit;
+            } else {
+                $errors[] = "Error al actualizar el curso";
+                $shifts = $this->shiftModel->getAll();
+                include BASE_PATH . '/views/academic/course_edit.php';
+            }
+        }
+    }
+
+    public function deleteCourse() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $courseId = (int)$_POST['course_id'];
+            $course = $this->courseModel->findById($courseId);
+
+            if (!$course || $course['institution_id'] != $_SESSION['institution_id']) {
+                header('Location: ?action=academic&error=course_not_found');
+                exit;
+            }
+
+            // Verificar si tiene estudiantes matriculados
+            $students = $this->courseModel->getEnrolledStudents($courseId);
+            if (count($students) > 0) {
+                header('Location: ?action=academic&error=course_has_students');
+                exit;
+            }
+
+            // Verificar si tiene asignaciones docentes
+            $db = new Database();
+            $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE course_id = :id");
+            $stmt->execute([':id' => $courseId]);
+            $result = $stmt->fetch();
+            
+            if ($result['count'] > 0) {
+                header('Location: ?action=academic&error=course_has_assignments');
+                exit;
+            }
+
+            if ($this->courseModel->delete($courseId)) {
+                header('Location: ?action=academic&course_deleted=1');
+                exit;
+            } else {
+                header('Location: ?action=academic&error=delete_failed');
+                exit;
+            }
+        }
+    }
+
+    // ============================================
+    // CRUD ASIGNATURAS
+    // ============================================
+
+    public function editSubject() {
+        $subjectId = (int)$_GET['id'];
+        $subject = $this->subjectModel->findById($subjectId);
+
+        if (!$subject || $subject['institution_id'] != $_SESSION['institution_id']) {
+            header('Location: ?action=academic&error=subject_not_found');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            include BASE_PATH . '/views/academic/subject_edit.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'id' => $subjectId,
+                'name' => Security::sanitize($_POST['name']),
+                'code' => Security::sanitize($_POST['code'])
+            ];
+
+            if ($this->subjectModel->update($data)) {
+                header('Location: ?action=academic&subject_updated=1');
+                exit;
+            } else {
+                $errors[] = "Error al actualizar la asignatura";
+                include BASE_PATH . '/views/academic/subject_edit.php';
+            }
+        }
+    }
+
+    public function deleteSubject() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $subjectId = (int)$_POST['subject_id'];
+            $subject = $this->subjectModel->findById($subjectId);
+
+            if (!$subject || $subject['institution_id'] != $_SESSION['institution_id']) {
+                header('Location: ?action=academic&error=subject_not_found');
+                exit;
+            }
+
+            // Verificar si tiene asignaciones docentes
+            $db = new Database();
+            $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE subject_id = :id");
+            $stmt->execute([':id' => $subjectId]);
+            $result = $stmt->fetch();
+            
+            if ($result['count'] > 0) {
+                header('Location: ?action=academic&error=subject_has_assignments');
+                exit;
+            }
+
+            if ($this->subjectModel->delete($subjectId)) {
+                header('Location: ?action=academic&subject_deleted=1');
+                exit;
+            } else {
+                header('Location: ?action=academic&error=delete_failed');
+                exit;
+            }
+        }
+    }
+
     public function enrollStudents() {
         $activeYear = $this->schoolYearModel->getActive();
         $courses = $this->courseModel->getAll();
@@ -125,7 +268,7 @@ class AcademicController {
 
     public function createSchoolYear() {
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            include BASE_PATH . '/views/academic/create.php';
+            include BASE_PATH . '/views/academic/school_year_create.php';
             return;
         }
 

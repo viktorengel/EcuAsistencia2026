@@ -22,10 +22,10 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Gestión Académica
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 3 | Crear/editar/eliminar años lectivos |  |
-| 4 | Activar/desactivar año lectivo |  |
-| 5 | ✅Crear/editar/eliminar cursos |  |
-| 6 | ✅Crear/editar/eliminar asignaturas |  |
+| 3 | Crear/editar/eliminar años lectivos | ✅ Implementado |
+| 4 | Activar/desactivar año lectivo | ✅ Implementado |
+| 5 | ✅Crear/editar/eliminar cursos | ✅ Implementado |
+| 6 | ✅Crear/editar/eliminar asignaturas | ✅ Implementado |
 
 ### Asignaciones Docentes
 | # | Funcionalidad | Estado |
@@ -244,15 +244,15 @@ Funcionalidad: Crear/editar/eliminar usuarios
 |---|---------------|--------|
 | 8 | **Justificar sus ausencias** | ✅ **Implementado** ⚠️ **REVISAR NECESIDAD** |
 | 9 | **Subir documento de justificación** | ✅ **Implementado** ⚠️ **REVISAR NECESIDAD** |
-| 10 | Ver estado de justificaciones enviadas |  |
-| 11 | Ver justificaciones aprobadas/rechazadas |  |
+| 10 | Ver estado de justificaciones enviadas | ✅ Implementado |
+| 11 | Ver justificaciones aprobadas/rechazadas | ✅ Implementado |
 
 ### Sistema
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 12 | Ver dashboard con sus métricas |  |
-| 13 | Editar su propio perfil |  |
-| 14 | Cambiar su propia contraseña |  |
+| 13 | Editar su propio perfil | ✅ Implementado |
+| 14 | Cambiar su propia contraseña | ✅ Implementado |
 
 **Total Estudiante: 14/14 ✅ (2 a revisar)**
 
@@ -287,8 +287,8 @@ Funcionalidad: Crear/editar/eliminar usuarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 12 | Ver dashboard con métricas de representados |  |
-| 13 | Editar su propio perfil |  |
-| 14 | Cambiar su propia contraseña |  |
+| 13 | Editar su propio perfil | ✅ Implementado |
+| 14 | Cambiar su propia contraseña | ✅ Implementado |
 
 **Total Representante: 14/14 ✅**
 

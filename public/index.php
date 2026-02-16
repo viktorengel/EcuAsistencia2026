@@ -412,6 +412,30 @@ switch ($action) {
         $controller->deactivateSchoolYear();
         break;
 
+    case 'edit_course':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->editCourse();
+        break;
+
+    case 'delete_course':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->deleteCourse();
+        break;
+
+    case 'edit_subject':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->editSubject();
+        break;
+
+    case 'delete_subject':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->deleteSubject();
+        break;
+
     default:
         header('Location: ?action=login');
 }

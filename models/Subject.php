@@ -23,4 +23,28 @@ class Subject {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($data);
     }
+
+    public function findById($id) {
+        $sql = "SELECT * FROM subjects WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function update($data) {
+        $sql = "UPDATE subjects SET 
+                name = :name,
+                code = :code,
+                updated_at = NOW()
+                WHERE id = :id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($data);
+    }
+
+    public function delete($id) {
+        $sql = "DELETE FROM subjects WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $id]);
+    }
 }
