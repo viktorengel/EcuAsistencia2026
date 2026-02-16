@@ -362,7 +362,25 @@ switch ($action) {
         require_once BASE_PATH . '/controllers/InstitutionController.php';
         $controller = new InstitutionController();
         $controller->removeShift();
-        break;        
+        break;
+    
+    case 'create_user':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $controller = new UserController();
+        $controller->create();
+        break;
+
+    case 'edit_user':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $controller = new UserController();
+        $controller->edit();
+        break;
+
+    case 'delete_user':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $controller = new UserController();
+        $controller->delete();
+        break;
 
     default:
         header('Location: ?action=login');

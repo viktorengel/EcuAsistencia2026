@@ -1,6 +1,6 @@
 <?php
 class User {
-    private $db;
+    public $db;
 
     public function __construct($database) {
         $this->db = $database->connect();
@@ -221,5 +221,100 @@ class User {
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function findByUsername($username) {
+        $sql = "SELECT * FROM users WHERE username = :username";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':username' => $username]);
+        return $stmt->fetch();
+    }
+
+    public function update($data) {
+        // Si se incluye password, actualizarla
+        if (isset($data['password'])) {
+            $sql = "UPDATE users SET 
+                    username = :username, 
+                    email = :email, 
+                    password = :password,
+                    first_name = :first_name, 
+                    last_name = :last_name, 
+                    dni = :dni, 
+                    phone = :phone,
+                    updated_at = NOW()
+                    WHERE id = :id";
+            
+            $params = [
+                ':id' => $data['id'],
+                ':username' => $data['username'],
+                ':email' => $data['email'],
+                ':password' => Security::hashPassword($data['password']),
+                ':first_name' => $data['first_name'],
+                ':last_name' => $data['last_name'],
+                ':dni' => $data['dni'],
+                ':phone' => $data['phone']
+            ];
+        } else {
+            // No actualizar password
+            $sql = "UPDATE users SET 
+                    username = :username, 
+                    email = :email, 
+                    first_name = :first_name, 
+                    last_name = :last_name, 
+                    dni = :dni, 
+                    phone = :phone,
+                    updated_at = NOW()
+                    WHERE id = :id";
+            
+            $params = [
+                ':id' => $data['id'],
+                ':username' => $data['username'],
+                ':email' => $data['email'],
+                ':first_name' => $data['first_name'],
+                ':last_name' => $data['last_name'],
+                ':dni' => $data['dni'],
+                ':phone' => $data['phone']
+            ];
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    public function delete($userId) {
+        // Primero eliminar roles
+        $sql = "DELETE FROM user_roles WHERE user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':user_id' => $userId]);
+
+        // Eliminar representaciones (tanto como representante como estudiante)
+        $sql = "DELETE FROM representatives 
+                WHERE representative_id = :rep_id OR student_id = :stu_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':rep_id' => $userId,
+            ':stu_id' => $userId
+        ]);
+
+        // Eliminar de course_students
+        $sql = "DELETE FROM course_students WHERE student_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':user_id' => $userId]);
+
+        // Eliminar asignaciones docentes
+        $sql = "DELETE FROM teacher_assignments WHERE teacher_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':user_id' => $userId]);
+
+        // Finalmente eliminar usuario
+        $sql = "DELETE FROM users WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $userId]);
+    }
+
+    public function deactivate($userId) {
+        $sql = "UPDATE users SET is_active = 0, updated_at = NOW() WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $userId]);
     }
 }

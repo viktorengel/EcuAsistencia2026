@@ -1,7 +1,6 @@
-Quiero implementar estas funciones al sistema 
-
+Quiero implementar estas funciones al sistema
 Rol: AUTORIDAD
-
+Sección: Gestión de Usuarios
 Funcionalidad: Crear/editar/eliminar usuarios
 
 # 📋 FUNCIONALIDADES POR ROL - ECUASIST 2026
@@ -17,8 +16,8 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Gestión de Usuarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 1 | Crear/editar/eliminar usuarios | ✅ Implementado |
-| 2 | Asignar/quitar roles a usuarios | ✅ Implementado |
+| 1 | Crear/editar/eliminar usuarios | ✅ Implementado | Ok
+| 2 | Asignar/quitar roles a usuarios | ✅ Implementado | Ok
 
 ### Gestión Académica
 | # | Funcionalidad | Estado |
