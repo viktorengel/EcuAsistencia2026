@@ -382,6 +382,36 @@ switch ($action) {
         $controller->delete();
         break;
 
+    case 'create_school_year':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->createSchoolYear();
+        break;
+
+    case 'edit_school_year':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->editSchoolYear();
+        break;
+
+    case 'delete_school_year':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->deleteSchoolYear();
+        break;
+
+    case 'activate_school_year':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->activateSchoolYear();
+        break;
+
+    case 'deactivate_school_year':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->deactivateSchoolYear();
+        break;
+
     default:
         header('Location: ?action=login');
 }

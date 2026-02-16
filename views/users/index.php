@@ -139,7 +139,6 @@
                         <th>#</th>
                         <th>Nombre Completo</th>
                         <th>Email</th>
-                        <th>Cédula</th>
                         <th>Roles Actuales</th>
                         <th>Asignar Rol</th>
                         <th>Acciones</th>
@@ -175,7 +174,6 @@
                             <td><?= $counter++ ?></td>
                             <td><?= $user['last_name'] . ' ' . $user['first_name'] ?></td>
                             <td><?= $user['email'] ?></td>
-                            <td><?= $user['dni'] ?? '-' ?></td>
                             <td>
                                 <?php if($user['roles']): ?>
                                     <?php 

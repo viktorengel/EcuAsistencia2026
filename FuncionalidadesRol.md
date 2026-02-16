@@ -16,36 +16,36 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Gestión de Usuarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 1 | Crear/editar/eliminar usuarios | ✅ Implementado | Ok
-| 2 | Asignar/quitar roles a usuarios | ✅ Implementado | Ok
+| 1 | Crear/editar/eliminar usuarios | ✅ Implementado |
+| 2 | Asignar/quitar roles a usuarios | ✅ Implementado |
 
 ### Gestión Académica
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 3 | Crear/editar/eliminar años lectivos | ✅ Implementado |
-| 4 | Activar/desactivar año lectivo | ✅ Implementado |
-| 5 | Crear/editar/eliminar cursos | ✅ Implementado |
-| 6 | Crear/editar/eliminar asignaturas | ✅ Implementado |
+| 3 | Crear/editar/eliminar años lectivos |  |
+| 4 | Activar/desactivar año lectivo |  |
+| 5 | ✅Crear/editar/eliminar cursos |  |
+| 6 | ✅Crear/editar/eliminar asignaturas |  |
 
 ### Asignaciones Docentes
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 7 | Asignar docente-materia a curso | ✅ Implementado |
-| 8 | Eliminar asignación docente-materia | ✅ Implementado |
+| 7 | Asignar docente-materia a curso |  | Primero seleccionar el curso y de ahi de acuerdo a las asignaturas asignar los docentes
+| 8 | ✅Eliminar asignación docente-materia |  |
 | 9 | Asignar docente tutor a curso | ✅ Implementado |
 | 10 | Quitar docente tutor de curso | ✅ Implementado |
 
 ### Matriculación
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 11 | Matricular estudiantes a cursos | ✅ Implementado |
-| 12 | Retirar estudiante de curso | ✅ Implementado |
+| 11 | Matricular estudiantes a cursos | ✅ Implementado | mejorar
+| 12 | Retirar estudiante de curso |  |
 
 ### Horarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 13 | Crear horarios de clases por curso | ✅ Implementado |
-| 14 | Editar horarios de clases | ✅ Implementado |
+| 13 | Crear horarios de clases por curso | ✅ Implementado | Mejorar mas visual
+| 14 | Editar horarios de clases |  | No se si está
 | 15 | Eliminar clases del horario | ✅ Implementado |
 
 ### Configuración Institucional
@@ -59,15 +59,15 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Asistencia
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 20 | Ver asistencias de todos los cursos | ✅ Implementado |
-| 21 | Registrar asistencia (cualquier curso) | ✅ Implementado |
+| 20 | Ver asistencias de todos los cursos | ✅ Implementado | Mejorar se debe ver todos los cursos
+| 21 | Registrar asistencia (cualquier curso) | ✅ Implementado | Cambiar de rol y verificar
 | 22 | Editar asistencia (dentro de 48h) | ✅ Implementado |
 | 31 | Ver calendario de asistencias | ✅ Implementado |
 
 ### Justificaciones
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 23 | Ver todas las justificaciones | ✅ Implementado |
+| 23 | Ver todas las justificaciones | ✅ Implementado | Revisar todo esto
 | 24 | Aprobar justificaciones | ✅ Implementado |
 | 25 | Rechazar justificaciones | ✅ Implementado |
 
@@ -83,21 +83,21 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Respaldos y Logs
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 32 | Crear respaldos de base de datos | ✅ Implementado |
-| 33 | Descargar respaldos | ✅ Implementado |
-| 34 | Ver logs de actividad del sistema | ✅ Implementado |
+| 32 | Crear respaldos de base de datos | ✅ Implementado | ✗ Error al crear el respaldo. Verifique la configuración de MySQL.
+| 33 | Descargar respaldos | ✅ Implementado | Tamaño 0.00 KB Vacio el sql
+| 34 | Ver logs de actividad del sistema |  |
 
 ### Representantes
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 35 | Vincular representante-estudiante | ✅ Implementado |
-| 36 | Desvincular representante-estudiante | ✅ Implementado |
+| 35 | Vincular representante-estudiante | ✅ Implementado | Mejorar no se entiende
+| 36 | Desvincular representante-estudiante |  |
 | 37 | Marcar representante como principal | ✅ Implementado |
 
 ### Sistema
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 38 | Buscar en el sistema (global) | ✅ Implementado |
+| 38 | Buscar en el sistema (global) |  |
 | 39 | Editar su propio perfil | ✅ Implementado |
 | 40 | Cambiar su propia contraseña | ✅ Implementado |
 
@@ -110,36 +110,36 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Visualización de Asistencia
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 1 | Ver asistencias de todos los cursos | ✅ Implementado |
-| 2 | Ver asistencias por fecha | ✅ Implementado |
-| 3 | Ver asistencias por curso | ✅ Implementado |
+| 1 | Ver asistencias de todos los cursos | ✅ Implementado | No funciona
+| 2 | Ver asistencias por fecha | ✅ Implementado | Separar e implementar
+| 3 | Ver asistencias por curso | ✅ Implementado | Separar e implementar
 | 4 | Ver calendario de asistencias | ✅ Implementado |
 
 ### Justificaciones
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 5 | Ver todas las justificaciones pendientes | ✅ Implementado |
-| 6 | Ver justificaciones aprobadas | ✅ Implementado |
-| 7 | Ver justificaciones rechazadas | ✅ Implementado |
-| 8 | Aprobar justificaciones | ✅ Implementado |
-| 9 | Rechazar justificaciones | ✅ Implementado |
-| 10 | Descargar documentos de justificación | ✅ Implementado |
+| 5 | Ver todas las justificaciones pendientes |  | Revisar
+| 6 | Ver justificaciones aprobadas |  |
+| 7 | Ver justificaciones rechazadas |  |
+| 8 | Aprobar justificaciones |  |
+| 9 | Rechazar justificaciones |  |
+| 10 | Descargar documentos de justificación |  |
 
 ### Estadísticas y Búsqueda
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 11 | Ver estadísticas de asistencia general | ✅ Implementado |
-| 12 | Ver estadísticas por curso | ✅ Implementado |
-| 13 | Ver top estudiantes con ausencias | ✅ Implementado |
-| 14 | Buscar asistencias | ✅ Implementado |
-| 15 | Buscar estudiantes | ✅ Implementado |
-| 16 | Ver horarios de cursos | ✅ Implementado |
+| 11 | Ver estadísticas de asistencia general |  |
+| 12 | Ver estadísticas por curso |  |
+| 13 | Ver top estudiantes con ausencias |  |
+| 14 | Buscar asistencias |  |
+| 15 | Buscar estudiantes |  |
+| 16 | Ver horarios de cursos |  |
 
 ### Perfil
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 17 | Editar su propio perfil | ✅ Implementado |
-| 18 | Cambiar su propia contraseña | ✅ Implementado |
+| 17 | Editar su propio perfil |  |
+| 18 | Cambiar su propia contraseña |  |
 
 ### Casos Especiales
 | # | Funcionalidad | Estado |
@@ -156,35 +156,35 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Registro de Asistencia
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 1 | Ver sus clases programadas del día | ✅ Implementado |
-| 2 | Registrar asistencia en sus clases | ✅ Implementado |
-| 3 | Editar asistencia de sus clases (48h) | ✅ Implementado |
-| 4 | Ver asistencias que registró | ✅ Implementado |
+| 1 | Ver sus clases programadas del día |  |
+| 2 | Registrar asistencia en sus clases |  |
+| 3 | Editar asistencia de sus clases (48h) |  |
+| 4 | Ver asistencias que registró |  |
 
 ### Como Tutor del Curso
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 5 | Ver asistencias de su curso (como tutor) | ✅ Implementado |
-| 6 | Ver calendario de su curso | ✅ Implementado |
-| 7 | Ver horario de su curso | ✅ Implementado |
-| 8 | Ver lista de estudiantes de su curso | ✅ Implementado |
-| 9 | Ver estadísticas de su curso | ✅ Implementado |
-| 13 | Ver representantes de sus estudiantes | ✅ Implementado |
+| 5 | Ver asistencias de su curso (como tutor) |  |
+| 6 | Ver calendario de su curso |  |
+| 7 | Ver horario de su curso |  |
+| 8 | Ver lista de estudiantes de su curso |  |
+| 9 | Ver estadísticas de su curso |  |
+| 13 | Ver representantes de sus estudiantes |  |
 
 ### Justificaciones
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 10 | Ver justificaciones de su curso | ✅ Implementado |
+| 10 | Ver justificaciones de su curso |  |
 | 11 | **Aprobar justificaciones de su curso** | ❌ **NO implementado** |
 | 12 | **Rechazar justificaciones de su curso** | ❌ **NO implementado** |
 
 ### Sistema
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 14 | Ver dashboard con métricas de su curso | ✅ Implementado |
-| 15 | Buscar estudiantes de su curso | ✅ Implementado |
-| 16 | Editar su propio perfil | ✅ Implementado |
-| 17 | Cambiar su propia contraseña | ✅ Implementado |
+| 14 | Ver dashboard con métricas de su curso |  |
+| 15 | Buscar estudiantes de su curso |  |
+| 16 | Editar su propio perfil |  |
+| 17 | Cambiar su propia contraseña |  |
 
 **Total Docente Tutor: 15/17 ✅ (2 pendientes)**
 
@@ -196,27 +196,27 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Registro de Asistencia
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 1 | Ver sus clases programadas del día | ✅ Implementado |
-| 2 | Registrar asistencia en sus clases | ✅ Implementado |
-| 3 | Editar asistencia de sus clases (48h) | ✅ Implementado |
-| 4 | Ver asistencias que registró | ✅ Implementado |
+| 1 | Ver sus clases programadas del día |  |
+| 2 | Registrar asistencia en sus clases |  |
+| 3 | Editar asistencia de sus clases (48h) |  |
+| 4 | Ver asistencias que registró |  |
 
 ### Visualización
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 5 | Ver asistencias de cursos donde dicta | ✅ Implementado |
-| 6 | Ver calendario de sus cursos | ✅ Implementado |
-| 7 | Ver horario de sus clases | ✅ Implementado |
-| 8 | Ver estudiantes de sus cursos | ✅ Implementado |
+| 5 | Ver asistencias de cursos donde dicta |  |
+| 6 | Ver calendario de sus cursos |  |
+| 7 | Ver horario de sus clases |  |
+| 8 | Ver estudiantes de sus cursos |  |
 
 ### Estadísticas y Sistema
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 9 | Ver estadísticas de sus cursos | ✅ Implementado |
-| 10 | Ver dashboard con sus métricas | ✅ Implementado |
-| 11 | Buscar estudiantes de sus cursos | ✅ Implementado |
-| 12 | Editar su propio perfil | ✅ Implementado |
-| 13 | Cambiar su propia contraseña | ✅ Implementado |
+| 9 | Ver estadísticas de sus cursos |  |
+| 10 | Ver dashboard con sus métricas |  |
+| 11 | Buscar estudiantes de sus cursos |  |
+| 12 | Editar su propio perfil |  |
+| 13 | Cambiar su propia contraseña |  |
 
 **Total Docente: 13/13 ✅**
 
@@ -227,32 +227,32 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Visualización de Asistencia
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 1 | Ver su propia asistencia | ✅ Implementado |
-| 2 | Ver calendario de su asistencia | ✅ Implementado |
-| 3 | Ver estadísticas de su asistencia | ✅ Implementado |
+| 1 | Ver su propia asistencia |  |
+| 2 | Ver calendario de su asistencia |  |
+| 3 | Ver estadísticas de su asistencia |  |
 
 ### Información Académica
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 4 | Ver su curso y paralelo | ✅ Implementado |
-| 5 | Ver horario de clases | ✅ Implementado |
-| 6 | Ver sus docentes | ✅ Implementado |
-| 7 | Ver quiénes son sus representantes | ✅ Implementado |
+| 4 | Ver su curso y paralelo |  |
+| 5 | Ver horario de clases |  |
+| 6 | Ver sus docentes |  |
+| 7 | Ver quiénes son sus representantes |  |
 
 ### Justificaciones
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 8 | **Justificar sus ausencias** | ✅ **Implementado** ⚠️ **REVISAR NECESIDAD** |
 | 9 | **Subir documento de justificación** | ✅ **Implementado** ⚠️ **REVISAR NECESIDAD** |
-| 10 | Ver estado de justificaciones enviadas | ✅ Implementado |
-| 11 | Ver justificaciones aprobadas/rechazadas | ✅ Implementado |
+| 10 | Ver estado de justificaciones enviadas |  |
+| 11 | Ver justificaciones aprobadas/rechazadas |  |
 
 ### Sistema
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 12 | Ver dashboard con sus métricas | ✅ Implementado |
-| 13 | Editar su propio perfil | ✅ Implementado |
-| 14 | Cambiar su propia contraseña | ✅ Implementado |
+| 12 | Ver dashboard con sus métricas |  |
+| 13 | Editar su propio perfil |  |
+| 14 | Cambiar su propia contraseña |  |
 
 **Total Estudiante: 14/14 ✅ (2 a revisar)**
 
@@ -263,32 +263,32 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Gestión de Representados
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 1 | Ver lista de sus representados | ✅ Implementado |
-| 2 | Ver asistencia de cada representado | ✅ Implementado |
-| 3 | Ver calendario de cada representado | ✅ Implementado |
-| 4 | Ver estadísticas de cada representado | ✅ Implementado |
+| 1 | Ver lista de sus representados |  |
+| 2 | Ver asistencia de cada representado |  |
+| 3 | Ver calendario de cada representado |  |
+| 4 | Ver estadísticas de cada representado |  |
 
 ### Información Académica
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 5 | Ver curso de cada representado | ✅ Implementado |
-| 6 | Ver horario de cada representado | ✅ Implementado |
-| 7 | Ver docentes de cada representado | ✅ Implementado |
+| 5 | Ver curso de cada representado |  |
+| 6 | Ver horario de cada representado |  |
+| 7 | Ver docentes de cada representado |  |
 
 ### Justificaciones
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 8 | Justificar ausencias de representados | ✅ Implementado |
-| 9 | Subir documentos de justificación | ✅ Implementado |
-| 10 | Ver justificaciones enviadas | ✅ Implementado |
-| 11 | Ver estado de justificaciones | ✅ Implementado |
+| 8 | Justificar ausencias de representados |  |
+| 9 | Subir documentos de justificación |  |
+| 10 | Ver justificaciones enviadas |  |
+| 11 | Ver estado de justificaciones |  |
 
 ### Sistema
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 12 | Ver dashboard con métricas de representados | ✅ Implementado |
-| 13 | Editar su propio perfil | ✅ Implementado |
-| 14 | Cambiar su propia contraseña | ✅ Implementado |
+| 12 | Ver dashboard con métricas de representados |  |
+| 13 | Editar su propio perfil |  |
+| 14 | Cambiar su propia contraseña |  |
 
 **Total Representante: 14/14 ✅**
 
@@ -336,7 +336,7 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### ⚠️ A REVISAR (3)
 
 #### 1. Estudiante - Justificar sus propias ausencias
-- **Estado:** ✅ Implementado actualmente
+- **Estado:**  actualmente
 - **Problema detectado:** 
   - Podría prestarse para abusos
   - Estudiantes podrían justificar cualquier ausencia
@@ -351,7 +351,7 @@ Funcionalidad: Crear/editar/eliminar usuarios
   4. **Limitar cantidad** (máximo X justificaciones por mes)
 
 #### 2. Estudiante - Subir documentos de justificación
-- **Estado:** ✅ Implementado actualmente
+- **Estado:**  actualmente
 - **Problema:** Mismo que punto #1
 - **Acción:** Depende de decisión del punto anterior
 
