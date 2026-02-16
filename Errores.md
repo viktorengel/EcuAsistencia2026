@@ -9,3 +9,5 @@ Al generar Excel se borra el boton Vista previa.
 Me parece inconcistente Asignar Estudiante a Representante, creo que al registrar una nuevo usuario e ingresar se deberia indicar que es representante de tal estudiantes de alguna manera logica. Pensar
 
 Al registar un docente se deberia tomar en cuenta su titulo y experienca.
+
+Si se cierra el navegador se deberia cerrar la sesion por seguridad.
