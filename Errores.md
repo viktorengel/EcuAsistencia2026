@@ -11,3 +11,5 @@ Me parece inconcistente Asignar Estudiante a Representante, creo que al registra
 Al registar un docente se deberia tomar en cuenta su titulo y experienca.
 
 Si se cierra el navegador se deberia cerrar la sesion por seguridad.
+
+http://localhost/ecuasistencia2026/public/index.php?action=enroll_students Matricular Estudiantes Estado de Todos los Estudiantes hay que agregar el curso del estudiante
