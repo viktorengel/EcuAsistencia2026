@@ -120,23 +120,37 @@
             <table>
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Apellidos y Nombres</th>
                         <th>Cédula</th>
+                        <th>Curso</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($allStudents as $student): 
+                    <?php 
+                    $counter = 1;
+                    foreach($allStudents as $student): 
                         $course = $this->userModel->getStudentCourse($student['id'], $activeYear['id']);
                     ?>
                     <tr>
+                        <td><?= $counter++ ?></td>
                         <td><?= $student['last_name'] . ' ' . $student['first_name'] ?></td>
                         <td><?= $student['dni'] ?? '-' ?></td>
                         <td>
                             <?php if($course): ?>
+                                <strong><?= $course['name'] ?></strong>
+                                <br>
+                                <small style="color: #666;"><?= $course['shift_name'] ?></small>
+                            <?php else: ?>
+                                <span style="color: #999;">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if($course): ?>
                                 <span class="badge" style="background: #28a745;">
-                                    Matriculado en: <?= $course['name'] ?> (<?= $course['shift_name'] ?>)
+                                    ✓ Matriculado
                                 </span>
                             <?php else: ?>
                                 <span class="badge" style="background: #6c757d;">Sin matricular</span>
