@@ -126,6 +126,9 @@ class JustificationController {
             });
         }
 
+        // Reindexar array después del filtro
+        $justifications = array_values($justifications);
+
         include BASE_PATH . '/views/justifications/reviewed.php';
     }
 }

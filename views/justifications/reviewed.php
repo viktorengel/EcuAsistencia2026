@@ -86,13 +86,16 @@
                         </td>
                         <td><?= htmlspecialchars($j['reviewer_name'] ?? '-') ?></td>
                         <td>
-                            <button class="btn btn-primary" onclick="verDetalle(
-                                '<?= addslashes($j['student_name']) ?>',
-                                '<?= addslashes($j['reason']) ?>',
-                                '<?= addslashes($j['review_notes'] ?? '') ?>',
-                                '<?= $j['document_path'] ?? '' ?>',
-                                '<?= $j['status'] ?>'
-                            )">Ver</button>
+                            <?php
+                                $jData = htmlspecialchars(json_encode([
+                                    'student' => $j['student_name'],
+                                    'reason'  => $j['reason'],
+                                    'notes'   => $j['review_notes'] ?? '',
+                                    'doc'     => $j['document_path'] ?? '',
+                                    'status'  => $j['status']
+                                ]), ENT_QUOTES);
+                            ?>
+                            <button class="btn btn-primary" onclick="verDetalle('<?= $jData ?>')">Ver</button>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -116,7 +119,14 @@
     </div>
 
     <script>
-        function verDetalle(estudiante, motivo, notas, docPath, estado) {
+function verDetalle(jsonStr) {
+            const d = JSON.parse(jsonStr);
+            const estudiante = d.student;
+            const motivo = d.reason;
+            const notas = d.notes;
+            const docPath = d.doc;
+            const estado = d.status;
+
             const badgeColor = estado === 'aprobado' ? '#d4edda' : '#f8d7da';
             const badgeText = estado === 'aprobado' ? '#155724' : '#721c24';
             const estadoLabel = estado === 'aprobado' ? '✅ Aprobada' : '❌ Rechazada';

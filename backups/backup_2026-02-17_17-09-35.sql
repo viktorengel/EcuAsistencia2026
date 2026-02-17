@@ -203,7 +203,7 @@ CREATE TABLE `courses` (
 
 LOCK TABLES `courses` WRITE;
 /*!40000 ALTER TABLE `courses` DISABLE KEYS */;
-INSERT INTO `courses` VALUES (1,1,1,'8vo EGB &quot;A&quot; - Matutina','8vo EGB','A',1,'2026-02-11 23:56:54','2026-02-16 20:41:13'),(2,1,1,'1ro BGU &quot;A&quot; - Matutina','1ro BGU','A',1,'2026-02-11 23:56:54','2026-02-16 20:41:46'),(3,1,1,'1ro Técnico &quot;B&quot; - Matutina','1ro Técnico','B',1,'2026-02-11 23:56:54','2026-02-16 20:42:05'),(4,1,1,'9no EGB &quot;A&quot; - Vespertina','9no EGB','A',2,'2026-02-11 23:56:54','2026-02-16 20:41:07'),(5,1,1,'10mo EGB &quot;A&quot; - Vespertina','10mo EGB','A',2,'2026-02-11 23:56:54','2026-02-16 20:40:57');
+INSERT INTO `courses` VALUES (1,1,1,'8vo EGB \"A\" - Matutina','8vo EGB','A',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(2,1,1,'1ro BGU \"A\" - Matutina','1ro BGU','A',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(3,1,1,'1ro Técnico \"B\" - Matutina','1ro Técnico','B',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(4,1,1,'9no EGB \"A\" - Vespertina','9no EGB','A',2,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(5,1,1,'10mo EGB \"A\" - Vespertina','10mo EGB','A',2,'2026-02-11 23:56:54','2026-02-17 22:08:44');
 /*!40000 ALTER TABLE `courses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -271,7 +271,7 @@ CREATE TABLE `institutions` (
 
 LOCK TABLES `institutions` WRITE;
 /*!40000 ALTER TABLE `institutions` DISABLE KEYS */;
-INSERT INTO `institutions` VALUES (1,'Unidad Educativa Pomasqui','UEP001','Av. Manuel Cordova Galarza 123, Quito, Ecuador','Pichincha','Quito','02-2351072','contacto@uep.edu.ec','MSc. Nombre Apellido','17h01988','https://www.uep.edu.ec','uploads/institution/logo_1771157768.jpg',1,'2026-02-11 23:56:53','2026-02-16 01:50:19');
+INSERT INTO `institutions` VALUES (1,'Unidad Educativa Pomasqui','UEP001','Av. Manuel Cordova Galarza 123, Quito, Ecuador','Pichincha','Quito','02-2351072','contacto@uep.edu.ec','MSc. Nombre Apellido','17h01988','https://www.uep.edu.ec','uploads/institution/logo_1771364861.jpg',1,'2026-02-11 23:56:53','2026-02-17 21:47:41');
 /*!40000 ALTER TABLE `institutions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -639,4 +639,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-16 19:00:53
+-- Dump completed on 2026-02-17 17:09:36
