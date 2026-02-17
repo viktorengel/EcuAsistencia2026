@@ -442,6 +442,12 @@ switch ($action) {
         $controller->unenrollStudent();
         break;
 
+    case 'delete_backup':
+        require_once BASE_PATH . '/controllers/BackupController.php';
+        $controller = new BackupController();
+        $controller->delete();
+        break;
+
     default:
         header('Location: ?action=login');
 }
