@@ -448,6 +448,12 @@ switch ($action) {
         $controller->delete();
         break;
 
+    case 'remove_representative':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $controller = new RepresentativeController();
+        $controller->removeRelation();
+        break;
+
     default:
         header('Location: ?action=login');
 }
