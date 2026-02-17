@@ -76,4 +76,56 @@ class Course {
         $stmt->execute([':course_id' => $courseId]);
         return $stmt->fetchAll();
     }
+
+    public function findById($id) {
+        $sql = "SELECT c.*, s.name as shift_name 
+                FROM courses c
+                INNER JOIN shifts s ON c.shift_id = s.id
+                WHERE c.id = :id";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function update($data) {
+        $sql = "UPDATE courses SET 
+                name = :name,
+                grade_level = :grade_level,
+                parallel = :parallel,
+                shift_id = :shift_id,
+                updated_at = NOW()
+                WHERE id = :id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($data);
+    }
+
+    public function delete($id) {
+        // Eliminar relaciones primero
+        $sql = "DELETE FROM course_students WHERE course_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+
+        // Eliminar horarios
+        $sql = "DELETE FROM class_schedule WHERE course_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+
+        // Eliminar curso
+        $sql = "DELETE FROM courses WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $id]);
+    }
+
+    public function unenrollStudent($studentId, $schoolYearId) {
+        $sql = "DELETE FROM course_students 
+                WHERE student_id = :student_id AND school_year_id = :school_year_id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':student_id' => $studentId,
+            ':school_year_id' => $schoolYearId
+        ]);
+    }
 }

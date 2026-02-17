@@ -178,19 +178,41 @@
                 return;
             }
 
+            // Crear un formulario temporal
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.style.display = 'none';
+            
             if (type === 'pdf') {
-                form.action = '?action=generate_pdf';
+                tempForm.action = '?action=generate_pdf';
             } else {
-                form.action = '?action=generate_excel';
+                tempForm.action = '?action=generate_excel';
             }
             
-            // Remover el campo preview si existe
-            const previewInput = form.querySelector('[name="preview"]');
-            if (previewInput) {
-                previewInput.remove();
-            }
+            // Copiar valores del formulario original
+            const courseId = form.querySelector('[name="course_id"]').value;
+            const startDate = form.querySelector('[name="start_date"]').value;
+            const endDate = form.querySelector('[name="end_date"]').value;
             
-            form.submit();
+            // Crear inputs ocultos
+            const inputs = [
+                { name: 'course_id', value: courseId },
+                { name: 'start_date', value: startDate },
+                { name: 'end_date', value: endDate }
+            ];
+            
+            inputs.forEach(input => {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = input.name;
+                hiddenInput.value = input.value;
+                tempForm.appendChild(hiddenInput);
+            });
+            
+            // Agregar al body, enviar y eliminar
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            document.body.removeChild(tempForm);
         }
     </script>
 </body>

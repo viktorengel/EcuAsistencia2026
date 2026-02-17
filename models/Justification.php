@@ -106,4 +106,28 @@ class Justification {
         $result = $stmt->fetch();
         return $result['count'] > 0;
     }
+
+    public function getReviewed($institutionId = null) {
+        $sql = "SELECT j.*, 
+                CONCAT(u.last_name, ' ', u.first_name) as student_name,
+                CONCAT(s.last_name, ' ', s.first_name) as submitted_by_name,
+                CONCAT(r.last_name, ' ', r.first_name) as reviewer_name,
+                a.date as attendance_date,
+                a.hour_period,
+                sub.name as subject_name,
+                c.name as course_name
+                FROM justifications j
+                INNER JOIN users u ON j.student_id = u.id
+                INNER JOIN users s ON j.submitted_by = s.id
+                INNER JOIN attendances a ON j.attendance_id = a.id
+                INNER JOIN subjects sub ON a.subject_id = sub.id
+                LEFT JOIN users r ON j.reviewed_by = r.id
+                LEFT JOIN course_students cs ON u.id = cs.student_id
+                LEFT JOIN courses c ON cs.course_id = c.id
+                WHERE j.status IN ('aprobado', 'rechazado')
+                ORDER BY j.updated_at DESC";
+        
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll();
+    }
 }

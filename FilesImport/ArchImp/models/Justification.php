@@ -20,12 +20,15 @@ class Justification {
                 CONCAT(u.last_name, ' ', u.first_name) as student_name,
                 CONCAT(s.last_name, ' ', s.first_name) as submitted_by_name,
                 a.date as attendance_date,
-                sub.name as subject_name
+                sub.name as subject_name,
+                c.name as course_name
                 FROM justifications j
                 INNER JOIN users u ON j.student_id = u.id
                 INNER JOIN users s ON j.submitted_by = s.id
                 INNER JOIN attendances a ON j.attendance_id = a.id
                 INNER JOIN subjects sub ON a.subject_id = sub.id
+                LEFT JOIN course_students cs ON u.id = cs.student_id
+                LEFT JOIN courses c ON cs.course_id = c.id
                 WHERE j.status = 'pendiente'
                 ORDER BY j.created_at DESC";
         
@@ -37,7 +40,9 @@ class Justification {
         $sql = "SELECT j.*, 
                 a.date as attendance_date,
                 sub.name as subject_name,
-                CONCAT(r.last_name, ' ', r.first_name) as reviewed_by_name
+                j.created_at as submitted_at,
+                j.updated_at as reviewed_at,
+                CONCAT(r.last_name, ' ', r.first_name) as reviewer_name
                 FROM justifications j
                 INNER JOIN attendances a ON j.attendance_id = a.id
                 INNER JOIN subjects sub ON a.subject_id = sub.id
@@ -92,5 +97,13 @@ class Justification {
             ':notes' => $notes,
             ':id' => $justificationId
         ]);
+    }
+
+    public function existsByAttendance($attendanceId) {
+        $sql = "SELECT COUNT(*) as count FROM justifications WHERE attendance_id = :attendance_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':attendance_id' => $attendanceId]);
+        $result = $stmt->fetch();
+        return $result['count'] > 0;
     }
 }

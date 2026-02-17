@@ -245,7 +245,6 @@ switch ($action) {
         break;
 
     case 'reviewed_justifications':
-        require_once BASE_PATH . '/controllers/JustificationController.php';
         $controller = new JustificationController();
         $controller->reviewed();
         break;

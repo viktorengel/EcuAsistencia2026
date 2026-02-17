@@ -17,19 +17,44 @@ class Backup {
         $filename = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
         $filepath = $this->backupDir . $filename;
 
-        $command = sprintf(
-            'mysqldump --host=%s --user=%s --password=%s %s > %s',
-            escapeshellarg($this->dbHost),
-            escapeshellarg($this->dbUser),
-            escapeshellarg($this->dbPass),
-            escapeshellarg($this->dbName),
-            escapeshellarg($filepath)
-        );
+        // Verificar que mysqldump esté disponible
+        $mysqldumpPath = 'C:\\xampp\\mysql\\bin\\mysqldump.exe'; // XAMPP Windows
+        if (!file_exists($mysqldumpPath)) {
+            $mysqldumpPath = 'mysqldump'; // Linux/Mac o PATH configurado
+        }
+
+        // Comando mejorado con opciones
+        if (empty($this->dbPass)) {
+            $command = sprintf(
+                '"%s" --host=%s --user=%s --skip-password %s > "%s" 2>&1',
+                $mysqldumpPath,
+                $this->dbHost,
+                $this->dbUser,
+                $this->dbName,
+                $filepath
+            );
+        } else {
+            $command = sprintf(
+                '"%s" --host=%s --user=%s --password=%s %s > "%s" 2>&1',
+                $mysqldumpPath,
+                $this->dbHost,
+                $this->dbUser,
+                $this->dbPass,
+                $this->dbName,
+                $filepath
+            );
+        }
 
         exec($command, $output, $result);
 
-        if ($result === 0 && file_exists($filepath)) {
+        // Verificar que el archivo existe y tiene contenido
+        if (file_exists($filepath) && filesize($filepath) > 0) {
             return $filename;
+        }
+
+        // Si falló, intentar eliminar archivo vacío
+        if (file_exists($filepath)) {
+            unlink($filepath);
         }
 
         return false;
@@ -40,19 +65,30 @@ class Backup {
         $backups = [];
 
         foreach ($files as $file) {
+            $size = filesize($file);
             $backups[] = [
-                'name' => basename($file),
+                'filename' => basename($file),
                 'path' => $file,
-                'size' => filesize($file),
-                'date' => filemtime($file)
+                'size' => $this->formatBytes($size),
+                'date' => date('d/m/Y H:i:s', filemtime($file)),
+                'timestamp' => filemtime($file)
             ];
         }
 
         usort($backups, function($a, $b) {
-            return $b['date'] - $a['date'];
+            return $b['timestamp'] - $a['timestamp'];
         });
 
         return $backups;
+    }
+
+    private function formatBytes($bytes, $precision = 2) {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10 * $pow));
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 
     public function deleteOldBackups($daysToKeep = 30) {
@@ -81,5 +117,20 @@ class Backup {
         header('Content-Length: ' . filesize($filepath));
         readfile($filepath);
         exit;
+    }
+
+    public function deleteBackup($filename) {
+        // Validar que sea un archivo de backup válido
+        if (!preg_match('/^backup_[\d\-_]+\.sql$/', $filename)) {
+            return false;
+        }
+
+        $filepath = $this->backupDir . $filename;
+
+        if (file_exists($filepath)) {
+            return unlink($filepath);
+        }
+
+        return false;
     }
 }

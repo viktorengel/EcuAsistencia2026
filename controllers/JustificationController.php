@@ -110,4 +110,22 @@ class JustificationController {
             exit;
         }
     }
+
+    public function reviewed() {
+        if (!Security::hasRole(['autoridad', 'inspector'])) {
+            die('Acceso denegado');
+        }
+
+        $filter = $_GET['filter'] ?? 'all'; // all, aprobado, rechazado
+        $justifications = $this->justificationModel->getReviewed();
+
+        // Filtrar por estado si se seleccionó uno
+        if ($filter !== 'all') {
+            $justifications = array_filter($justifications, function($j) use ($filter) {
+                return $j['status'] === $filter;
+            });
+        }
+
+        include BASE_PATH . '/views/justifications/reviewed.php';
+    }
 }

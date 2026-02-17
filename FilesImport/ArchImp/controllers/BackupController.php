@@ -40,4 +40,15 @@ class BackupController {
         header('Location: ?action=backups&cleanup=' . $deleted);
         exit;
     }
+
+    public function delete() {
+        $filename = $_GET['file'] ?? '';
+        
+        if ($this->backup->deleteBackup($filename)) {
+            header('Location: ?action=backups&deleted=1');
+        } else {
+            header('Location: ?action=backups&error_delete=1');
+        }
+        exit;
+    }
 }

@@ -5,6 +5,7 @@ require_once BASE_PATH . '/models/Course.php';
 require_once BASE_PATH . '/models/Subject.php';
 require_once BASE_PATH . '/models/SchoolYear.php';
 require_once BASE_PATH . '/models/User.php';
+require_once BASE_PATH . '/models/Institution.php';
 require_once BASE_PATH . '/vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -19,6 +20,7 @@ class ReportController {
     private $subjectModel;
     private $schoolYearModel;
     private $userModel;
+    private $institutionModel;
 
     public function __construct() {
         Security::requireLogin();
@@ -32,6 +34,7 @@ class ReportController {
         $this->subjectModel = new Subject($db);
         $this->schoolYearModel = new SchoolYear($db);
         $this->userModel = new User($db);
+        $this->institutionModel = new Institution($db);
     }
 
     public function index() {
@@ -62,6 +65,7 @@ class ReportController {
 
         $data = $this->attendanceModel->getReportData($courseId, $startDate, $endDate);
         $course = $this->getCourseInfo($courseId);
+        $institution = $this->institutionModel->getById($_SESSION['institution_id']);
 
         $pdf = new \TCPDF('L', 'mm', 'A4', true, 'UTF-8');
         
@@ -80,13 +84,13 @@ class ReportController {
         $pdf->Cell(0, 10, 'REPORTE DE ASISTENCIA', 0, 1, 'C');
         
         $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 5, 'Unidad Educativa Demo', 0, 1, 'C');
+        $pdf->Cell(0, 5, $institution['name'] ?? 'Institución Educativa', 0, 1, 'C');
         $pdf->Ln(5);
         
         $pdf->SetFont('helvetica', 'B', 11);
         $pdf->Cell(50, 6, 'Curso:', 0, 0);
         $pdf->SetFont('helvetica', '', 11);
-        $pdf->Cell(0, 6, $course['name'] . ' - ' . $course['shift_name'], 0, 1);
+        $pdf->Cell(0, 6, html_entity_decode($course['name'], ENT_QUOTES, 'UTF-8'), 0, 1);
         
         $pdf->SetFont('helvetica', 'B', 11);
         $pdf->Cell(50, 6, 'Período:', 0, 0);
@@ -125,7 +129,11 @@ class ReportController {
 
         $pdf->writeHTML($html, true, false, true, false, '');
         
-        $pdf->Output('reporte_asistencia_' . date('YmdHis') . '.pdf', 'D');
+        // Generar nombre de archivo con curso
+        $courseName = $this->sanitizeFilename($course['name']);
+        $filename = 'reporte_asistencia_' . $courseName . '_' . date('YmdHis') . '.pdf';
+        
+        $pdf->Output($filename, 'D');
         exit;
     }
 
@@ -136,6 +144,7 @@ class ReportController {
 
         $data = $this->attendanceModel->getReportData($courseId, $startDate, $endDate);
         $course = $this->getCourseInfo($courseId);
+        $institution = $this->institutionModel->getById($_SESSION['institution_id']);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -149,11 +158,11 @@ class ReportController {
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->mergeCells('A2:F2');
-        $sheet->setCellValue('A2', 'Unidad Educativa Demo');
+        $sheet->setCellValue('A2', $institution['name'] ?? 'Institución Educativa');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->setCellValue('A4', 'Curso:');
-        $sheet->setCellValue('B4', $course['name'] . ' - ' . $course['shift_name']);
+        $sheet->setCellValue('B4', html_entity_decode($course['name'], ENT_QUOTES, 'UTF-8'));
         $sheet->getStyle('A4')->getFont()->setBold(true);
 
         $sheet->setCellValue('A5', 'Período:');
@@ -213,8 +222,12 @@ class ReportController {
 
         $writer = new Xlsx($spreadsheet);
         
+        // Generar nombre de archivo con curso
+        $courseName = $this->sanitizeFilename($course['name']);
+        $filename = 'reporte_asistencia_' . $courseName . '_' . date('YmdHis') . '.xlsx';
+        
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="reporte_asistencia_' . date('YmdHis') . '.xlsx"');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
         
         $writer->save('php://output');
@@ -249,5 +262,29 @@ class ReportController {
             case 'justificado': return '17a2b8';
             default: return 'FFFFFF';
         }
+    }
+
+    private function sanitizeFilename($filename) {
+        // Decodificar HTML entities
+        $filename = html_entity_decode($filename, ENT_QUOTES, 'UTF-8');
+        
+        // Reemplazar caracteres no permitidos en nombres de archivo
+        $filename = str_replace(['"', '/', '\\', ':', '*', '?', '<', '>', '|'], '', $filename);
+        
+        // Reemplazar espacios con guiones bajos
+        $filename = str_replace(' ', '_', $filename);
+        
+        // Reemplazar guiones múltiples
+        $filename = preg_replace('/-+/', '-', $filename);
+        
+        // Limitar longitud (máximo 50 caracteres)
+        if (strlen($filename) > 50) {
+            $filename = substr($filename, 0, 50);
+        }
+        
+        // Limpiar caracteres al inicio y final
+        $filename = trim($filename, '-_');
+        
+        return $filename;
     }
 }

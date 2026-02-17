@@ -47,6 +47,18 @@
             <div class="warning">⚠ <?= $_GET['errors'] ?> estudiante(s) no pudieron ser matriculados (ya están en otro curso)</div>
         <?php endif; ?>
 
+        <?php if(isset($_GET['unenrolled'])): ?>
+            <div class="success">✓ Estudiante retirado del curso correctamente</div>
+        <?php endif; ?>
+
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'not_enrolled'): ?>
+            <div class="warning">⚠ El estudiante no está matriculado en ningún curso</div>
+        <?php endif; ?>
+
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'unenroll_failed'): ?>
+            <div class="warning">✗ Error al retirar el estudiante del curso</div>
+        <?php endif; ?>
+
         <!-- Resumen de estudiantes -->
         <div class="card">
             <h2>Resumen</h2>
@@ -108,25 +120,54 @@
             <table>
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Apellidos y Nombres</th>
                         <th>Cédula</th>
+                        <th>Curso</th>
                         <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($allStudents as $student): 
+                    <?php 
+                    $counter = 1;
+                    foreach($allStudents as $student): 
                         $course = $this->userModel->getStudentCourse($student['id'], $activeYear['id']);
                     ?>
                     <tr>
+                        <td><?= $counter++ ?></td>
                         <td><?= $student['last_name'] . ' ' . $student['first_name'] ?></td>
                         <td><?= $student['dni'] ?? '-' ?></td>
                         <td>
                             <?php if($course): ?>
+                                <strong><?= $course['name'] ?></strong>
+                                <br>
+                                <small style="color: #666;"><?= $course['shift_name'] ?></small>
+                            <?php else: ?>
+                                <span style="color: #999;">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if($course): ?>
                                 <span class="badge" style="background: #28a745;">
-                                    Matriculado en: <?= $course['name'] ?> (<?= $course['shift_name'] ?>)
+                                    ✓ Matriculado
                                 </span>
                             <?php else: ?>
                                 <span class="badge" style="background: #6c757d;">Sin matricular</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if($course): ?>
+                                <form method="POST" action="?action=unenroll_student" style="display: inline;" 
+                                      onsubmit="return confirmUnenroll(event, '<?= addslashes($student['last_name'] . ' ' . $student['first_name']) ?>', '<?= addslashes($course['name']) ?>')">
+                                    <input type="hidden" name="student_id" value="<?= $student['id'] ?>">
+                                    <button type="submit" 
+                                            style="padding: 6px 12px; background: #dc3545; font-size: 13px;">
+                                        ✗ Retirar
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <span style="color: #999;">-</span>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -135,5 +176,52 @@
             </table>
         </div>
     </div>
+
+    <script>
+    function confirmUnenroll(event, studentName, courseName) {
+        event.preventDefault();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Retirar Estudiante del Curso</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">
+                ¿Está seguro de retirar a <strong>${studentName}</strong> del curso <strong>${courseName}</strong>?
+            </p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; background: #fff3cd; padding: 10px; border-radius: 4px;">
+                <strong>⚠️ Advertencia:</strong> Esta acción quitará al estudiante del curso. 
+                Los registros de asistencia se conservarán pero el estudiante no aparecerá como matriculado.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelUnenrollBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmUnenrollBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sí, Retirar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const form = event.target;
+        
+        document.getElementById('confirmUnenrollBtn').onclick = function() {
+            document.body.removeChild(modal);
+            form.submit();
+        };
+        
+        document.getElementById('cancelUnenrollBtn').onclick = function() {
+            document.body.removeChild(modal);
+        };
+        
+        return false;
+    }
+    </script>
 </body>
 </html>

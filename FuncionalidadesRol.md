@@ -119,8 +119,8 @@ Funcionalidad: Crear/editar/eliminar usuarios
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 5 | Ver todas las justificaciones pendientes | ✅ Implementado |
-| 6 | Ver justificaciones aprobadas |  |
-| 7 | Ver justificaciones rechazadas |  |
+| 6 | Ver justificaciones aprobadas | ✅ Implementado |
+| 7 | Ver justificaciones rechazadas | ✅ Implementado |
 | 8 | Aprobar justificaciones | ✅ Implementado |
 | 9 | Rechazar justificaciones | ✅ Implementado |
 | 10 | Descargar documentos de justificación |  |

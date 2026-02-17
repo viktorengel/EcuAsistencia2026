@@ -78,4 +78,23 @@ class RepresentativeController {
         
         include BASE_PATH . '/views/representatives/child_attendance.php';
     }
+
+    public function removeRelation() {
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
+        $repId = (int)($_GET['rep_id'] ?? 0);
+        $studentId = (int)($_GET['student_id'] ?? 0);
+
+        if ($repId && $studentId) {
+            if ($this->representativeModel->removeStudent($repId, $studentId)) {
+                header('Location: ?action=manage_representatives&removed=1');
+                exit;
+            }
+        }
+
+        header('Location: ?action=manage_representatives&error=1');
+        exit;
+    }
 }

@@ -41,9 +41,28 @@
         button:hover { background: #0056b3; }
         .btn-danger { background: #dc3545; }
         .btn-danger:hover { background: #c82333; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
         .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
         h2 { margin-bottom: 20px; color: #333; }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        .action-buttons {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -51,6 +70,18 @@
 
     <div class="container">
         <div class="card">
+            <?php if(isset($_GET['created'])): ?>
+                <div class="success">✓ Usuario creado correctamente</div>
+            <?php endif; ?>
+            <?php if(isset($_GET['updated'])): ?>
+                <div class="success">✓ Usuario actualizado correctamente</div>
+            <?php endif; ?>
+            <?php if(isset($_GET['deleted'])): ?>
+                <div class="success">✓ Usuario eliminado correctamente</div>
+            <?php endif; ?>
+            <?php if(isset($_GET['deactivated'])): ?>
+                <div class="info">ℹ️ Usuario desactivado (tiene registros de asistencia)</div>
+            <?php endif; ?>
             <?php if(isset($_GET['success'])): ?>
                 <div class="success">✓ Rol asignado correctamente</div>
             <?php endif; ?>
@@ -60,8 +91,22 @@
             <?php if(isset($_GET['error']) && $_GET['error'] === 'has_assignments'): ?>
                 <div class="error">✗ No se puede eliminar el rol docente porque tiene asignaciones activas. Elimine primero las asignaciones.</div>
             <?php endif; ?>
+            <?php if(isset($_GET['error']) && $_GET['error'] === 'not_found'): ?>
+                <div class="error">✗ Usuario no encontrado</div>
+            <?php endif; ?>
+            <?php if(isset($_GET['error']) && $_GET['error'] === 'self_delete'): ?>
+                <div class="error">✗ No puedes eliminar tu propia cuenta</div>
+            <?php endif; ?>
+            <?php if(isset($_GET['error']) && $_GET['error'] === 'delete_failed'): ?>
+                <div class="error">✗ Error al eliminar el usuario</div>
+            <?php endif; ?>
 
-            <h2>Usuarios Registrados</h2>
+            <div class="header-actions">
+                <h2>👥 Gestión de Usuarios</h2>
+                <a href="?action=create_user" style="padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
+                    + Crear Usuario
+                </a>
+            </div>
             
             <!-- Filtro por Rol -->
             <form method="GET" action="" style="margin-bottom: 20px;">
@@ -94,9 +139,9 @@
                         <th>#</th>
                         <th>Nombre Completo</th>
                         <th>Email</th>
-                        <th>Cédula</th>
                         <th>Roles Actuales</th>
                         <th>Asignar Rol</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -118,7 +163,7 @@
                     
                     <?php if(empty($filteredUsers)): ?>
                         <tr>
-                            <td colspan="6" style="text-align:center;">No hay usuarios con este rol</td>
+                            <td colspan="7" style="text-align:center;">No hay usuarios con este rol</td>
                         </tr>
                     <?php else: ?>
                          <?php 
@@ -129,7 +174,6 @@
                             <td><?= $counter++ ?></td>
                             <td><?= $user['last_name'] . ' ' . $user['first_name'] ?></td>
                             <td><?= $user['email'] ?></td>
-                            <td><?= $user['dni'] ?? '-' ?></td>
                             <td>
                                 <?php if($user['roles']): ?>
                                     <?php 
@@ -171,6 +215,19 @@
                                     <button type="submit" style="padding: 5px 10px;">Asignar</button>
                                 </form>
                             </td>
+                            <td class="action-buttons">
+                                <a href="?action=edit_user&id=<?= $user['id'] ?>" 
+                                   class="btn-warning btn-sm" 
+                                   style="text-decoration: none; padding: 5px 10px; border-radius: 4px;">
+                                    ✏️ Editar
+                                </a>
+                                <form method="POST" action="?action=delete_user" style="display: inline;" onsubmit="return confirmDelete(event, '<?= $user['last_name'] . ' ' . $user['first_name'] ?>')">
+                                    <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                                    <button type="submit" class="btn-danger btn-sm">
+                                        🗑️ Eliminar
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -180,6 +237,50 @@
     </div>
 
     <script>
+    function confirmDelete(event, userName) {
+        event.preventDefault();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Usuario</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">
+                ¿Está seguro de eliminar al usuario <strong>${userName}</strong>?
+            </p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
+                <strong>Nota:</strong> Si el usuario tiene asistencias registradas, será desactivado en lugar de eliminado.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelDeleteBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmDeleteBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sí, Eliminar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const form = event.target;
+        
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+            form.submit();
+        };
+        
+        document.getElementById('cancelDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+        };
+        
+        return false;
+    }
+
     function confirmRemoveRole(event, roleName, userName) {
         event.preventDefault();
         

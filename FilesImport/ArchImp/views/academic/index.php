@@ -35,13 +35,148 @@
         <?php if(isset($_GET['course_success'])): ?>
             <div class="success">✓ Curso creado correctamente</div>
         <?php endif; ?>
+        <?php if(isset($_GET['course_updated'])): ?>
+            <div class="success">✓ Curso actualizado correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['course_deleted'])): ?>
+            <div class="success">✓ Curso eliminado correctamente</div>
+        <?php endif; ?>
+        
         <?php if(isset($_GET['subject_success'])): ?>
             <div class="success">✓ Asignatura creada correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['subject_updated'])): ?>
+            <div class="success">✓ Asignatura actualizada correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['subject_deleted'])): ?>
+            <div class="success">✓ Asignatura eliminada correctamente</div>
+        <?php endif; ?>
+        
+        <?php if(isset($_GET['sy_created'])): ?>
+            <div class="success">✓ Año lectivo creado correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['sy_updated'])): ?>
+            <div class="success">✓ Año lectivo actualizado correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['sy_deleted'])): ?>
+            <div class="success">✓ Año lectivo eliminado correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['sy_activated'])): ?>
+            <div class="success">✓ Año lectivo activado correctamente</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['sy_deactivated'])): ?>
+            <div class="success">✓ Año lectivo desactivado correctamente</div>
         <?php endif; ?>
 
         <?php if(isset($_GET['error']) && $_GET['error'] === 'no_active_year'): ?>
             <div class="error">✗ No hay un año lectivo activo</div>
         <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'course_not_found'): ?>
+            <div class="error">✗ Curso no encontrado</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'course_has_students'): ?>
+            <div class="error">✗ No se puede eliminar el curso porque tiene estudiantes matriculados</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'course_has_assignments'): ?>
+            <div class="error">✗ No se puede eliminar el curso porque tiene asignaciones docentes</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'subject_not_found'): ?>
+            <div class="error">✗ Asignatura no encontrada</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'subject_has_assignments'): ?>
+            <div class="error">✗ No se puede eliminar la asignatura porque tiene asignaciones docentes</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'cannot_delete_active'): ?>
+            <div class="error">✗ No se puede eliminar el año lectivo activo</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'has_courses'): ?>
+            <div class="error">✗ No se puede eliminar el año lectivo porque tiene cursos asociados</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'year_not_found'): ?>
+            <div class="error">✗ Año lectivo no encontrado</div>
+        <?php endif; ?>
+
+        <!-- Años Lectivos -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">📅 Años Lectivos</h2>
+                <button onclick="location.href='?action=create_school_year'" class="btn-primary" style="margin: 0;">
+                    + Crear Año Lectivo
+                </button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if(empty($schoolYears)): ?>
+                        <tr>
+                            <td colspan="6" style="text-align:center; color: #999;">No hay años lectivos registrados</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php $counter = 1; foreach($schoolYears as $year): ?>
+                        <tr style="<?= $year['is_active'] ? 'background: #e7f3ff;' : '' ?>">
+                            <td><?= $counter++ ?></td>
+                            <td><strong><?= htmlspecialchars($year['name']) ?></strong></td>
+                            <td><?= date('d/m/Y', strtotime($year['start_date'])) ?></td>
+                            <td><?= date('d/m/Y', strtotime($year['end_date'])) ?></td>
+                            <td>
+                                <?php if($year['is_active']): ?>
+                                    <span style="background: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                                        ✓ ACTIVO
+                                    </span>
+                                <?php else: ?>
+                                    <span style="background: #6c757d; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px;">
+                                        Inactivo
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="white-space: nowrap;">
+                                <button onclick="location.href='?action=edit_school_year&id=<?= $year['id'] ?>'" 
+                                        style="padding: 5px 10px; font-size: 12px; background: #ffc107; color: #212529;">
+                                    ✏️ Editar
+                                </button>
+                                
+                                <?php if($year['is_active']): ?>
+                                    <form method="POST" action="?action=deactivate_school_year" style="display: inline;" 
+                                          onsubmit="return confirm('¿Desactivar este año lectivo?')">
+                                        <input type="hidden" name="year_id" value="<?= $year['id'] ?>">
+                                        <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #6c757d;">
+                                            ⊘ Desactivar
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <form method="POST" action="?action=activate_school_year" style="display: inline;" 
+                                          onsubmit="return confirm('¿Activar este año lectivo? Se desactivarán los demás.')">
+                                        <input type="hidden" name="year_id" value="<?= $year['id'] ?>">
+                                        <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #28a745;">
+                                            ✓ Activar
+                                        </button>
+                                    </form>
+                                    
+                                    <form method="POST" action="?action=delete_school_year" style="display: inline;" 
+                                          onsubmit="return confirmDelete(event, '<?= htmlspecialchars($year['name']) ?>')">
+                                        <input type="hidden" name="year_id" value="<?= $year['id'] ?>">
+                                        <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">
+                                            🗑️ Eliminar
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
 
         <div class="grid">
             <!-- Crear Curso -->
@@ -138,7 +273,7 @@
                         <th>Nivel</th>
                         <th>Paralelo</th>
                         <th>Jornada</th>
-                        <th>Acción</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -149,11 +284,22 @@
                         <td><?= $course['grade_level'] ?></td>
                         <td><?= $course['parallel'] ?></td>
                         <td><?= ucfirst($course['shift_name']) ?></td>
-                        <td>
+                        <td style="white-space: nowrap;">
                             <button onclick="location.href='?action=view_course_students&course_id=<?= $course['id'] ?>'" 
-                                    style="padding: 5px 10px; font-size: 12px;">
-                                Ver Estudiantes
+                                    style="padding: 5px 10px; font-size: 12px; background: #007bff;">
+                                👥 Estudiantes
                             </button>
+                            <button onclick="location.href='?action=edit_course&id=<?= $course['id'] ?>'" 
+                                    style="padding: 5px 10px; font-size: 12px; background: #ffc107; color: #000;">
+                                ✏️ Editar
+                            </button>
+                            <form method="POST" action="?action=delete_course" style="display: inline;" 
+                                  onsubmit="return confirmDeleteCourse(event, '<?= addslashes($course['name']) ?>')">
+                                <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
+                                <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">
+                                    🗑️ Eliminar
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -173,6 +319,7 @@
                         <th>ID</th>
                         <th>Código</th>
                         <th>Nombre</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -181,11 +328,158 @@
                         <td><?= $subject['id'] ?></td>
                         <td><?= $subject['code'] ?></td>
                         <td><?= $subject['name'] ?></td>
+                        <td style="white-space: nowrap;">
+                            <button onclick="location.href='?action=edit_subject&id=<?= $subject['id'] ?>'" 
+                                    style="padding: 5px 10px; font-size: 12px; background: #ffc107; color: #000;">
+                                ✏️ Editar
+                            </button>
+                            <form method="POST" action="?action=delete_subject" style="display: inline;" 
+                                  onsubmit="return confirmDeleteSubject(event, '<?= addslashes($subject['name']) ?>')">
+                                <input type="hidden" name="subject_id" value="<?= $subject['id'] ?>">
+                                <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">
+                                    🗑️ Eliminar
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
     </div>
+
+    <script>
+    function confirmDeleteCourse(event, courseName) {
+        event.preventDefault();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Curso</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">
+                ¿Está seguro de eliminar el curso <strong>${courseName}</strong>?
+            </p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
+                <strong>Nota:</strong> No se puede eliminar si tiene estudiantes o asignaciones docentes.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelDeleteBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmDeleteBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sí, Eliminar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const form = event.target;
+        
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+            form.submit();
+        };
+        
+        document.getElementById('cancelDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+        };
+        
+        return false;
+    }
+
+    function confirmDeleteSubject(event, subjectName) {
+        event.preventDefault();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Asignatura</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">
+                ¿Está seguro de eliminar la asignatura <strong>${subjectName}</strong>?
+            </p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
+                <strong>Nota:</strong> No se puede eliminar si tiene asignaciones docentes.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelDeleteSubBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmDeleteSubBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sí, Eliminar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const form = event.target;
+        
+        document.getElementById('confirmDeleteSubBtn').onclick = function() {
+            document.body.removeChild(modal);
+            form.submit();
+        };
+        
+        document.getElementById('cancelDeleteSubBtn').onclick = function() {
+            document.body.removeChild(modal);
+        };
+        
+        return false;
+    }
+
+    function confirmDelete(event, yearName) {
+        event.preventDefault();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Año Lectivo</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">
+                ¿Está seguro de eliminar el año lectivo <strong>${yearName}</strong>?
+            </p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
+                <strong>Nota:</strong> No se puede eliminar si tiene cursos asociados.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelDeleteBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmDeleteBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sí, Eliminar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        const form = event.target;
+        
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+            form.submit();
+        };
+        
+        document.getElementById('cancelDeleteBtn').onclick = function() {
+            document.body.removeChild(modal);
+        };
+        
+        return false;
+    }
+    </script>
 </body>
 </html>

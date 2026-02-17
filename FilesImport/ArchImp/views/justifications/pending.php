@@ -42,6 +42,7 @@
                 <thead>
                     <tr>
                         <th>Estudiante</th>
+                        <th>Curso</th>
                         <th>Fecha Ausencia</th>
                         <th>Asignatura</th>
                         <th>Presentado por</th>
@@ -53,12 +54,13 @@
                     <?php foreach($justifications as $just): ?>
                     <tr>
                         <td><?= $just['student_name'] ?></td>
+                        <td><?= $just['course_name'] ?? '-' ?></td>
                         <td><?= date('d/m/Y', strtotime($just['attendance_date'])) ?></td>
                         <td><?= $just['subject_name'] ?></td>
                         <td><?= $just['submitted_by_name'] ?></td>
                         <td><?= date('d/m/Y H:i', strtotime($just['created_at'])) ?></td>
                         <td>
-                            <button class="btn btn-view" onclick="viewJustification(<?= $just['id'] ?>, '<?= addslashes($just['reason']) ?>', '<?= $just['document_path'] ?>')">Ver</button>
+                            <button class="btn btn-view" onclick="viewJustification(<?= $just['id'] ?>, '<?= addslashes($just['reason']) ?>', '<?= $just['document_path'] ?? '' ?>')">Ver</button>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -90,26 +92,40 @@
     </div>
 
     <script>
-        function viewJustification(id, reason, document) {
-            document.getElementById('justification_id').value = id;
+        function viewJustification(id, reason, docPath) {
+            const justificationIdInput = window.document.querySelector('#justification_id');
+            const modalBody = window.document.querySelector('#modal-body');
+            const modal = window.document.querySelector('#modal');
+            
+            if (!justificationIdInput || !modalBody || !modal) {
+                console.error('Elementos del modal no encontrados');
+                return;
+            }
+            
+            justificationIdInput.value = id;
             
             let html = '<p><strong>Motivo:</strong></p><p>' + reason + '</p>';
             
-            if (document) {
-                html += '<p style="margin-top: 15px;"><strong>Documento:</strong> <a href="/' + document + '" target="_blank">Ver archivo adjunto</a></p>';
+            if (docPath && docPath.length > 0) {
+                html += '<p style="margin-top: 15px;"><strong>Documento:</strong> <a href="<?= BASE_URL ?>/' + docPath + '" target="_blank" style="color: #007bff; text-decoration: underline;">📎 Ver archivo adjunto</a></p>';
+            } else {
+                html += '<p style="margin-top: 15px; color: #999;"><em>Sin documento adjunto</em></p>';
             }
             
-            document.getElementById('modal-body').innerHTML = html;
-            document.getElementById('modal').style.display = 'block';
+            modalBody.innerHTML = html;
+            modal.style.display = 'block';
         }
 
         function closeModal() {
-            document.getElementById('modal').style.display = 'none';
+            const modal = window.document.querySelector('#modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
         window.onclick = function(event) {
-            const modal = document.getElementById('modal');
-            if (event.target == modal) {
+            const modal = window.document.querySelector('#modal');
+            if (modal && event.target == modal) {
                 closeModal();
             }
         }
