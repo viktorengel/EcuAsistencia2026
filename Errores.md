@@ -11,3 +11,5 @@ debe haber un módulo en la configuración del sistema que se pueda registrar cu
 Quiero póder importar desde excel o csv los datos de los estudiantes, docentes, asignaturas, etc
 
 Al registar un docente se deberia tomar en cuenta su titulo y experienca.
+
+Error al crear curso, se genera asi 1.º BT "A" - Informática (Soporte Técnico) - Matutina y aparece asi:  	1.º BT &quot;A&quot; - Informática (Soporte Técnico) - Matutina
