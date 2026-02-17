@@ -38,8 +38,8 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Matriculación
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 11 | Matricular estudiantes a cursos | ✅ Implementado | mejorar
-| 12 | Retirar estudiante de curso | ✅ Implementado | ✗ No se puede eliminar la asignatura porque tiene asignaciones docentes
+| 11 | Matricular estudiantes a cursos | ✅ Implementado | mejorar poder matricular varios estudiantes con algun buscador
+| 12 | Retirar estudiante de curso | ✅ Implementado |
 
 ### Horarios
 | # | Funcionalidad | Estado |
@@ -83,16 +83,16 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Respaldos y Logs
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 32 | Crear respaldos de base de datos | ✅ Implementado | ✗ Error al crear el respaldo. Verifique la configuración de MySQL.
-| 33 | Descargar respaldos | ✅ Implementado | Tamaño 0.00 KB Vacio el sql
+| 32 | Crear respaldos de base de datos | ✅ Implementado |
+| 33 | Descargar respaldos | ✅ Implementado |
 | 34 | Ver logs de actividad del sistema |  |
 
 ### Representantes
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
 | 35 | Vincular representante-estudiante | ✅ Implementado | Mejorar no se entiende
-| 36 | Desvincular representante-estudiante |  |
-| 37 | Marcar representante como principal | ✅ Implementado |
+| 36 | Desvincular representante-estudiante | ✅ Implementado |
+| 37 | Marcar representante como principal | ✅ Implementado | pero no hay como cambiar a secundario
 
 ### Sistema
 | # | Funcionalidad | Estado |
@@ -118,11 +118,11 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Justificaciones
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 5 | Ver todas las justificaciones pendientes |  | Revisar
+| 5 | Ver todas las justificaciones pendientes | ✅ Implementado |
 | 6 | Ver justificaciones aprobadas |  |
 | 7 | Ver justificaciones rechazadas |  |
-| 8 | Aprobar justificaciones |  |
-| 9 | Rechazar justificaciones |  |
+| 8 | Aprobar justificaciones | ✅ Implementado |
+| 9 | Rechazar justificaciones | ✅ Implementado |
 | 10 | Descargar documentos de justificación |  |
 
 ### Estadísticas y Búsqueda
@@ -138,8 +138,8 @@ Funcionalidad: Crear/editar/eliminar usuarios
 ### Perfil
 | # | Funcionalidad | Estado |
 |---|---------------|--------|
-| 17 | Editar su propio perfil |  |
-| 18 | Cambiar su propia contraseña |  |
+| 17 | Editar su propio perfil | ✅ Implementado |
+| 18 | Cambiar su propia contraseña | ✅ Implementado |
 
 ### Casos Especiales
 | # | Funcionalidad | Estado |
