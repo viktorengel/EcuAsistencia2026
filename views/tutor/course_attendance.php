@@ -165,7 +165,7 @@ $hasFilters = !empty($filters['subject_id']) || !empty($filters['student_id'])
         <div class="filter-grid">
             <div>
                 <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Asignatura</label>
-                <select name="subject_id" id="f_subject" class="<?= !empty($filters['subject_id']) ? 'on' : '' ?>">
+                <select name="subject_id" id="f_subject" onchange="runFilter()" class="<?= !empty($filters['subject_id']) ? 'on' : '' ?>">
                     <option value="">— Todas —</option>
                     <?php foreach ($subjects as $s): ?>
                         <option value="<?= $s['id'] ?>" <?= ($filters['subject_id'] ?? '') == $s['id'] ? 'selected' : '' ?>>
@@ -176,7 +176,7 @@ $hasFilters = !empty($filters['subject_id']) || !empty($filters['student_id'])
             </div>
             <div>
                 <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Estudiante</label>
-                <select name="student_id" id="f_student" class="<?= !empty($filters['student_id']) ? 'on' : '' ?>">
+                <select name="student_id" id="f_student" onchange="runFilter()" class="<?= !empty($filters['student_id']) ? 'on' : '' ?>">
                     <option value="">— Todos —</option>
                     <?php foreach ($students as $st): ?>
                         <option value="<?= $st['id'] ?>" <?= ($filters['student_id'] ?? '') == $st['id'] ? 'selected' : '' ?>>
@@ -187,7 +187,7 @@ $hasFilters = !empty($filters['subject_id']) || !empty($filters['student_id'])
             </div>
             <div>
                 <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Estado</label>
-                <select name="status" id="f_status" class="<?= !empty($filters['status']) ? 'on' : '' ?>">
+                <select name="status" id="f_status" onchange="runFilter()" class="<?= !empty($filters['status']) ? 'on' : '' ?>">
                     <option value="">— Todos —</option>
                     <option value="presente"    <?= ($filters['status'] ?? '') === 'presente'    ? 'selected' : '' ?>>Presente</option>
                     <option value="ausente"     <?= ($filters['status'] ?? '') === 'ausente'     ? 'selected' : '' ?>>Ausente</option>
@@ -197,13 +197,13 @@ $hasFilters = !empty($filters['subject_id']) || !empty($filters['student_id'])
             </div>
             <div>
                 <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Desde</label>
-                <input type="date" name="start_date" id="f_start"
+                <input type="date" name="start_date" id="f_start" onchange="runFilter()"
                        value="<?= htmlspecialchars($filters['start_date'] ?? '') ?>"
                        class="<?= !empty($filters['start_date']) ? 'on' : '' ?>">
             </div>
             <div>
                 <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Hasta</label>
-                <input type="date" name="end_date" id="f_end"
+                <input type="date" name="end_date" id="f_end" onchange="runFilter()"
                        value="<?= htmlspecialchars($filters['end_date'] ?? '') ?>"
                        class="<?= !empty($filters['end_date']) ? 'on' : '' ?>">
             </div>
@@ -258,10 +258,6 @@ var SL = {
     'justificado': { label:'Justificado', color:'#17a2b8', bg:'#d1ecf1' },
 };
 
-// Escuchar cambios en todos los filtros
-['f_subject','f_student','f_status','f_start','f_end'].forEach(function(id){
-    document.getElementById(id).addEventListener('change', runFilter);
-});
 
 function getVals() {
     return {

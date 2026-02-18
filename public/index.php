@@ -497,15 +497,10 @@ switch ($action) {
         (new NotificationController())->getUnread();
         break;
 
-    case 'tutor_course_attendance':
-        require_once BASE_PATH . '/controllers/TutorController.php';
-        (new TutorController())->courseAttendance();
-        break;
-
-    /*case 'tutor_course_attendance_ajax':
+    case 'tutor_course_attendance_ajax':
         require_once BASE_PATH . '/controllers/TutorController.php';
         (new TutorController())->ajax();
-        break;*/
+        break;
 
     default:
         header('Location: ?action=login');
