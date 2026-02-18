@@ -93,6 +93,12 @@ if (isset($_SESSION['user_id'])) {
                     </a>
                     <?php endif; ?>
 
+                    <?php if(Security::hasRole('docente')): ?>
+                    <a href="?action=tutor_course_attendance" class="<?= $current_page == 'tutor_course_attendance' ? 'active' : '' ?>">
+                        🎓 Asistencia de Mi Curso
+                    </a>
+                    <?php endif; ?>
+
                     <?php if(Security::hasRole(['docente', 'inspector', 'autoridad'])): ?>
                     <a href="?action=attendance_view" class="<?= $current_page == 'attendance_view' ? 'active' : '' ?>">
                         📊 Ver Asistencias
