@@ -89,6 +89,17 @@
                 <div class="stat-number"><?= $stats['my_students'] ?></div>
                 <div class="stat-label">Mis Estudiantes</div>
             </div>
+            <?php if(!empty($stats['tutor_course'])): ?>
+            <div class="stat-card purple" style="grid-column: span 1;">
+                <div style="font-size: 28px; margin-bottom: 6px;">🎓</div>
+                <div style="font-size: 13px; font-weight: bold; color: #6f42c1; margin-bottom: 4px;">
+                    Soy Tutor de:
+                </div>
+                <div style="font-size: 14px; color: #333; font-weight: bold;">
+                    <?= htmlspecialchars($stats['tutor_course']) ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 

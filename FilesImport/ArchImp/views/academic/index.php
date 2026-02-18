@@ -183,33 +183,83 @@
             <div class="card">
                 <h2>Crear Curso</h2>
                 <form method="POST" action="?action=create_course" id="courseForm">
+
+                    <!-- NIVEL EDUCATIVO -->
                     <div class="form-group">
-                        <label>Nivel</label>
-                        <select name="grade_level" id="grade_level" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="8vo EGB">8vo EGB</option>
-                            <option value="9no EGB">9no EGB</option>
-                            <option value="10mo EGB">10mo EGB</option>
-                            <option value="1ro BGU">1ro BGU</option>
-                            <option value="2do BGU">2do BGU</option>
-                            <option value="3ro BGU">3ro BGU</option>
-                            <option value="1ro Técnico">1ro Técnico</option>
-                            <option value="2do Técnico">2do Técnico</option>
-                            <option value="3ro Técnico">3ro Técnico</option>
+                        <label>Nivel Educativo</label>
+                        <select name="education_type" id="education_type" required onchange="updateGradeLevels()">
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="inicial">🧒 Educación Inicial</option>
+                            <option value="egb">📘 Educación General Básica (EGB)</option>
+                            <option value="bgu">🎓 Bachillerato General Unificado (BGU)</option>
+                            <option value="bt">🛠 Bachillerato Técnico (BT)</option>
                         </select>
                     </div>
+
+                    <!-- GRADO -->
+                    <div class="form-group" id="group_grade">
+                        <label>Grado / Año</label>
+                        <select name="grade_level" id="grade_level" required onchange="onGradeChange()">
+                            <option value="">Seleccione nivel primero...</option>
+                        </select>
+                    </div>
+
+                    <!-- FIGURA PROFESIONAL (solo BT) -->
+                    <div class="form-group" id="group_specialty" style="display:none;">
+                        <label>Figura Profesional</label>
+                        <select name="specialty" id="specialty" onchange="updateCarreras()">
+                            <option value="">Seleccionar figura...</option>
+                            <option value="Informática">Informática</option>
+                            <option value="Administración">Administración</option>
+                            <option value="Contabilidad">Contabilidad</option>
+                            <option value="Comercialización y Ventas">Comercialización y Ventas</option>
+                            <option value="Servicios Hoteleros">Servicios Hoteleros</option>
+                            <option value="Turismo">Turismo</option>
+                            <option value="Electromecánica Automotriz">Electromecánica Automotriz</option>
+                            <option value="Instalaciones Eléctricas">Instalaciones Eléctricas</option>
+                            <option value="Electrónica de Consumo">Electrónica de Consumo</option>
+                            <option value="Mecanizado y Construcciones Metálicas">Mecanizado y Construcciones Metálicas</option>
+                            <option value="Producción Agropecuaria">Producción Agropecuaria</option>
+                            <option value="Acuicultura">Acuicultura</option>
+                            <option value="Industrialización de Alimentos">Industrialización de Alimentos</option>
+                            <option value="Confección Textil">Confección Textil</option>
+                            <option value="Música">Música</option>
+                            <option value="Artes Plásticas">Artes Plásticas</option>
+                            <option value="Diseño Gráfico">Diseño Gráfico</option>
+                            <option value="Servicios de Belleza">Servicios de Belleza</option>
+                            <option value="Atención Integral en Salud">Atención Integral en Salud</option>
+                            <option value="Mecatrónica">Mecatrónica</option>
+                            <option value="Refrigeración y Climatización">Refrigeración y Climatización</option>
+                            <option value="Construcción">Construcción</option>
+                            <option value="Redes y Telecomunicaciones">Redes y Telecomunicaciones</option>
+                            <option value="Seguridad Industrial">Seguridad Industrial</option>
+                            <option value="Logística y Transporte">Logística y Transporte</option>
+                        </select>
+                    </div>
+
+                    <!-- ESPECIALIDAD / CARRERA (solo BT) -->
+                    <div class="form-group" id="group_carrera" style="display:none;">
+                        <label>Especialidad / Carrera <span style="color:#999; font-weight:normal;">(opcional)</span></label>
+                        <select name="carrera" id="carrera" onchange="generateCourseName()">
+                            <option value="">Sin especificar</option>
+                        </select>
+                    </div>
+
+                    <!-- PARALELO -->
                     <div class="form-group">
                         <label>Paralelo</label>
-                        <select name="parallel" id="parallel" required>
+                        <select name="parallel" id="parallel" required onchange="generateCourseName()">
                             <option value="">Seleccionar...</option>
-                            <?php foreach(range('A', 'Z') as $letter): ?>
+                            <?php foreach(range('A', 'J') as $letter): ?>
                                 <option value="<?= $letter ?>"><?= $letter ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
+
+                    <!-- JORNADA -->
                     <div class="form-group">
                         <label>Jornada</label>
-                        <select name="shift_id" id="shift_id" required>
+                        <select name="shift_id" id="shift_id" required onchange="generateCourseName()">
                             <option value="">Seleccionar...</option>
                             <?php foreach($shifts as $shift): ?>
                                 <option value="<?= $shift['id'] ?>" data-shift="<?= $shift['name'] ?>">
@@ -218,31 +268,161 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
+
+                    <!-- NOMBRE GENERADO -->
                     <div class="form-group">
-                        <label>Nombre del Curso (generado automáticamente)</label>
-                        <input type="text" name="name" id="course_name" readonly style="background: #f0f0f0;">
+                        <label>Nombre del Curso <span style="color:#999; font-weight:normal;">(generado automáticamente)</span></label>
+                        <input type="text" name="name" id="course_name" readonly 
+                               style="background: #f0f0f0; font-weight: bold; color: #333;">
                     </div>
+
                     <button type="submit">Crear Curso</button>
                 </form>
             </div>
 
             <script>
-            function generateCourseName() {
-                const level = document.getElementById('grade_level').value;
-                const parallel = document.getElementById('parallel').value;
-                const shiftSelect = document.getElementById('shift_id');
-                const shiftOption = shiftSelect.options[shiftSelect.selectedIndex];
-                const shiftName = shiftOption ? shiftOption.getAttribute('data-shift') : '';
-                
-                if (level && parallel && shiftName) {
-                    const courseName = `${level} "${parallel}" - ${shiftName.charAt(0).toUpperCase() + shiftName.slice(1)}`;
-                    document.getElementById('course_name').value = courseName;
+            const gradeLevels = {
+                inicial: [
+                    'Inicial 1 (0-3 años)',
+                    'Inicial 2 (3-5 años)'
+                ],
+                egb: [
+                    '1.º EGB - Preparatoria',
+                    '2.º EGB', '3.º EGB', '4.º EGB',
+                    '5.º EGB', '6.º EGB', '7.º EGB',
+                    '8.º EGB', '9.º EGB', '10.º EGB'
+                ],
+                bgu: ['1.º BGU', '2.º BGU', '3.º BGU'],
+                bt:  ['1.º BT', '2.º BT', '3.º BT']
+            };
+
+            // Grados EGB donde se permite jornada nocturna
+            const egbNocturnaAllowed = ['8.º EGB', '9.º EGB', '10.º EGB'];
+
+            const carreras = {
+                'Informática': ['Aplicaciones Informáticas','Programación de Software','Soporte Técnico','Sistemas Microinformáticos y Redes'],
+                'Administración': ['Asistencia Administrativa','Gestión Empresarial'],
+                'Contabilidad': ['Contabilidad','Ventas e Información Comercial'],
+                'Comercialización y Ventas': ['Ventas e Información Comercial','Marketing'],
+                'Servicios Hoteleros': ['Hotelería','Hospitalidad'],
+                'Turismo': ['Turismo','Guía Turístico'],
+                'Electromecánica Automotriz': ['Electromecánica Automotriz','Mecánica Automotriz'],
+                'Instalaciones Eléctricas': ['Electricidad','Instalaciones Eléctricas'],
+                'Electrónica de Consumo': ['Electrónica','Mantenimiento Electrónico'],
+                'Atención Integral en Salud': ['Atención en Enfermería','Auxiliar de Salud'],
+                'Producción Agropecuaria': ['Producción Agropecuaria','Agroindustria'],
+                'Redes y Telecomunicaciones': ['Redes','Telecomunicaciones'],
+                'Diseño Gráfico': ['Diseño Gráfico','Multimedia'],
+                'Servicios de Belleza': ['Peluquería','Cosmetología']
+            };
+
+            function getNocturnaOption() {
+                const opts = document.getElementById('shift_id').options;
+                for (let i = 0; i < opts.length; i++) {
+                    if ((opts[i].getAttribute('data-shift') || '').toLowerCase() === 'nocturna') return opts[i];
+                }
+                return null;
+            }
+
+            function updateNocturnaVisibility(type, grade) {
+                const nocturna = getNocturnaOption();
+                if (!nocturna) return;
+
+                let visible = false;
+                if (type === 'bgu' || type === 'bt') {
+                    visible = true;
+                } else if (type === 'egb' && egbNocturnaAllowed.includes(grade)) {
+                    visible = true;
+                }
+
+                nocturna.style.display = visible ? '' : 'none';
+
+                // Si estaba seleccionada y ya no aplica, limpiar
+                if (!visible && nocturna.selected) {
+                    document.getElementById('shift_id').value = '';
+                    generateCourseName();
                 }
             }
-            
-            document.getElementById('grade_level').addEventListener('change', generateCourseName);
-            document.getElementById('parallel').addEventListener('change', generateCourseName);
-            document.getElementById('shift_id').addEventListener('change', generateCourseName);
+
+            function updateGradeLevels() {
+                const type = document.getElementById('education_type').value;
+                const gradeSelect = document.getElementById('grade_level');
+
+                gradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+                document.getElementById('course_name').value = '';
+
+                if (!type) return;
+
+                (gradeLevels[type] || []).forEach(function(g) {
+                    const opt = document.createElement('option');
+                    opt.value = g;
+                    opt.textContent = g;
+                    gradeSelect.appendChild(opt);
+                });
+
+                // Mostrar/ocultar campos BT
+                const isBT = (type === 'bt');
+                document.getElementById('group_specialty').style.display = isBT ? 'block' : 'none';
+                document.getElementById('group_carrera').style.display = isBT ? 'block' : 'none';
+                document.getElementById('specialty').required = isBT;
+
+                if (!isBT) {
+                    document.getElementById('specialty').value = '';
+                    document.getElementById('carrera').innerHTML = '<option value="">Sin especificar</option>';
+                }
+
+                updateNocturnaVisibility(type, '');
+                generateCourseName();
+            }
+
+            function onGradeChange() {
+                const type = document.getElementById('education_type').value;
+                const grade = document.getElementById('grade_level').value;
+                updateNocturnaVisibility(type, grade);
+                generateCourseName();
+            }
+
+            function updateCarreras() {
+                const fig = document.getElementById('specialty').value;
+                const carreraSelect = document.getElementById('carrera');
+                carreraSelect.innerHTML = '<option value="">Sin especificar</option>';
+
+                if (carreras[fig]) {
+                    carreras[fig].forEach(function(c) {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        carreraSelect.appendChild(opt);
+                    });
+                }
+                generateCourseName();
+            }
+
+            function generateCourseName() {
+                const grade    = document.getElementById('grade_level').value;
+                const parallel = document.getElementById('parallel').value;
+                const shiftSelect = document.getElementById('shift_id');
+                const shiftOpt = shiftSelect.options[shiftSelect.selectedIndex];
+                const shiftName = shiftOpt ? (shiftOpt.getAttribute('data-shift') || '') : '';
+                const type     = document.getElementById('education_type').value;
+                const specialty = document.getElementById('specialty').value;
+                const carrera  = document.getElementById('carrera').value;
+
+                if (!grade || !parallel || !shiftName) {
+                    document.getElementById('course_name').value = '';
+                    return;
+                }
+
+                let name = grade + ' "' + parallel + '"';
+
+                if (type === 'bt' && specialty) {
+                    name += ' - ' + specialty;
+                    if (carrera) name += ' (' + carrera + ')';
+                }
+
+                name += ' - ' + shiftName.charAt(0).toUpperCase() + shiftName.slice(1);
+                document.getElementById('course_name').value = name;
+            }
             </script>
 
             <!-- Crear Asignatura -->
@@ -280,9 +460,9 @@
                     <?php foreach($courses as $course): ?>
                     <tr>
                         <td><?= $course['id'] ?></td>
-                        <td><?= $course['name'] ?></td>
-                        <td><?= $course['grade_level'] ?></td>
-                        <td><?= $course['parallel'] ?></td>
+                        <td><?= htmlspecialchars($course['name']) ?></td>
+                        <td><?= htmlspecialchars($course['grade_level']) ?></td>
+                        <td><?= htmlspecialchars($course['parallel']) ?></td>
                         <td><?= ucfirst($course['shift_name']) ?></td>
                         <td style="white-space: nowrap;">
                             <button onclick="location.href='?action=view_course_students&course_id=<?= $course['id'] ?>'" 
@@ -294,7 +474,7 @@
                                 ✏️ Editar
                             </button>
                             <form method="POST" action="?action=delete_course" style="display: inline;" 
-                                  onsubmit="return confirmDeleteCourse(event, '<?= addslashes($course['name']) ?>')">
+                                  onsubmit="return confirmDeleteCourse(event, '<?= htmlspecialchars(addslashes($course['name'])) ?>')">
                                 <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
                                 <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">
                                     🗑️ Eliminar
@@ -326,15 +506,15 @@
                     <?php foreach($subjects as $subject): ?>
                     <tr>
                         <td><?= $subject['id'] ?></td>
-                        <td><?= $subject['code'] ?></td>
-                        <td><?= $subject['name'] ?></td>
+                        <td><?= htmlspecialchars($subject['code']) ?></td>
+                        <td><?= htmlspecialchars($subject['name']) ?></td>
                         <td style="white-space: nowrap;">
                             <button onclick="location.href='?action=edit_subject&id=<?= $subject['id'] ?>'" 
                                     style="padding: 5px 10px; font-size: 12px; background: #ffc107; color: #000;">
                                 ✏️ Editar
                             </button>
                             <form method="POST" action="?action=delete_subject" style="display: inline;" 
-                                  onsubmit="return confirmDeleteSubject(event, '<?= addslashes($subject['name']) ?>')">
+                                  onsubmit="return confirmDeleteSubject(event, '<?= htmlspecialchars(addslashes($subject['name'])) ?>')">
                                 <input type="hidden" name="subject_id" value="<?= $subject['id'] ?>">
                                 <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">
                                     🗑️ Eliminar
@@ -351,133 +531,67 @@
     <script>
     function confirmDeleteCourse(event, courseName) {
         event.preventDefault();
-        
         const modal = document.createElement('div');
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        
         const modalContent = document.createElement('div');
         modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        
         modalContent.innerHTML = `
             <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Curso</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">
-                ¿Está seguro de eliminar el curso <strong>${courseName}</strong>?
-            </p>
-            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
-                <strong>Nota:</strong> No se puede eliminar si tiene estudiantes o asignaciones docentes.
-            </p>
+            <p style="margin: 0 0 20px 0; color: #666;">¿Está seguro de eliminar el curso <strong>${courseName}</strong>?</p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;"><strong>Nota:</strong> No se puede eliminar si tiene estudiantes o asignaciones docentes.</p>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelDeleteBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="confirmDeleteBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Sí, Eliminar
-                </button>
-            </div>
-        `;
-        
+                <button type="button" id="cancelCourseBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="confirmCourseBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Sí, Eliminar</button>
+            </div>`;
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
-        
         const form = event.target;
-        
-        document.getElementById('confirmDeleteBtn').onclick = function() {
-            document.body.removeChild(modal);
-            form.submit();
-        };
-        
-        document.getElementById('cancelDeleteBtn').onclick = function() {
-            document.body.removeChild(modal);
-        };
-        
+        document.getElementById('confirmCourseBtn').onclick = function() { document.body.removeChild(modal); form.submit(); };
+        document.getElementById('cancelCourseBtn').onclick = function() { document.body.removeChild(modal); };
         return false;
     }
 
     function confirmDeleteSubject(event, subjectName) {
         event.preventDefault();
-        
         const modal = document.createElement('div');
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        
         const modalContent = document.createElement('div');
         modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        
         modalContent.innerHTML = `
             <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Asignatura</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">
-                ¿Está seguro de eliminar la asignatura <strong>${subjectName}</strong>?
-            </p>
-            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
-                <strong>Nota:</strong> No se puede eliminar si tiene asignaciones docentes.
-            </p>
+            <p style="margin: 0 0 20px 0; color: #666;">¿Está seguro de eliminar la asignatura <strong>${subjectName}</strong>?</p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;"><strong>Nota:</strong> No se puede eliminar si tiene asignaciones docentes.</p>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelDeleteSubBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="confirmDeleteSubBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Sí, Eliminar
-                </button>
-            </div>
-        `;
-        
+                <button type="button" id="cancelSubBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="confirmSubBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Sí, Eliminar</button>
+            </div>`;
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
-        
         const form = event.target;
-        
-        document.getElementById('confirmDeleteSubBtn').onclick = function() {
-            document.body.removeChild(modal);
-            form.submit();
-        };
-        
-        document.getElementById('cancelDeleteSubBtn').onclick = function() {
-            document.body.removeChild(modal);
-        };
-        
+        document.getElementById('confirmSubBtn').onclick = function() { document.body.removeChild(modal); form.submit(); };
+        document.getElementById('cancelSubBtn').onclick = function() { document.body.removeChild(modal); };
         return false;
     }
 
     function confirmDelete(event, yearName) {
         event.preventDefault();
-        
         const modal = document.createElement('div');
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        
         const modalContent = document.createElement('div');
         modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        
         modalContent.innerHTML = `
             <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Año Lectivo</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">
-                ¿Está seguro de eliminar el año lectivo <strong>${yearName}</strong>?
-            </p>
-            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
-                <strong>Nota:</strong> No se puede eliminar si tiene cursos asociados.
-            </p>
+            <p style="margin: 0 0 20px 0; color: #666;">¿Está seguro de eliminar el año lectivo <strong>${yearName}</strong>?</p>
+            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;"><strong>Nota:</strong> No se puede eliminar si tiene cursos asociados.</p>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelDeleteBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="confirmDeleteBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Sí, Eliminar
-                </button>
-            </div>
-        `;
-        
+                <button type="button" id="cancelYearBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="confirmYearBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Sí, Eliminar</button>
+            </div>`;
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
-        
         const form = event.target;
-        
-        document.getElementById('confirmDeleteBtn').onclick = function() {
-            document.body.removeChild(modal);
-            form.submit();
-        };
-        
-        document.getElementById('cancelDeleteBtn').onclick = function() {
-            document.body.removeChild(modal);
-        };
-        
+        document.getElementById('confirmYearBtn').onclick = function() { document.body.removeChild(modal); form.submit(); };
+        document.getElementById('cancelYearBtn').onclick = function() { document.body.removeChild(modal); };
         return false;
     }
     </script>

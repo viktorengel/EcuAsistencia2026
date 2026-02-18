@@ -82,6 +82,7 @@ $current_page = $_GET['action'] ?? 'dashboard';
                     <a href="?action=pending_justifications" class="<?= $current_page == 'pending_justifications' ? 'active' : '' ?>">
                         ✅ Revisar Justificaciones
                     </a>
+                    <a href="?action=reviewed_justifications">📋 Justificaciones Revisadas</a>
                     <?php endif; ?>
                 </div>
             </div>

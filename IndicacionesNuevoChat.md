@@ -1,4 +1,4 @@
-Analiza estos archivos que te envío para dar continuidad un sistema que estoy construyendo y luego ayudame con  algunas mejoras o cambios.
+Analiza estos archivos que te envío para dar continuidad un sistema que estoy construyendo y luego ayúdame con  algunas mejoras o cambios.
 
 ## Indicaciones nuevo chat
 1. Identificaba el archivo exacto

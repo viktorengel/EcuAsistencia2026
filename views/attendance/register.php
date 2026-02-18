@@ -49,7 +49,7 @@
         <div class="card">
             <h2>Mis Clases de Hoy</h2>
             <div class="warning">
-                ⚠ <strong>Importante:</strong> La asistencia registrada hoy podrá corregirse hasta 48 horas hábiles después (<?= date('d/m/Y', strtotime($maxEditDate)) ?>).
+                ⚠ <strong>Importante:</strong> Puede registrar asistencia de hoy o corregir registros anteriores hasta el <?= date('d/m/Y', strtotime($maxEditDate)) ?>.
             </div>
 
             <?php if(empty($todayClasses)): ?>

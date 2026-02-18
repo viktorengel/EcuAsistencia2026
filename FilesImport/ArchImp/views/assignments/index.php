@@ -60,7 +60,7 @@
                         <option value="">Seleccionar...</option>
                         <?php foreach($courses as $course): ?>
                             <option value="<?= $course['id'] ?>">
-                                <?= $course['name'] ?> - <?= $course['shift_name'] ?>
+                                <?= htmlspecialchars($course['name']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

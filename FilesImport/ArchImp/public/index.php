@@ -1,4 +1,5 @@
 <?php
+
 require_once '../config/config.php';
 
 $action = $_GET['action'] ?? 'login';
@@ -245,6 +246,7 @@ switch ($action) {
         break;
 
     case 'reviewed_justifications':
+        require_once BASE_PATH . '/controllers/JustificationController.php';
         $controller = new JustificationController();
         $controller->reviewed();
         break;
@@ -319,6 +321,12 @@ switch ($action) {
         require_once BASE_PATH . '/controllers/AttendanceController.php';
         $controller = new AttendanceController();
         $controller->getScheduleInfo();
+        break;
+
+    case 'get_existing_attendance':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $controller = new AttendanceController();
+        $controller->getExistingAttendance();
         break;
 
     case 'tutor_management':
