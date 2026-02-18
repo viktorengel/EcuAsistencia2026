@@ -178,13 +178,15 @@
             document.getElementById('schedule_id_hidden').value = scheduleId;
             document.getElementById('date_hidden').value = date;
 
+            let courseId = null;
+
             // Obtener course_id del horario
             fetch('?action=get_schedule_info&schedule_id=' + scheduleId)
                 .then(response => response.json())
                 .then(scheduleData => {
+                    courseId = scheduleData.course_id;
                     const formData = new FormData();
-                    formData.append('course_id', scheduleData.course_id);
-
+                    formData.append('course_id', courseId);
                     return fetch('?action=get_students', {
                         method: 'POST',
                         body: formData
@@ -197,37 +199,59 @@
                         return;
                     }
 
-                    const tbody = document.querySelector('#students-table tbody');
-                    tbody.innerHTML = '';
+                    // Consultar asistencia ya registrada para esta clase y fecha
+                    return fetch('?action=get_existing_attendance&schedule_id=' + scheduleId + '&date=' + date)
+                        .then(response => response.json())
+                        .then(existing => {
+                            // Convertir a mapa: student_id => {status, observation}
+                            const existingMap = {};
+                            existing.forEach(a => {
+                                existingMap[a.student_id] = { status: a.status, observation: a.observation || '' };
+                            });
 
-                    students.forEach((student, index) => {
-                        const row = `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${student.last_name} ${student.first_name}</td>
-                                <td>${student.dni || '-'}</td>
-                                <td>
-                                    <select name="status_${student.id}" class="status-select">
-                                        <option value="presente" selected>Presente</option>
-                                        <option value="ausente">Ausente</option>
-                                        <option value="tardanza">Tardanza</option>
-                                        <option value="justificado">Justificado</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" name="obs_${student.id}" placeholder="Opcional" style="width: 100%;">
-                                </td>
-                            </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
+                            const tbody = document.querySelector('#students-table tbody');
+                            tbody.innerHTML = '';
 
-                    document.getElementById('student-list').style.display = 'block';
-                    document.getElementById('student-list').scrollIntoView({ behavior: 'smooth' });
+                            const statuses = ['presente', 'ausente', 'tardanza', 'justificado'];
+
+                            students.forEach((student, index) => {
+                                const current = existingMap[student.id] || { status: 'presente', observation: '' };
+                                const statusOptions = statuses.map(s =>
+                                    `<option value="${s}" ${current.status === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
+                                ).join('');
+
+                                const row = `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${student.last_name} ${student.first_name}</td>
+                                        <td>${student.dni || '-'}</td>
+                                        <td>
+                                            <select name="status_${student.id}" class="status-select">
+                                                ${statusOptions}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="obs_${student.id}" 
+                                                   value="${current.observation}" 
+                                                   placeholder="Opcional" style="width: 100%;">
+                                        </td>
+                                    </tr>
+                                `;
+                                tbody.innerHTML += row;
+                            });
+
+                            document.getElementById('student-list').style.display = 'block';
+                            document.getElementById('student-list').scrollIntoView({ behavior: 'smooth' });
+                        });
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al cargar estudiantes');
+                    // Diagnóstico
+                    fetch('?action=get_existing_attendance&schedule_id=' + scheduleId + '&date=' + date)
+                        .then(r => r.text())
+                        .then(t => { 
+                            console.log('Respuesta get_existing_attendance:', t);
+                        });
                 });
         }
     </script>

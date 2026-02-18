@@ -323,6 +323,12 @@ switch ($action) {
         $controller->getScheduleInfo();
         break;
 
+    case 'get_existing_attendance':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $controller = new AttendanceController();
+        $controller->getExistingAttendance();
+        break;
+
     case 'tutor_management':
         require_once BASE_PATH . '/controllers/AssignmentController.php';
         $controller = new AssignmentController();

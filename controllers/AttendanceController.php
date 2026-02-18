@@ -385,4 +385,50 @@ class AttendanceController {
         echo json_encode($schedule);
         exit;
     }
+
+    public function getExistingAttendance() {
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode([]);
+            exit;
+        }
+
+        $scheduleId = (int)($_GET['schedule_id'] ?? 0);
+        $date = $_GET['date'] ?? date('Y-m-d');
+
+        if (!$scheduleId) {
+            echo json_encode([]);
+            exit;
+        }
+
+        $db = new Database();
+        $sql = "SELECT * FROM class_schedule WHERE id = :id";
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([':id' => $scheduleId]);
+        $schedule = $stmt->fetch();
+
+        if (!$schedule) {
+            echo json_encode([]);
+            exit;
+        }
+
+        $sql2 = "SELECT student_id, status, observation 
+                 FROM attendances 
+                 WHERE course_id = :course_id 
+                 AND subject_id = :subject_id
+                 AND date = :date
+                 AND hour_period = :hour_period";
+
+        $stmt2 = $db->connect()->prepare($sql2);
+        $stmt2->execute([
+            ':course_id'   => $schedule['course_id'],
+            ':subject_id'  => $schedule['subject_id'],
+            ':date'        => $date,
+            ':hour_period' => $schedule['period_number'] . 'ra hora'
+        ]);
+
+        echo json_encode($stmt2->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
 }
