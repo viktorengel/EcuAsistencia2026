@@ -1,10 +1,14 @@
 <?php
+// ARCHIVO COMPLETO - Reemplaza TODO el archivo
+// controllers/AttendanceController.php
+
 require_once BASE_PATH . '/config/config.php';
 require_once BASE_PATH . '/models/Attendance.php';
 require_once BASE_PATH . '/models/Course.php';
 require_once BASE_PATH . '/models/Subject.php';
 require_once BASE_PATH . '/models/SchoolYear.php';
 require_once BASE_PATH . '/models/Shift.php';
+require_once BASE_PATH . '/models/Notification.php';
 
 class AttendanceController {
     private $attendanceModel;
@@ -12,51 +16,46 @@ class AttendanceController {
     private $subjectModel;
     private $schoolYearModel;
     private $shiftModel;
+    private $notificationModel;
 
     public function __construct() {
         Security::requireLogin();
         $db = new Database();
-        
-        $this->attendanceModel = new Attendance($db);
-        $this->courseModel = new Course($db);
-        $this->subjectModel = new Subject($db);
-        $this->schoolYearModel = new SchoolYear($db);
-        $this->shiftModel = new Shift($db);
+
+        $this->attendanceModel   = new Attendance($db);
+        $this->courseModel       = new Course($db);
+        $this->subjectModel      = new Subject($db);
+        $this->schoolYearModel   = new SchoolYear($db);
+        $this->shiftModel        = new Shift($db);
+        $this->notificationModel = new Notification($db);
     }
 
     private function isWithin48BusinessHours($date) {
         $targetDate = new DateTime($date);
         $today = new DateTime();
         $today->setTime(0, 0, 0);
-        
-        // Si es el mismo día, siempre está permitido
+
         if ($targetDate->format('Y-m-d') === $today->format('Y-m-d')) {
             return true;
         }
-        
-        // Si la fecha es futura, no permitir
         if ($targetDate > $today) {
             return false;
         }
-        
+
         $businessHours = 0;
         $current = clone $targetDate;
-        
-        // Contar horas hábiles desde la fecha objetivo hasta hoy
+
         while ($current < $today) {
             $current->modify('+1 day');
-            $dayOfWeek = (int)$current->format('N'); // 1=Lunes, 7=Domingo
-            
-            // Solo contar si no es fin de semana (sábado=6, domingo=7)
+            $dayOfWeek = (int)$current->format('N');
             if ($dayOfWeek < 6) {
                 $businessHours += 24;
             }
         }
-        
+
         return $businessHours <= EDIT_ATTENDANCE_HOURS;
     }
 
-    // Agregar nueva función para calcular fecha máxima de edición
     private function getMaxEditDate() {
         $today = new DateTime();
         $businessHoursNeeded = EDIT_ATTENDANCE_HOURS;
@@ -80,7 +79,7 @@ class AttendanceController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $activeYear = $this->schoolYearModel->getActive();
-            $date = $_POST['date'];
+            $date  = $_POST['date'];
             $today = date('Y-m-d');
 
             if (strtotime($date) > strtotime($today)) {
@@ -94,34 +93,64 @@ class AttendanceController {
             }
 
             $scheduleId = (int)$_POST['schedule_id'];
-            
-            // Obtener datos del horario
-            $db = new Database();
-            $sql = "SELECT * FROM class_schedule WHERE id = :id";
-            $stmt = $db->connect()->prepare($sql);
+
+            // Obtener datos del horario incluyendo nombre de asignatura
+            $db   = new Database();
+            $pdo  = $db->connect();
+            $sql  = "SELECT cs.*, s.name as subject_name 
+                     FROM class_schedule cs
+                     INNER JOIN subjects s ON cs.subject_id = s.id
+                     WHERE cs.id = :id";
+            $stmt = $pdo->prepare($sql);
             $stmt->execute([':id' => $scheduleId]);
             $scheduleData = $stmt->fetch();
 
+            $subjectName   = $scheduleData['subject_name'] ?? 'clase';
+            $dateFormatted = date('d/m/Y', strtotime($date));
+
             foreach ($_POST as $key => $value) {
                 if (strpos($key, 'status_') === 0) {
-                    $studentId = (int)str_replace('status_', '', $key);
-                    $status = Security::sanitize($value);
+                    $studentId   = (int)str_replace('status_', '', $key);
+                    $status      = Security::sanitize($value);
                     $observation = Security::sanitize($_POST['obs_' . $studentId] ?? '');
 
                     $data = [
-                        ':student_id' => $studentId,
-                        ':course_id' => $scheduleData['course_id'],
-                        ':subject_id' => $scheduleData['subject_id'],
-                        ':teacher_id' => $_SESSION['user_id'],
+                        ':student_id'     => $studentId,
+                        ':course_id'      => $scheduleData['course_id'],
+                        ':subject_id'     => $scheduleData['subject_id'],
+                        ':teacher_id'     => $_SESSION['user_id'],
                         ':school_year_id' => $activeYear['id'],
-                        ':shift_id' => 1, // Obtener del curso
-                        ':date' => $date,
-                        ':hour_period' => $scheduleData['period_number'] . 'ra hora',
-                        ':status' => $status,
-                        ':observation' => $observation
+                        ':shift_id'       => 1,
+                        ':date'           => $date,
+                        ':hour_period'    => $scheduleData['period_number'] . 'ra hora',
+                        ':status'         => $status,
+                        ':observation'    => $observation
                     ];
 
                     $this->attendanceModel->create($data);
+
+                    // Notificar al estudiante si fue marcado ausente
+                    // El enlace lleva directo a su asistencia para que pueda justificar
+                    if ($status === 'ausente') {
+                        $this->notificationModel->create(
+                            $studentId,
+                            '📅 Ausencia registrada',
+                            "Se registró una ausencia el {$dateFormatted} en {$subjectName}. Puedes justificarla.",
+                            'ausente',
+                            '?action=my_attendance'
+                        );
+                    }
+
+                    // Notificar al estudiante si fue marcado con tardanza
+                    if ($status === 'tardanza') {
+                        $this->notificationModel->create(
+                            $studentId,
+                            '⏰ Tardanza registrada',
+                            "Se registró una tardanza el {$dateFormatted} en {$subjectName}.",
+                            'warning',
+                            '?action=my_attendance'
+                        );
+                    }
                 }
             }
 
@@ -131,14 +160,14 @@ class AttendanceController {
 
         // Obtener clases del docente para hoy
         $activeYear = $this->schoolYearModel->getActive();
-        
+
         $db = new Database();
         require_once BASE_PATH . '/models/ClassSchedule.php';
         $scheduleModel = new ClassSchedule($db);
-        
+
         $todayClasses = $scheduleModel->getTeacherScheduleToday($_SESSION['user_id'], $activeYear['id']);
-        $minDate = $this->calculateMinDate();
-        $maxEditDate = $this->getMaxEditDate();
+        $minDate      = $this->calculateMinDate();
+        $maxEditDate  = $this->getMaxEditDate();
 
         include BASE_PATH . '/views/attendance/register.php';
     }
@@ -150,27 +179,25 @@ class AttendanceController {
                 INNER JOIN shifts sh ON c.shift_id = sh.id
                 WHERE ta.teacher_id = :teacher_id
                 ORDER BY c.name";
-        
-        $db = new Database();
+
+        $db   = new Database();
         $stmt = $db->connect()->prepare($sql);
         $stmt->execute([':teacher_id' => $teacherId]);
         return $stmt->fetchAll();
     }
-    
+
     private function calculateMinDate() {
-        $date = new DateTime();
+        $date      = new DateTime();
         $hoursBack = 0;
-        
+
         while ($hoursBack < 48) {
             $date->modify('-1 day');
-            $dayOfWeek = $date->format('N'); // 1=Lunes, 7=Domingo
-            
-            // Solo contar días laborables (lunes a viernes)
+            $dayOfWeek = $date->format('N');
             if ($dayOfWeek >= 1 && $dayOfWeek <= 5) {
                 $hoursBack += 24;
             }
         }
-        
+
         return $date->format('Y-m-d');
     }
 
@@ -178,7 +205,6 @@ class AttendanceController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = (int)$_POST['course_id'];
             $students = $this->courseModel->getStudents($courseId);
-            
             header('Content-Type: application/json');
             echo json_encode($students);
             exit;
@@ -190,12 +216,12 @@ class AttendanceController {
             die('Acceso denegado');
         }
 
-        $courses = $this->courseModel->getAll();
+        $courses     = $this->courseModel->getAll();
         $attendances = [];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $courseId = (int)$_POST['course_id'];
-            $date = $_POST['date'];
+            $courseId    = (int)$_POST['course_id'];
+            $date        = $_POST['date'];
             $attendances = $this->attendanceModel->getByCourse($courseId, $date);
         }
 
@@ -207,7 +233,7 @@ class AttendanceController {
             die('Acceso denegado');
         }
 
-        $studentId = $_SESSION['user_id'];
+        $studentId   = $_SESSION['user_id'];
         $attendances = $this->attendanceModel->getByStudent($studentId);
 
         include BASE_PATH . '/views/attendance/my_attendance.php';
@@ -219,59 +245,53 @@ class AttendanceController {
         }
 
         $courses = $this->courseModel->getAll();
-        
+
         if (isset($_GET['course_id'])) {
             $courseId = (int)$_GET['course_id'];
-            $month = $_GET['month'] ?? date('Y-m');
-            
+            $month    = $_GET['month'] ?? date('Y-m');
+
             list($year, $monthNum) = explode('-', $month);
-            
+
             $monthNames = [
-                '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
-                '05' => 'Mayo', '06' => 'Junio', '07' => 'Julio', '08' => 'Agosto',
-                '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'
+                '01' => 'Enero',    '02' => 'Febrero',   '03' => 'Marzo',
+                '04' => 'Abril',    '05' => 'Mayo',       '06' => 'Junio',
+                '07' => 'Julio',    '08' => 'Agosto',     '09' => 'Septiembre',
+                '10' => 'Octubre',  '11' => 'Noviembre',  '12' => 'Diciembre'
             ];
-            
-            $monthName = $monthNames[$monthNum];
-            
-            // Calcular mes anterior y siguiente
-            $prevMonth = date('Y-m', strtotime($month . '-01 -1 month'));
-            $nextMonth = date('Y-m', strtotime($month . '-01 +1 month'));
-            
-            // Generar calendario
-            $firstDay = date('w', strtotime($year . '-' . $monthNum . '-01'));
+
+            $monthName   = $monthNames[$monthNum];
+            $prevMonth   = date('Y-m', strtotime($month . '-01 -1 month'));
+            $nextMonth   = date('Y-m', strtotime($month . '-01 +1 month'));
+            $firstDay    = date('w', strtotime($year . '-' . $monthNum . '-01'));
             $daysInMonth = date('t', strtotime($year . '-' . $monthNum . '-01'));
-            
+
             $calendarDays = [];
-            
-            // Días vacíos al inicio
+
             for ($i = 0; $i < $firstDay; $i++) {
                 $calendarDays[] = ['day' => '', 'classes' => ''];
             }
-            
-            // Días del mes
+
             for ($day = 1; $day <= $daysInMonth; $day++) {
-                $date = $year . '-' . $monthNum . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
+                $date      = $year . '-' . $monthNum . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
                 $dayOfWeek = date('w', strtotime($date));
-                
-                $classes = [];
+                $classes   = [];
+
                 if ($date == date('Y-m-d')) $classes[] = 'today';
                 if ($dayOfWeek == 0 || $dayOfWeek == 6) $classes[] = 'weekend';
-                
-                // Obtener estadísticas de asistencia del día
+
                 $attendance = $this->attendanceModel->getDayStats($courseId, $date);
-                
+
                 if ($attendance && $attendance['total'] > 0) {
                     $classes[] = 'has-attendance';
                 }
-                
+
                 $calendarDays[] = [
-                    'day' => $day,
-                    'classes' => implode(' ', $classes),
+                    'day'        => $day,
+                    'classes'    => implode(' ', $classes),
                     'attendance' => $attendance
                 ];
             }
-            
+
             include BASE_PATH . '/views/attendance/calendar.php';
         } else {
             include BASE_PATH . '/views/attendance/calendar.php';
@@ -284,26 +304,26 @@ class AttendanceController {
             echo json_encode(['error' => 'No autenticado']);
             exit;
         }
-        
+
         $courseId = (int)($_GET['course_id'] ?? 0);
-        
+
         if (!$courseId) {
             header('Content-Type: application/json');
             echo json_encode([]);
             exit;
         }
-        
+
         $sql = "SELECT DISTINCT ta.subject_id, s.name as subject_name
                 FROM teacher_assignments ta
                 INNER JOIN subjects s ON ta.subject_id = s.id
                 WHERE ta.course_id = :course_id
                 ORDER BY s.name";
-        
-        $db = new Database();
+
+        $db   = new Database();
         $stmt = $db->connect()->prepare($sql);
         $stmt->execute([':course_id' => $courseId]);
         $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         header('Content-Type: application/json');
         echo json_encode($subjects);
         exit;
@@ -315,44 +335,37 @@ class AttendanceController {
             echo json_encode(['error' => 'No autenticado']);
             exit;
         }
-        
+
         $courseId = (int)($_GET['course_id'] ?? 0);
-        
+
         if (!$courseId) {
             header('Content-Type: application/json');
             echo json_encode([]);
             exit;
         }
-        
-        // Si es autoridad: todas las asignaturas del curso
-        // Si es docente: solo las que él dicta en ese curso
+
         if (Security::hasRole('autoridad')) {
-            $sql = "SELECT DISTINCT ta.subject_id, s.name as subject_name
-                    FROM teacher_assignments ta
-                    INNER JOIN subjects s ON ta.subject_id = s.id
-                    WHERE ta.course_id = :course_id
-                    ORDER BY s.name";
-            
+            $sql    = "SELECT DISTINCT ta.subject_id, s.name as subject_name
+                       FROM teacher_assignments ta
+                       INNER JOIN subjects s ON ta.subject_id = s.id
+                       WHERE ta.course_id = :course_id
+                       ORDER BY s.name";
             $params = [':course_id' => $courseId];
         } else {
-            $sql = "SELECT DISTINCT ta.subject_id, s.name as subject_name
-                    FROM teacher_assignments ta
-                    INNER JOIN subjects s ON ta.subject_id = s.id
-                    WHERE ta.course_id = :course_id 
-                    AND ta.teacher_id = :teacher_id
-                    ORDER BY s.name";
-            
-            $params = [
-                ':course_id' => $courseId,
-                ':teacher_id' => $_SESSION['user_id']
-            ];
+            $sql    = "SELECT DISTINCT ta.subject_id, s.name as subject_name
+                       FROM teacher_assignments ta
+                       INNER JOIN subjects s ON ta.subject_id = s.id
+                       WHERE ta.course_id = :course_id 
+                       AND ta.teacher_id = :teacher_id
+                       ORDER BY s.name";
+            $params = [':course_id' => $courseId, ':teacher_id' => $_SESSION['user_id']];
         }
-        
-        $db = new Database();
+
+        $db   = new Database();
         $stmt = $db->connect()->prepare($sql);
         $stmt->execute($params);
         $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         header('Content-Type: application/json');
         echo json_encode($subjects);
         exit;
@@ -364,22 +377,21 @@ class AttendanceController {
             echo json_encode(['error' => 'No autenticado']);
             exit;
         }
-        
+
         $scheduleId = (int)($_GET['schedule_id'] ?? 0);
-        
+
         if (!$scheduleId) {
             header('Content-Type: application/json');
             echo json_encode([]);
             exit;
         }
-        
-        $sql = "SELECT * FROM class_schedule WHERE id = :id";
-        
-        $db = new Database();
+
+        $sql  = "SELECT * FROM class_schedule WHERE id = :id";
+        $db   = new Database();
         $stmt = $db->connect()->prepare($sql);
         $stmt->execute([':id' => $scheduleId]);
         $schedule = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         header('Content-Type: application/json');
         echo json_encode($schedule);
         exit;
@@ -394,16 +406,17 @@ class AttendanceController {
         }
 
         $scheduleId = (int)($_GET['schedule_id'] ?? 0);
-        $date = $_GET['date'] ?? date('Y-m-d');
+        $date       = $_GET['date'] ?? date('Y-m-d');
 
         if (!$scheduleId) {
             echo json_encode([]);
             exit;
         }
 
-        $db = new Database();
-        $sql = "SELECT * FROM class_schedule WHERE id = :id";
-        $stmt = $db->connect()->prepare($sql);
+        $db   = new Database();
+        $pdo  = $db->connect();
+        $sql  = "SELECT * FROM class_schedule WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $scheduleId]);
         $schedule = $stmt->fetch();
 
@@ -412,14 +425,13 @@ class AttendanceController {
             exit;
         }
 
-        $sql2 = "SELECT student_id, status, observation 
-                 FROM attendances 
-                 WHERE course_id = :course_id 
-                 AND subject_id = :subject_id
-                 AND date = :date
-                 AND hour_period = :hour_period";
-
-        $stmt2 = $db->connect()->prepare($sql2);
+        $sql2  = "SELECT student_id, status, observation 
+                  FROM attendances 
+                  WHERE course_id  = :course_id 
+                  AND subject_id   = :subject_id
+                  AND date         = :date
+                  AND hour_period  = :hour_period";
+        $stmt2 = $pdo->prepare($sql2);
         $stmt2->execute([
             ':course_id'   => $schedule['course_id'],
             ':subject_id'  => $schedule['subject_id'],

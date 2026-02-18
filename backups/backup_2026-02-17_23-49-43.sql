@@ -83,7 +83,7 @@ CREATE TABLE `attendances` (
   CONSTRAINT `attendances_ibfk_4` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`),
   CONSTRAINT `attendances_ibfk_5` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`),
   CONSTRAINT `attendances_ibfk_6` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -92,7 +92,7 @@ CREATE TABLE `attendances` (
 
 LOCK TABLES `attendances` WRITE;
 /*!40000 ALTER TABLE `attendances` DISABLE KEYS */;
-INSERT INTO `attendances` VALUES (1,8,1,1,2,1,1,'2026-02-07','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(2,9,1,1,2,1,1,'2026-02-07','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(3,10,1,1,2,1,1,'2026-02-07','1ra hora','ausente','Sin justificación','2026-02-11 23:56:54','2026-02-11 23:56:54'),(4,11,1,1,2,1,1,'2026-02-07','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(5,8,1,1,2,1,1,'2026-02-08','1ra hora','tardanza','Llegó 10 min tarde','2026-02-11 23:56:54','2026-02-11 23:56:54'),(6,9,1,1,2,1,1,'2026-02-08','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(7,10,1,1,2,1,1,'2026-02-08','1ra hora','justificado','Cita médica','2026-02-11 23:56:54','2026-02-11 23:56:54'),(8,11,1,1,2,1,1,'2026-02-08','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(9,8,1,1,2,1,1,'2026-02-09','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(10,9,1,1,2,1,1,'2026-02-09','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(11,10,1,1,2,1,1,'2026-02-09','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(12,11,1,1,2,1,1,'2026-02-09','1ra hora','ausente','Enfermo','2026-02-11 23:56:54','2026-02-11 23:56:54'),(13,8,1,1,2,1,1,'2026-02-10','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(14,9,1,1,2,1,1,'2026-02-10','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(15,10,1,1,2,1,1,'2026-02-10','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(16,11,1,1,2,1,1,'2026-02-10','1ra hora','tardanza','Tráfico','2026-02-11 23:56:54','2026-02-11 23:56:54'),(17,8,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(18,9,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(19,10,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(20,11,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(21,8,1,2,3,1,1,'2026-02-09','2da hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(22,9,1,2,3,1,1,'2026-02-09','2da hora','presente','Participación activa','2026-02-11 23:56:54','2026-02-11 23:56:54'),(23,10,1,2,3,1,1,'2026-02-09','2da hora','ausente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(24,11,1,2,3,1,1,'2026-02-09','2da hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(25,21,5,2,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:19:50','2026-02-12 05:19:50'),(26,22,5,2,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:19:50','2026-02-12 05:19:50'),(27,21,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:20:27','2026-02-12 05:20:27'),(28,22,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:20:27','2026-02-12 05:20:27'),(29,21,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:21:05','2026-02-12 05:21:05'),(30,22,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:21:05','2026-02-12 05:21:05'),(31,21,5,1,2,1,2,'2026-02-11','2da hora','ausente','','2026-02-12 05:22:21','2026-02-12 05:22:21'),(32,22,5,1,2,1,2,'2026-02-11','2da hora','ausente','','2026-02-12 05:22:21','2026-02-12 05:22:21'),(33,21,5,1,2,1,2,'2026-02-11','2da hora','tardanza','','2026-02-12 05:22:54','2026-02-12 05:22:54'),(34,22,5,1,2,1,2,'2026-02-11','2da hora','ausente','','2026-02-12 05:22:54','2026-02-12 05:22:54'),(35,21,5,3,1,1,2,'2026-02-15','1ra hora','ausente','','2026-02-15 02:16:55','2026-02-15 02:16:55'),(36,22,5,3,1,1,2,'2026-02-15','1ra hora','ausente','','2026-02-15 02:16:55','2026-02-15 02:16:55'),(37,21,5,3,1,1,2,'2026-02-14','1ra hora','justificado','','2026-02-15 02:29:20','2026-02-15 02:31:25'),(38,22,5,3,1,1,2,'2026-02-14','1ra hora','justificado','','2026-02-15 02:29:20','2026-02-15 02:31:25'),(39,21,5,3,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:29:38','2026-02-15 02:29:38'),(40,22,5,3,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:29:38','2026-02-15 02:29:38'),(41,20,4,5,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:31:54','2026-02-15 02:32:33'),(42,18,4,5,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:31:54','2026-02-15 02:32:33'),(43,19,4,5,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:31:54','2026-02-15 02:32:33'),(44,12,2,8,28,1,1,'2026-02-16','1ra hora','justificado','','2026-02-16 15:13:20','2026-02-16 18:33:28'),(45,13,2,8,28,1,1,'2026-02-16','1ra hora','justificado','','2026-02-16 15:13:20','2026-02-16 20:23:12'),(46,14,2,8,28,1,1,'2026-02-16','1ra hora','ausente','','2026-02-16 15:13:20','2026-02-16 15:13:39');
+INSERT INTO `attendances` VALUES (1,8,1,1,2,1,1,'2026-02-07','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(2,9,1,1,2,1,1,'2026-02-07','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(3,10,1,1,2,1,1,'2026-02-07','1ra hora','ausente','Sin justificación','2026-02-11 23:56:54','2026-02-11 23:56:54'),(4,11,1,1,2,1,1,'2026-02-07','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(5,8,1,1,2,1,1,'2026-02-08','1ra hora','tardanza','Llegó 10 min tarde','2026-02-11 23:56:54','2026-02-11 23:56:54'),(6,9,1,1,2,1,1,'2026-02-08','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(7,10,1,1,2,1,1,'2026-02-08','1ra hora','justificado','Cita médica','2026-02-11 23:56:54','2026-02-11 23:56:54'),(8,11,1,1,2,1,1,'2026-02-08','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(9,8,1,1,2,1,1,'2026-02-09','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(10,9,1,1,2,1,1,'2026-02-09','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(11,10,1,1,2,1,1,'2026-02-09','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(12,11,1,1,2,1,1,'2026-02-09','1ra hora','ausente','Enfermo','2026-02-11 23:56:54','2026-02-11 23:56:54'),(13,8,1,1,2,1,1,'2026-02-10','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(14,9,1,1,2,1,1,'2026-02-10','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(15,10,1,1,2,1,1,'2026-02-10','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(16,11,1,1,2,1,1,'2026-02-10','1ra hora','tardanza','Tráfico','2026-02-11 23:56:54','2026-02-11 23:56:54'),(17,8,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(18,9,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(19,10,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(20,11,1,1,2,1,1,'2026-02-11','1ra hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(21,8,1,2,3,1,1,'2026-02-09','2da hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(22,9,1,2,3,1,1,'2026-02-09','2da hora','presente','Participación activa','2026-02-11 23:56:54','2026-02-11 23:56:54'),(23,10,1,2,3,1,1,'2026-02-09','2da hora','ausente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(24,11,1,2,3,1,1,'2026-02-09','2da hora','presente','','2026-02-11 23:56:54','2026-02-11 23:56:54'),(25,21,5,2,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:19:50','2026-02-12 05:19:50'),(26,22,5,2,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:19:50','2026-02-12 05:19:50'),(27,21,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:20:27','2026-02-12 05:20:27'),(28,22,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:20:27','2026-02-12 05:20:27'),(29,21,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:21:05','2026-02-12 05:21:05'),(30,22,5,1,2,1,2,'2026-02-12','2da hora','ausente','','2026-02-12 05:21:05','2026-02-12 05:21:05'),(31,21,5,1,2,1,2,'2026-02-11','2da hora','ausente','','2026-02-12 05:22:21','2026-02-12 05:22:21'),(32,22,5,1,2,1,2,'2026-02-11','2da hora','ausente','','2026-02-12 05:22:21','2026-02-12 05:22:21'),(33,21,5,1,2,1,2,'2026-02-11','2da hora','tardanza','','2026-02-12 05:22:54','2026-02-12 05:22:54'),(34,22,5,1,2,1,2,'2026-02-11','2da hora','ausente','','2026-02-12 05:22:54','2026-02-12 05:22:54'),(35,21,5,3,1,1,2,'2026-02-15','1ra hora','ausente','','2026-02-15 02:16:55','2026-02-15 02:16:55'),(36,22,5,3,1,1,2,'2026-02-15','1ra hora','ausente','','2026-02-15 02:16:55','2026-02-15 02:16:55'),(37,21,5,3,1,1,2,'2026-02-14','1ra hora','justificado','','2026-02-15 02:29:20','2026-02-15 02:31:25'),(38,22,5,3,1,1,2,'2026-02-14','1ra hora','justificado','','2026-02-15 02:29:20','2026-02-15 02:31:25'),(39,21,5,3,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:29:38','2026-02-15 02:29:38'),(40,22,5,3,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:29:38','2026-02-15 02:29:38'),(41,20,4,5,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:31:54','2026-02-15 02:32:33'),(42,18,4,5,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:31:54','2026-02-15 02:32:33'),(43,19,4,5,1,1,2,'2026-02-14','1ra hora','presente','','2026-02-15 02:31:54','2026-02-15 02:32:33'),(44,12,2,8,28,1,1,'2026-02-16','1ra hora','justificado','','2026-02-16 15:13:20','2026-02-16 18:33:28'),(45,13,2,8,28,1,1,'2026-02-16','1ra hora','justificado','','2026-02-16 15:13:20','2026-02-16 20:23:12'),(46,14,2,8,28,1,1,'2026-02-16','1ra hora','ausente','','2026-02-16 15:13:20','2026-02-16 15:13:39'),(47,21,5,6,7,1,1,'2026-02-17','4ra hora','presente','','2026-02-18 03:36:14','2026-02-18 04:03:25'),(48,22,5,6,7,1,1,'2026-02-17','4ra hora','justificado','ABC','2026-02-18 03:36:14','2026-02-18 04:03:25');
 /*!40000 ALTER TABLE `attendances` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -123,7 +123,7 @@ CREATE TABLE `class_schedule` (
   CONSTRAINT `class_schedule_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`),
   CONSTRAINT `class_schedule_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`),
   CONSTRAINT `class_schedule_ibfk_4` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -132,7 +132,7 @@ CREATE TABLE `class_schedule` (
 
 LOCK TABLES `class_schedule` WRITE;
 /*!40000 ALTER TABLE `class_schedule` DISABLE KEYS */;
-INSERT INTO `class_schedule` VALUES (2,5,3,5,1,'martes','00:00:00','00:00:00',7,'2026-02-15 03:05:28'),(5,5,6,7,1,'lunes','00:00:00','00:00:00',1,'2026-02-15 04:59:04'),(6,2,8,28,1,'lunes','00:00:00','00:00:00',1,'2026-02-16 15:13:02');
+INSERT INTO `class_schedule` VALUES (2,5,3,5,1,'martes','00:00:00','00:00:00',7,'2026-02-15 03:05:28'),(5,5,6,7,1,'lunes','00:00:00','00:00:00',1,'2026-02-15 04:59:04'),(6,2,8,28,1,'lunes','00:00:00','00:00:00',1,'2026-02-16 15:13:02'),(7,5,6,7,1,'miercoles','00:00:00','00:00:00',1,'2026-02-18 03:06:58'),(8,5,6,7,1,'martes','00:00:00','00:00:00',4,'2026-02-18 03:17:05');
 /*!40000 ALTER TABLE `class_schedule` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -194,7 +194,7 @@ CREATE TABLE `courses` (
   CONSTRAINT `courses_ibfk_1` FOREIGN KEY (`institution_id`) REFERENCES `institutions` (`id`),
   CONSTRAINT `courses_ibfk_2` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`),
   CONSTRAINT `courses_ibfk_3` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -203,7 +203,7 @@ CREATE TABLE `courses` (
 
 LOCK TABLES `courses` WRITE;
 /*!40000 ALTER TABLE `courses` DISABLE KEYS */;
-INSERT INTO `courses` VALUES (1,1,1,'8vo EGB \"A\" - Matutina','8vo EGB','A',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(2,1,1,'1ro BGU \"A\" - Matutina','1ro BGU','A',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(3,1,1,'1ro Técnico \"B\" - Matutina','1ro Técnico','B',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(4,1,1,'9no EGB \"A\" - Vespertina','9no EGB','A',2,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(5,1,1,'10mo EGB \"A\" - Vespertina','10mo EGB','A',2,'2026-02-11 23:56:54','2026-02-17 22:08:44');
+INSERT INTO `courses` VALUES (1,1,1,'8vo EGB \"A\" - Matutina','8vo EGB','A',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(2,1,1,'1ro BGU \"A\" - Matutina','1ro BGU','A',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(3,1,1,'1ro Técnico \"B\" - Matutina','1ro Técnico','B',1,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(4,1,1,'9no EGB \"A\" - Vespertina','9no EGB','A',2,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(5,1,1,'10mo EGB \"A\" - Vespertina','10mo EGB','A',2,'2026-02-11 23:56:54','2026-02-17 22:08:44'),(6,1,1,'1.º BT \"A\" - Informática (Soporte Técnico) - Matutina','1.º BT','A',1,'2026-02-18 02:53:24','2026-02-18 02:57:11');
 /*!40000 ALTER TABLE `courses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -304,7 +304,7 @@ CREATE TABLE `justifications` (
   CONSTRAINT `justifications_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`),
   CONSTRAINT `justifications_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`id`),
   CONSTRAINT `justifications_ibfk_4` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -313,7 +313,7 @@ CREATE TABLE `justifications` (
 
 LOCK TABLES `justifications` WRITE;
 /*!40000 ALTER TABLE `justifications` DISABLE KEYS */;
-INSERT INTO `justifications` VALUES (1,44,12,12,'Médico','uploads/justifications/69935b0811b11.png','rechazado',1,'dfasf','2026-02-16 17:59:36','2026-02-16 18:33:32'),(2,44,12,12,'Médico','uploads/justifications/69935bf9605e9.png','aprobado',1,'ok','2026-02-16 18:03:37','2026-02-16 18:33:28'),(3,45,13,13,'Viaje','uploads/justifications/69937ca16e332.png','aprobado',1,'ok','2026-02-16 20:22:57','2026-02-16 20:23:12');
+INSERT INTO `justifications` VALUES (1,44,12,12,'Médico','uploads/justifications/69935b0811b11.png','rechazado',1,'dfasf','2026-02-16 17:59:36','2026-02-16 18:33:32'),(2,44,12,12,'Médico','uploads/justifications/69935bf9605e9.png','aprobado',1,'ok','2026-02-16 18:03:37','2026-02-16 18:33:28'),(3,45,13,13,'Viaje','uploads/justifications/69937ca16e332.png','aprobado',1,'ok','2026-02-16 20:22:57','2026-02-16 20:23:12'),(4,46,14,14,'prueba','uploads/justifications/69954314eaeee.png','pendiente',NULL,NULL,'2026-02-18 04:41:56','2026-02-18 04:41:56'),(5,35,21,21,'vzxcvx','uploads/justifications/699543a6bad8f.png','pendiente',NULL,NULL,'2026-02-18 04:44:22','2026-02-18 04:44:22');
 /*!40000 ALTER TABLE `justifications` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -330,12 +330,13 @@ CREATE TABLE `notifications` (
   `title` varchar(255) NOT NULL,
   `message` text NOT NULL,
   `type` enum('info','warning','success','danger') DEFAULT 'info',
+  `link` varchar(255) DEFAULT NULL,
   `is_read` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_user_read` (`user_id`,`is_read`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -344,6 +345,7 @@ CREATE TABLE `notifications` (
 
 LOCK TABLES `notifications` WRITE;
 /*!40000 ALTER TABLE `notifications` DISABLE KEYS */;
+INSERT INTO `notifications` VALUES (1,1,'Nueva justificación pendiente','Un estudiante envió una justificación que requiere revisión.','',NULL,1,'2026-02-18 04:41:56'),(2,28,'Nueva justificación pendiente','Un estudiante envió una justificación que requiere revisión.','',NULL,0,'2026-02-18 04:41:56'),(3,1,'Nueva justificación pendiente','Un estudiante envió una justificación que requiere revisión.','',NULL,1,'2026-02-18 04:44:22'),(4,28,'Nueva justificación pendiente','Un estudiante envió una justificación que requiere revisión.','',NULL,0,'2026-02-18 04:44:22');
 /*!40000 ALTER TABLE `notifications` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -639,4 +641,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-17 17:09:36
+-- Dump completed on 2026-02-17 23:49:44
