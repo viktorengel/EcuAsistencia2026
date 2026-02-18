@@ -72,6 +72,7 @@ if (isset($_SESSION['user_id'])) {
         .dropdown a:hover { background: rgba(255,255,255,0.1); }
     }
 </style>
+<link rel="stylesheet" href="<?= BASE_URL ?>/public/css/global.css">
 
 <nav class="main-navbar">
     <div class="navbar-container">

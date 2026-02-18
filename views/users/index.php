@@ -3,324 +3,230 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Usuarios - EcuAsist</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; font-weight: bold; }
-        .badge {
-            display: inline-block;
-            background: #28a745;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 11px;
-            margin: 2px;
-            position: relative;
-        }
-        .btn-remove-role {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 0;
-            margin-left: 5px;
-            line-height: 1;
-        }
-        .btn-remove-role:hover {
-            color: #ff0000;
-        }
-        select, button { padding: 8px 12px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-success { background: #28a745; }
-        .btn-success:hover { background: #218838; }
-        .btn-warning { background: #ffc107; color: #212529; }
-        .btn-warning:hover { background: #e0a800; }
-        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
-        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
-        .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
-        h2 { margin-bottom: 20px; color: #333; }
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 12px;
-            margin: 2px;
-        }
-        .action-buttons {
-            white-space: nowrap;
-        }
-    </style>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-    <div class="container">
-        <div class="card">
-            <?php if(isset($_GET['created'])): ?>
-                <div class="success">✓ Usuario creado correctamente</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['updated'])): ?>
-                <div class="success">✓ Usuario actualizado correctamente</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['deleted'])): ?>
-                <div class="success">✓ Usuario eliminado correctamente</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['deactivated'])): ?>
-                <div class="info">ℹ️ Usuario desactivado (tiene registros de asistencia)</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['success'])): ?>
-                <div class="success">✓ Rol asignado correctamente</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['removed'])): ?>
-                <div class="success">✓ Rol eliminado correctamente</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['error']) && $_GET['error'] === 'has_assignments'): ?>
-                <div class="error">✗ No se puede eliminar el rol docente porque tiene asignaciones activas. Elimine primero las asignaciones.</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['error']) && $_GET['error'] === 'not_found'): ?>
-                <div class="error">✗ Usuario no encontrado</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['error']) && $_GET['error'] === 'self_delete'): ?>
-                <div class="error">✗ No puedes eliminar tu propia cuenta</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['error']) && $_GET['error'] === 'delete_failed'): ?>
-                <div class="error">✗ Error al eliminar el usuario</div>
-            <?php endif; ?>
+<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-            <div class="header-actions">
-                <h2>👥 Gestión de Usuarios</h2>
-                <a href="?action=create_user" style="padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
-                    + Crear Usuario
-                </a>
-            </div>
-            
-            <!-- Filtro por Rol -->
-            <form method="GET" action="" style="margin-bottom: 20px;">
-                <input type="hidden" name="action" value="users">
-                <div style="display: flex; gap: 15px; align-items: flex-end;">
-                    <div style="flex: 1;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Filtrar por Rol</label>
-                        <select name="filter_role" onchange="this.form.submit()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">Todos los roles</option>
-                            <?php foreach($roles as $role): ?>
-                                <option value="<?= $role['name'] ?>" <?= (isset($_GET['filter_role']) && $_GET['filter_role'] == $role['name']) ? 'selected' : '' ?>>
-                                    <?= ucfirst($role['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <?php if(isset($_GET['filter_role']) && $_GET['filter_role'] != ''): ?>
-                    <div>
-                        <a href="?action=users" style="padding: 10px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
-                            Limpiar
-                        </a>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </form>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nombre Completo</th>
-                        <th>Email</th>
-                        <th>Roles Actuales</th>
-                        <th>Asignar Rol</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php 
-                    // Aplicar filtro
-                    $filteredUsers = $users;
-                    
-                    if(isset($_GET['filter_role']) && $_GET['filter_role'] != '') {
-                        $filterRole = $_GET['filter_role'];
-                        $filteredUsers = array_filter($users, function($user) use ($filterRole) {
-                            if($user['roles']) {
-                                $userRoles = explode(',', $user['roles']);
-                                return in_array($filterRole, $userRoles);
-                            }
-                            return false;
-                        });
-                    }
-                    ?>
-                    
-                    <?php if(empty($filteredUsers)): ?>
-                        <tr>
-                            <td colspan="7" style="text-align:center;">No hay usuarios con este rol</td>
-                        </tr>
-                    <?php else: ?>
-                         <?php 
-                        $counter = 1;
-                        foreach($filteredUsers as $user): 
-                        ?>
-                        <tr>
-                            <td><?= $counter++ ?></td>
-                            <td><?= $user['last_name'] . ' ' . $user['first_name'] ?></td>
-                            <td><?= $user['email'] ?></td>
-                            <td>
-                                <?php if($user['roles']): ?>
-                                    <?php 
-                                    // Obtener IDs de roles con nombres
-                                    $db = new Database();
-                                    $sqlRoles = "SELECT r.id, r.name 
-                                                FROM roles r 
-                                                INNER JOIN user_roles ur ON r.id = ur.role_id 
-                                                WHERE ur.user_id = :user_id
-                                                ORDER BY r.name";
-                                    $stmtRoles = $db->connect()->prepare($sqlRoles);
-                                    $stmtRoles->execute([':user_id' => $user['id']]);
-                                    $userRolesData = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
-                                    
-                                    foreach($userRolesData as $roleData): 
-                                    ?>
-                                        <span class="badge">
-                                            <?= ucfirst($roleData['name']) ?>
-                                            <form method="POST" action="?action=remove_role<?= isset($_GET['filter_role']) ? '&filter_role=' . $_GET['filter_role'] : '' ?>" style="display: inline;" onsubmit="return confirmRemoveRole(event, '<?= ucfirst($roleData['name']) ?>', '<?= $user['last_name'] . ' ' . $user['first_name'] ?>')">
-                                                <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                                                <input type="hidden" name="role_id" value="<?= $roleData['id'] ?>">
-                                                <button type="submit" class="btn-remove-role">×</button>
-                                            </form>
-                                        </span>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <em>Sin roles</em>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <form method="POST" action="?action=assign_role<?= isset($_GET['filter_role']) ? '&filter_role=' . $_GET['filter_role'] : '' ?>" style="display: inline-flex; gap: 5px;">
-                                    <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                                    <select name="role_id" required style="padding: 5px;">
-                                        <option value="">Seleccionar...</option>
-                                        <?php foreach($roles as $role): ?>
-                                            <option value="<?= $role['id'] ?>"><?= ucfirst($role['name']) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <button type="submit" style="padding: 5px 10px;">Asignar</button>
-                                </form>
-                            </td>
-                            <td class="action-buttons">
-                                <a href="?action=edit_user&id=<?= $user['id'] ?>" 
-                                   class="btn-warning btn-sm" 
-                                   style="text-decoration: none; padding: 5px 10px; border-radius: 4px;">
-                                    ✏️ Editar
-                                </a>
-                                <form method="POST" action="?action=delete_user" style="display: inline;" onsubmit="return confirmDelete(event, '<?= $user['last_name'] . ' ' . $user['first_name'] ?>')">
-                                    <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                                    <button type="submit" class="btn-danger btn-sm">
-                                        🗑️ Eliminar
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Gestión de Usuarios
+</div>
+
+<div class="container-wide">
+
+    <!-- Mensajes flash -->
+    <?php if(isset($_GET['created'])): ?>
+        <div class="alert alert-success">✓ Usuario creado correctamente</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['updated'])): ?>
+        <div class="alert alert-success">✓ Usuario actualizado correctamente</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['deleted'])): ?>
+        <div class="alert alert-success">✓ Usuario eliminado correctamente</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['deactivated'])): ?>
+        <div class="alert alert-info">ℹ️ Usuario desactivado (tiene registros de asistencia)</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['success'])): ?>
+        <div class="alert alert-success">✓ Rol asignado correctamente</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['removed'])): ?>
+        <div class="alert alert-success">✓ Rol eliminado correctamente</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['error']) && $_GET['error'] === 'has_assignments'): ?>
+        <div class="alert alert-danger">✗ No se puede eliminar el rol docente porque tiene asignaciones activas.</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['error']) && $_GET['error'] === 'not_found'): ?>
+        <div class="alert alert-danger">✗ Usuario no encontrado</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['error']) && $_GET['error'] === 'self_delete'): ?>
+        <div class="alert alert-danger">✗ No puedes eliminar tu propia cuenta</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['error']) && $_GET['error'] === 'delete_failed'): ?>
+        <div class="alert alert-danger">✗ Error al eliminar el usuario</div>
+    <?php endif; ?>
+
+    <!-- Header -->
+    <div class="page-header">
+        <div class="ph-icon">👥</div>
+        <div>
+            <h1>Gestión de Usuarios</h1>
+            <p>Administra usuarios, roles y permisos del sistema</p>
+        </div>
+        <div class="ph-actions">
+            <a href="?action=create_user" class="btn btn-success">+ Crear Usuario</a>
         </div>
     </div>
 
-    <script>
-    function confirmDelete(event, userName) {
-        event.preventDefault();
-        
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        
-        modalContent.innerHTML = `
-            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Usuario</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">
-                ¿Está seguro de eliminar al usuario <strong>${userName}</strong>?
-            </p>
-            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
-                <strong>Nota:</strong> Si el usuario tiene asistencias registradas, será desactivado en lugar de eliminado.
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelDeleteBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="confirmDeleteBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Sí, Eliminar
-                </button>
+    <!-- Filtros -->
+    <div class="filters">
+        <h3>🔍 Filtrar usuarios</h3>
+        <?php if(isset($_GET['filter_role']) && $_GET['filter_role'] != ''): ?>
+        <div class="filter-banner">
+            <span>⚠️ Filtro activo: <strong><?= ucfirst(htmlspecialchars($_GET['filter_role'])) ?></strong></span>
+            <a href="?action=users">✕ Limpiar</a>
+        </div>
+        <?php endif; ?>
+        <form method="GET" action="">
+            <input type="hidden" name="action" value="users">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Filtrar por Rol</label>
+                    <select name="filter_role" onchange="this.form.submit()">
+                        <option value="">— Todos los roles —</option>
+                        <?php foreach($roles as $role): ?>
+                            <option value="<?= $role['name'] ?>" <?= (isset($_GET['filter_role']) && $_GET['filter_role'] == $role['name']) ? 'selected' : '' ?>>
+                                <?= ucfirst($role['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
-        `;
-        
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        
-        const form = event.target;
-        
-        document.getElementById('confirmDeleteBtn').onclick = function() {
-            document.body.removeChild(modal);
-            form.submit();
-        };
-        
-        document.getElementById('cancelDeleteBtn').onclick = function() {
-            document.body.removeChild(modal);
-        };
-        
-        return false;
-    }
+        </form>
+    </div>
 
-    function confirmRemoveRole(event, roleName, userName) {
-        event.preventDefault();
-        
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        
-        modalContent.innerHTML = `
-            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Rol</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">
-                ¿Está seguro de eliminar el rol <strong>${roleName}</strong> del usuario <strong>${userName}</strong>?
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelRemoveRoleBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="confirmRemoveRoleBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Sí, Eliminar
-                </button>
+    <!-- Tabla -->
+    <div class="table-wrap">
+        <?php
+        $filteredUsers = $users;
+        if(isset($_GET['filter_role']) && $_GET['filter_role'] != '') {
+            $filterRole = $_GET['filter_role'];
+            $filteredUsers = array_filter($users, function($user) use ($filterRole) {
+                if($user['roles']) {
+                    return in_array($filterRole, explode(',', $user['roles']));
+                }
+                return false;
+            });
+        }
+        ?>
+        <div class="table-info">
+            <span>📋 <strong><?= count($filteredUsers) ?></strong> usuarios encontrados</span>
+        </div>
+
+        <?php if(empty($filteredUsers)): ?>
+            <div class="empty-state">
+                <div class="icon">👥</div>
+                <p>No hay usuarios con este filtro</p>
             </div>
-        `;
-        
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        
-        const form = event.target;
-        
-        document.getElementById('confirmRemoveRoleBtn').onclick = function() {
-            document.body.removeChild(modal);
-            form.submit();
-        };
-        
-        document.getElementById('cancelRemoveRoleBtn').onclick = function() {
-            document.body.removeChild(modal);
-        };
-        
-        return false;
-    }
-    </script>
+        <?php else: ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Roles</th>
+                    <th>Asignar Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $counter = 1; foreach($filteredUsers as $user): ?>
+                <tr>
+                    <td style="color:#999;"><?= $counter++ ?></td>
+                    <td><strong><?= htmlspecialchars($user['last_name'] . ' ' . $user['first_name']) ?></strong></td>
+                    <td style="color:#666;"><?= htmlspecialchars($user['email']) ?></td>
+                    <td>
+                        <?php if($user['roles']):
+                            $db2 = new Database();
+                            $stmtR = $db2->connect()->prepare("SELECT r.id, r.name FROM roles r INNER JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = :uid ORDER BY r.name");
+                            $stmtR->execute([':uid' => $user['id']]);
+                            $userRolesData = $stmtR->fetchAll(PDO::FETCH_ASSOC);
+                            foreach($userRolesData as $rd): ?>
+                            <span class="badge badge-green" style="margin:2px;">
+                                <?= ucfirst($rd['name']) ?>
+                                <form method="POST" action="?action=remove_role<?= isset($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '' ?>" style="display:inline;" onsubmit="return confirmRemoveRole(event,'<?= ucfirst($rd['name']) ?>','<?= htmlspecialchars($user['last_name'].' '.$user['first_name']) ?>')">
+                                    <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                                    <input type="hidden" name="role_id" value="<?= $rd['id'] ?>">
+                                    <button type="submit" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 0 0 4px;font-size:13px;line-height:1;" title="Quitar rol">×</button>
+                                </form>
+                            </span>
+                        <?php endforeach;
+                        else: ?>
+                            <em style="color:#bbb;">Sin roles</em>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <form method="POST" action="?action=assign_role<?= isset($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '' ?>" style="display:inline-flex;gap:6px;align-items:center;">
+                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                            <select name="role_id" required style="padding:5px 8px;border:1px solid #ccc;border-radius:6px;font-size:0.82rem;">
+                                <option value="">Seleccionar...</option>
+                                <?php foreach($roles as $role): ?>
+                                    <option value="<?= $role['id'] ?>"><?= ucfirst($role['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">Asignar</button>
+                        </form>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <a href="?action=edit_user&id=<?= $user['id'] ?>" class="btn btn-warning btn-sm">✏️ Editar</a>
+                        <form method="POST" action="?action=delete_user" style="display:inline;" onsubmit="return confirmDelete(event,'<?= htmlspecialchars($user['last_name'].' '.$user['first_name']) ?>')">
+                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                            <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Modal Eliminar Usuario -->
+<div class="modal-overlay" id="modalDelete">
+    <div class="modal-box">
+        <h3 style="color:#dc3545;">⚠️ Eliminar Usuario</h3>
+        <p>¿Está seguro de eliminar a <strong id="modalDeleteName"></strong>?<br>
+        <span style="font-size:0.82rem;color:#888;">Si tiene asistencias registradas, será desactivado en lugar de eliminado.</span></p>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modalDelete')">Cancelar</button>
+            <button class="btn btn-danger" id="modalDeleteConfirm">Sí, Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quitar Rol -->
+<div class="modal-overlay" id="modalRemoveRole">
+    <div class="modal-box">
+        <h3 style="color:#dc3545;">⚠️ Eliminar Rol</h3>
+        <p>¿Está seguro de eliminar el rol <strong id="modalRoleName"></strong> del usuario <strong id="modalRoleUser"></strong>?</p>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modalRemoveRole')">Cancelar</button>
+            <button class="btn btn-danger" id="modalRemoveRoleConfirm">Sí, Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+
+function confirmDelete(event, userName) {
+    event.preventDefault();
+    document.getElementById('modalDeleteName').textContent = userName;
+    var form = event.target;
+    document.getElementById('modalDeleteConfirm').onclick = function() { form.submit(); };
+    document.getElementById('modalDelete').classList.add('on');
+    return false;
+}
+
+function confirmRemoveRole(event, roleName, userName) {
+    event.preventDefault();
+    document.getElementById('modalRoleName').textContent = roleName;
+    document.getElementById('modalRoleUser').textContent = userName;
+    var form = event.target;
+    document.getElementById('modalRemoveRoleConfirm').onclick = function() { form.submit(); };
+    document.getElementById('modalRemoveRole').classList.add('on');
+    return false;
+}
+
+// Cerrar modal al hacer click fuera
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+    m.addEventListener('click', function(e) { if(e.target === m) closeModal(m.id); });
+});
+</script>
+
 </body>
 </html>
