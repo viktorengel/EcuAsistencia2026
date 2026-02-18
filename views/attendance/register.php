@@ -49,7 +49,7 @@
         <div class="card">
             <h2>Mis Clases de Hoy</h2>
             <div class="warning">
-                ⚠ <strong>Importante:</strong> Solo puede registrar asistencia del día actual o hasta 48 horas atrás.
+                ⚠ <strong>Importante:</strong> La asistencia registrada hoy podrá corregirse hasta 48 horas hábiles después (<?= date('d/m/Y', strtotime($maxEditDate)) ?>).
             </div>
 
             <?php if(empty($todayClasses)): ?>
@@ -96,7 +96,7 @@
                         min="<?= $minDate ?>" 
                         required>
                     <small style="color: #666; display: block; margin-top: 5px;">
-                        Permitido: Desde el <?= date('d/m/Y', strtotime($minDate)) ?> hasta hoy
+                        📅 La asistencia de hoy podrá editarse hasta el <?= date('d/m/Y', strtotime($maxEditDate)) ?>
                     </small>
                 </div>
                 <button type="button" onclick="loadStudents()">Cargar Estudiantes</button>

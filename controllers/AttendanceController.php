@@ -56,22 +56,20 @@ class AttendanceController {
         return $businessHours <= EDIT_ATTENDANCE_HOURS;
     }
 
-    // Agregar nueva función para calcular fecha mínima
-    private function getMinDateAllowed() {
+    // Agregar nueva función para calcular fecha máxima de edición
+    private function getMaxEditDate() {
         $today = new DateTime();
         $businessHoursNeeded = EDIT_ATTENDANCE_HOURS;
         $current = clone $today;
-        
+
         while ($businessHoursNeeded > 0) {
-            $current->modify('-1 day');
+            $current->modify('+1 day');
             $dayOfWeek = (int)$current->format('N');
-            
-            // Solo restar si no es fin de semana
             if ($dayOfWeek < 6) {
                 $businessHoursNeeded -= 24;
             }
         }
-        
+
         return $current->format('Y-m-d');
     }
 
@@ -140,6 +138,7 @@ class AttendanceController {
         
         $todayClasses = $scheduleModel->getTeacherScheduleToday($_SESSION['user_id'], $activeYear['id']);
         $minDate = $this->calculateMinDate();
+        $maxEditDate = $this->getMaxEditDate();
 
         include BASE_PATH . '/views/attendance/register.php';
     }
