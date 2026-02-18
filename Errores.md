@@ -12,4 +12,6 @@ Quiero póder importar desde excel o csv los datos de los estudiantes, docentes,
 
 Al registar un docente se deberia tomar en cuenta su titulo y experienca.
 
-Error al crear curso, se genera asi 1.º BT "A" - Informática (Soporte Técnico) - Matutina y aparece asi:  	1.º BT &quot;A&quot; - Informática (Soporte Técnico) - Matutina
+Error al crear curso, se genera asi 1.º BT "A" - Informática (Soporte Técnico) - Matutina y aparece asi:  	1.º BT &quot;A&quot; - Informática (Soporte Técnico) - Matutina, tambien al editar un curso no trae los datos del curso en el titulo muestra ✏️ Editar Curso: 1.º BT &quot;A&quot; - Informática (Soporte Técnico) - Matutina, el formulario esta incompleto no trae datos y esta incompleto.
+
+En Asignar Docente a Materia en el formulario en el campo Curso aparece 1.º BT "A" - Informática (Soporte Técnico) - Matutina - matutina, esta repetido matutina
