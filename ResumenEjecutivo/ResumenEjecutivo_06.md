@@ -366,3 +366,82 @@ Actualmente está en fase de optimización avanzada y preparación productiva.
 ---
 
 **FIN DEL RESUMEN**
+
+
+📋 RESUMEN EJECUTIVO — EcuAsist 2026
+Fecha: 18 de Febrero 2026 | Versión: v1.6
+
+🆕 MÓDULO NUEVO: Docente Tutor — Asistencia de Mi Curso
+Archivos creados/modificados:
+models/Attendance.php — 6 métodos nuevos agregados al final:
+
+getTutorCourseId($teacherId) — obtiene el curso donde el docente es tutor
+getSubjectsByCourse($courseId) — asignaturas del curso para filtro
+getStudentsByCourse($courseId) — estudiantes del curso para filtro
+getTutorCourseAttendance($courseId, $filters) — asistencias con filtros
+getTutorCourseStats($courseId, $filters) — estadísticas con filtros
+getTutorTopAbsences($courseId, $limit) — top ausencias
+
+controllers/TutorController.php — NUEVO
+
+courseAttendance() — vista principal, lee filtros del GET
+ajax() — endpoint JSON para filtrado sin recargar página
+
+views/tutor/course_attendance.php — NUEVO
+
+Stats cards con barras de progreso
+Top 5 estudiantes con más ausencias
+Filtros AJAX: asignatura, estudiante, estado, fecha desde/hasta
+Tabla completa de asistencias
+Fix: stats no se ocultan cuando el filtro no encuentra resultados
+
+views/tutor/no_tutor.php — NUEVO — vista fallback si no es tutor
+
+🔧 public/index.php — 2 cases agregados:
+phpcase 'tutor_course_attendance':
+    require_once BASE_PATH . '/controllers/TutorController.php';
+    (new TutorController())->courseAttendance();
+    break;
+
+case 'tutor_course_attendance_ajax':
+    require_once BASE_PATH . '/controllers/TutorController.php';
+    (new TutorController())->ajax();
+    break;
+
+🎨 RESPONSIVE / NAVBAR
+views/partials/navbar.php — reescrito completamente:
+
+Botón hamburguesa ☰ en pantallas ≤ 900px
+Panel móvil desplegable dentro del <nav>
+Dropdowns con clic en móvil, hover en desktop
+Usuario y campana accesibles en móvil
+Polling de notificaciones cada 30s
+Enlace "🎓 Asistencia de Mi Curso" agregado para docentes
+
+views/dashboard/index.php — rediseñado:
+
+Eliminado navbar propio duplicado
+Cards de acceso rápido con <a href> responsivos
+Grid adaptable: 3 col desktop → 2 tablet → 1 móvil
+Incluye acceso rápido al módulo tutor para docentes
+
+
+✅ ESTADO FUNCIONAL
+FuncionalidadEstadoVer asistencias del curso (tutor)✅ FuncionaFiltros AJAX sin recargar página✅ FuncionaStats se mantienen al filtrar sin resultados✅ CorregidoNavbar responsivo con hamburguesa✅ ListoDashboard responsivo✅ Listo
+
+📁 ARCHIVOS PARA DESCARGAR EN NUEVA SESIÓN
+Disponibles en /mnt/user-data/outputs/:
+
+tutor_attendance/models/Attendance.php
+tutor_attendance/controllers/TutorController.php
+tutor_attendance/views/tutor/course_attendance.php
+tutor_attendance/views/tutor/no_tutor.php
+responsive/navbar.php
+responsive/dashboard_index.php
+
+
+🔜 PENDIENTE SUGERIDO
+
+Hacer responsivas las demás vistas: users/, academic/, attendance/, reports/, stats/, assignments/
+Notificaciones toast en lugar de divs
+Gráficos en estadísticas

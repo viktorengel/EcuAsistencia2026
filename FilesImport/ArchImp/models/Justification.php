@@ -107,6 +107,17 @@ class Justification {
         return $result['count'] > 0;
     }
 
+    public function getById($id) {
+        $sql = "SELECT j.*, j.student_id, j.submitted_by,
+                    CONCAT(u.last_name, ' ', u.first_name) as student_name
+                FROM justifications j
+                INNER JOIN users u ON j.student_id = u.id
+                WHERE j.id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }    
+
     public function getReviewed($institutionId = null) {
         $sql = "SELECT j.*, 
                 CONCAT(u.last_name, ' ', u.first_name) as student_name,

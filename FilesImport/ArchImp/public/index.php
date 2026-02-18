@@ -467,6 +467,46 @@ switch ($action) {
         $controller->removeRelation();
         break;
 
+    case 'notifications':
+        require_once BASE_PATH . '/controllers/NotificationController.php';
+        (new NotificationController())->index();
+        break;
+
+    case 'notifications_mark_read':
+        require_once BASE_PATH . '/controllers/NotificationController.php';
+        (new NotificationController())->markRead();
+        break;
+
+    case 'notifications_mark_all':
+        require_once BASE_PATH . '/controllers/NotificationController.php';
+        (new NotificationController())->markAllRead();
+        break;
+
+    case 'notifications_delete':
+        require_once BASE_PATH . '/controllers/NotificationController.php';
+        (new NotificationController())->delete();
+        break;
+
+    case 'notifications_delete_read':
+        require_once BASE_PATH . '/controllers/NotificationController.php';
+        (new NotificationController())->deleteRead();
+        break;
+
+    case 'notifications_unread_json':
+        require_once BASE_PATH . '/controllers/NotificationController.php';
+        (new NotificationController())->getUnread();
+        break;
+
+    case 'tutor_course_attendance':
+        require_once BASE_PATH . '/controllers/TutorController.php';
+        (new TutorController())->courseAttendance();
+        break;
+
+    case 'tutor_course_attendance_ajax':
+        require_once BASE_PATH . '/controllers/TutorController.php';
+        (new TutorController())->ajax();
+        break;
+
     default:
         header('Location: ?action=login');
 }
