@@ -34,8 +34,9 @@ class DashboardController {
         }
 
         if (Security::hasRole('docente')) {
-            $stats['my_courses'] = $this->getTeacherCourses($_SESSION['user_id']);
+            $stats['my_courses']  = $this->getTeacherCourses($_SESSION['user_id']);
             $stats['my_students'] = $this->getTeacherStudentsCount($_SESSION['user_id']);
+            $stats['tutor_course'] = $this->getTutorCourse($_SESSION['user_id']);
         }
 
         if (Security::hasRole('estudiante')) {
@@ -141,5 +142,22 @@ class DashboardController {
         $stmt->execute([':representative_id' => $representativeId]);
         
         return $stmt->fetch()['total'];
+    }
+
+    private function getTutorCourse($teacherId) {
+        $sql = "SELECT c.name as course_name
+                FROM teacher_assignments ta
+                INNER JOIN courses c ON ta.course_id = c.id
+                INNER JOIN school_years sy ON ta.school_year_id = sy.id
+                WHERE ta.teacher_id = :teacher_id
+                AND ta.is_tutor = 1
+                AND sy.is_active = 1
+                LIMIT 1";
+
+        $db = new Database();
+        $stmt = $db->connect()->prepare($sql);
+        $stmt->execute([':teacher_id' => $teacherId]);
+        $row = $stmt->fetch();
+        return $row ? $row['course_name'] : null;
     }
 }

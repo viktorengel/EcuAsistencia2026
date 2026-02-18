@@ -123,7 +123,7 @@ Funcionalidad: Crear/editar/eliminar usuarios
 | 7 | Ver justificaciones rechazadas | ✅ Implementado |
 | 8 | Aprobar justificaciones | ✅ Implementado |
 | 9 | Rechazar justificaciones | ✅ Implementado |
-| 10 | Descargar documentos de justificación |  |
+| 10 | Descargar documentos de justificación | ✅ Implementado |
 
 ### Estadísticas y Búsqueda
 | # | Funcionalidad | Estado |
