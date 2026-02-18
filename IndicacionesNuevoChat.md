@@ -1,4 +1,4 @@
-Analiza estos archivos que te envío para dar continuidad un sistema que estoy construyendo y luego ayúdame con  algunas mejoras o cambios.
+Analiza los archivos que te envío para dar continuidad al sistema que estoy construyendo y ayúdame con algunas mejoras o cambios, pero antes lista todos los archivos del ZIP usando unzip -l sin extraerlos y muéstrame la lista completa.
 
 ## Indicaciones nuevo chat
 1. Identificaba el archivo exacto

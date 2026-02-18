@@ -3,6 +3,5 @@ config/config.php
 *.log
 .DS_Store
 Thumbs.db
-*.pdf
 *.xlsx
 *.xls
