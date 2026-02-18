@@ -48,8 +48,8 @@ class AcademicController {
             $data = [
                 ':institution_id' => $_SESSION['institution_id'],
                 ':school_year_id' => $activeYear['id'],
-                ':name' => Security::sanitize($_POST['name']),
-                ':grade_level' => Security::sanitize($_POST['grade_level']),
+                ':name' => html_entity_decode(Security::sanitize($_POST['name']), ENT_QUOTES, 'UTF-8'),
+                ':grade_level' => html_entity_decode(Security::sanitize($_POST['grade_level']), ENT_QUOTES, 'UTF-8'),
                 ':parallel' => Security::sanitize($_POST['parallel']),
                 ':shift_id' => (int)$_POST['shift_id']
             ];
@@ -96,8 +96,8 @@ class AcademicController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'id' => $courseId,
-                'name' => Security::sanitize($_POST['name']),
-                'grade_level' => Security::sanitize($_POST['grade_level']),
+                'name' => html_entity_decode(Security::sanitize($_POST['name']), ENT_QUOTES, 'UTF-8'),
+                'grade_level' => html_entity_decode(Security::sanitize($_POST['grade_level']), ENT_QUOTES, 'UTF-8'),
                 'parallel' => Security::sanitize($_POST['parallel']),
                 'shift_id' => (int)$_POST['shift_id']
             ];
