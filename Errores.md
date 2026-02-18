@@ -11,3 +11,5 @@ debe haber un módulo en la configuración del sistema que se pueda registrar cu
 Quiero póder importar desde excel o csv los datos de los estudiantes, docentes, asignaturas, etc
 
 Al registar un docente se deberia tomar en cuenta su titulo y experienca.
+
+Docente tutor puede ver la asistencia de su curso pero no funciona el filtro
