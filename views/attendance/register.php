@@ -59,7 +59,11 @@
             <?php else: ?>
                 <div id="classes-list">
                     <?php foreach($todayClasses as $class): ?>
-                    <div class="class-card" onclick="selectClass(<?= $class['id'] ?>, '<?= $class['course_name'] ?>', '<?= $class['subject_name'] ?>', <?= $class['period_number'] ?>)">
+                    <?php
+                        $jsonCourse  = json_encode($class['course_name'],  JSON_HEX_TAG | JSON_HEX_APOS);
+                        $jsonSubject = json_encode($class['subject_name'],  JSON_HEX_TAG | JSON_HEX_APOS);
+                    ?>
+                    <div class="class-card" onclick='selectClass(event, <?= $class["id"] ?>, <?= $jsonCourse ?>, <?= $jsonSubject ?>, <?= $class["period_number"] ?>)'>
                         <div class="class-info">
                             <div class="class-details">
                                 <h3><?= $class['period_number'] ?>ra hora - <?= $class['subject_name'] ?></h3>
@@ -126,7 +130,7 @@
         const minDateAllowed = '<?= $minDate ?>';
         let selectedScheduleId = null;
 
-        function selectClass(scheduleId, courseName, subjectName, periodNumber) {
+        function selectClass(event, scheduleId, courseName, subjectName, periodNumber) {
             selectedScheduleId = scheduleId;
             
             // Remover selección anterior

@@ -98,6 +98,11 @@ class ClassSchedule {
     }
 
     private function getCurrentDayName() {
+        // Forzar zona horaria Ecuador
+        $tz = new DateTimeZone('America/Guayaquil');
+        $now = new DateTime('now', $tz);
+        $dayNumber = (int)$now->format('N'); // 1=Lunes, 7=Domingo
+        
         $days = [
             1 => 'lunes',
             2 => 'martes',
@@ -107,7 +112,6 @@ class ClassSchedule {
             6 => 'sabado'
         ];
         
-        $dayNumber = date('N'); // 1=Lunes, 7=Domingo
         return $days[$dayNumber] ?? 'lunes';
     }
 }
