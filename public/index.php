@@ -507,6 +507,16 @@ switch ($action) {
         (new TutorController())->ajax();
         break;
 
+    case 'tutor_dashboard':
+        require_once BASE_PATH . '/controllers/TutorController.php';
+        (new TutorController())->dashboard();
+        break;
+
+    case 'tutor_search_students':
+        require_once BASE_PATH . '/controllers/TutorController.php';
+        (new TutorController())->searchStudents();
+        break;
+
     default:
         header('Location: ?action=login');
 }
