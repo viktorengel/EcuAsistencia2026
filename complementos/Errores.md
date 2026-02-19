@@ -13,5 +13,3 @@ Quiero póder importar desde excel o csv los datos de los estudiantes, docentes,
 Al registar un docente se deberia tomar en cuenta su titulo y experienca.
 
 Menú se daña al hacerce mas pequeña la pantalla
-
-Diseño de pagina asistencia de mi curso copiar en todas las paginas, se apata a pantallas pequeñas

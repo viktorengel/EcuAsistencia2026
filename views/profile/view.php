@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Perfil - EcuAsist</title>
     <style>
-        .avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 2rem; font-weight: 700; flex-shrink: 0; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #0277bd, #0288d1); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 2rem; font-weight: 700; flex-shrink: 0; }
         .profile-header { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
         .info-row { display: flex; padding: 14px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
         .info-row:last-child { border-bottom: none; }
@@ -33,15 +33,15 @@
     <?php endif; ?>
 
     <!-- Header -->
-    <div class="page-header purple">
+    <div class="page-header" style="background:linear-gradient(135deg,#0277bd,#0288d1);">
         <div class="ph-icon">👤</div>
         <div>
             <h1>Mi Perfil</h1>
             <p>Información de tu cuenta</p>
         </div>
         <div class="ph-actions">
-            <a href="?action=edit_profile" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.5);">✏️ Editar</a>
-            <a href="?action=change_password" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.5);margin-left:8px;">🔒 Contraseña</a>
+            <a href="?action=edit_profile" class="btn" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.6);">✏️ Editar</a>
+            <a href="?action=change_password" class="btn" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.6);margin-left:8px;">🔒 Contraseña</a>
         </div>
     </div>
 
