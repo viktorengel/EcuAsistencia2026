@@ -3,84 +3,121 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario de Asistencia - EcuAsist</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .navbar { background: #007bff; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { font-size: 24px; }
-        .navbar a { color: white; text-decoration: none; margin-left: 20px; }
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 20px; }
-        .calendar-header { text-align: center; font-weight: bold; padding: 10px; background: #f8f9fa; }
-        .calendar-day { border: 1px solid #ddd; padding: 10px; min-height: 80px; border-radius: 4px; position: relative; }
-        .calendar-day.today { background: #fff3cd; border-color: #ffc107; }
-        .calendar-day.has-attendance { background: #d4edda; }
-        .calendar-day.weekend { background: #f8f9fa; color: #999; }
-        .day-number { font-weight: bold; margin-bottom: 5px; }
-        .attendance-summary { font-size: 11px; color: #666; }
-        .month-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; }
-        .btn:hover { background: #0056b3; }
-        .form-group { margin-bottom: 15px; }
-        select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 16px; }
+        .cal-header { text-align: center; font-size: 0.78rem; font-weight: 600; color: #555; padding: 8px; background: #f8f9fa; border-radius: 4px; }
+        .cal-day { border: 1px solid #e0e0e0; padding: 8px; min-height: 70px; border-radius: 6px; background: #fff; position: relative; font-size: 0.82rem; }
+        .cal-day.empty { background: #f8f9fa; border: none; }
+        .cal-day.today { background: #fff8e1; border-color: #ffc107; }
+        .cal-day.has-data { background: #f0faf0; border-color: #28a745; }
+        .cal-day.weekend { background: #fafafa; color: #bbb; }
+        .day-num { font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
+        .day-summary { font-size: 0.72rem; color: #666; line-height: 1.4; }
+        .day-summary .ok { color: #28a745; font-weight: 600; }
+        .day-summary .no { color: #dc3545; font-weight: 600; }
+        .month-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .month-nav h2 { font-size: 1.1rem; font-weight: 600; color: #333; }
     </style>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-    <div class="container">
-        <div class="card">
-            <div class="form-group">
+<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
+
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
+    <a href="?action=view_course_attendance">Asistencia</a> &rsaquo;
+    Calendario
+</div>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="page-header teal">
+        <div class="ph-icon">📅</div>
+        <div>
+            <h1>Calendario de Asistencia</h1>
+            <p>Vista mensual del registro de asistencia por curso</p>
+        </div>
+    </div>
+
+    <!-- Selector de curso -->
+    <div class="panel" style="margin-bottom:16px;">
+        <div class="form-row">
+            <div class="form-group" style="flex:2;">
                 <label>Seleccionar Curso</label>
-                <select id="course-select" onchange="loadCalendar()">
+                <select id="course-select" class="form-control" onchange="loadCalendar()">
                     <option value="">Seleccionar curso...</option>
                     <?php foreach($courses as $course): ?>
-                        <option value="<?= $course['id'] ?>" <?= isset($_GET['course_id']) && $_GET['course_id'] == $course['id'] ? 'selected' : '' ?>>
-                            <?= $course['name'] ?> - <?= $course['shift_name'] ?>
+                        <option value="<?= $course['id'] ?>"
+                            <?= isset($_GET['course_id']) && $_GET['course_id'] == $course['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($course['name']) ?> — <?= ucfirst($course['shift_name']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
-
-            <?php if(isset($_GET['course_id'])): ?>
-            <div class="month-nav">
-                <a href="?action=attendance_calendar&course_id=<?= $_GET['course_id'] ?>&month=<?= $prevMonth ?>" class="btn">← Anterior</a>
-                <h2><?= $monthName ?> <?= $year ?></h2>
-                <a href="?action=attendance_calendar&course_id=<?= $_GET['course_id'] ?>&month=<?= $nextMonth ?>" class="btn">Siguiente →</a>
-            </div>
-
-            <div class="calendar">
-                <?php foreach(['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as $day): ?>
-                    <div class="calendar-header"><?= $day ?></div>
-                <?php endforeach; ?>
-
-                <?php foreach($calendarDays as $day): ?>
-                    <div class="calendar-day <?= $day['classes'] ?>">
-                        <?php if($day['day']): ?>
-                            <div class="day-number"><?= $day['day'] ?></div>
-                            <?php if(isset($day['attendance'])): ?>
-                                <div class="attendance-summary">
-                                    ✓ <?= $day['attendance']['presente'] ?> 
-                                    ✗ <?= $day['attendance']['ausente'] ?>
-                                </div>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
         </div>
     </div>
 
-    <script>
-        function loadCalendar() {
-            const courseId = document.getElementById('course-select').value;
-            if (courseId) {
-                window.location.href = '?action=attendance_calendar&course_id=' + courseId;
-            }
-        }
-    </script>
+    <?php if(isset($_GET['course_id'])): ?>
+
+    <!-- Navegación del mes -->
+    <div class="month-nav">
+        <a href="?action=attendance_calendar&course_id=<?= (int)$_GET['course_id'] ?>&month=<?= htmlspecialchars($prevMonth) ?>"
+           class="btn btn-outline">← Anterior</a>
+        <h2><?= htmlspecialchars($monthName) ?> <?= $year ?></h2>
+        <a href="?action=attendance_calendar&course_id=<?= (int)$_GET['course_id'] ?>&month=<?= htmlspecialchars($nextMonth) ?>"
+           class="btn btn-outline">Siguiente →</a>
+    </div>
+
+    <!-- Calendario -->
+    <div class="panel" style="padding:16px;">
+        <div class="calendar-grid">
+            <?php foreach(['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as $d): ?>
+                <div class="cal-header"><?= $d ?></div>
+            <?php endforeach; ?>
+
+            <?php foreach($calendarDays as $day): ?>
+                <?php if(!$day['day']): ?>
+                    <div class="cal-day empty"></div>
+                <?php else: ?>
+                    <div class="cal-day <?= $day['classes'] ?>">
+                        <div class="day-num"><?= $day['day'] ?></div>
+                        <?php if(isset($day['attendance'])): ?>
+                            <div class="day-summary">
+                                <span class="ok">✓ <?= $day['attendance']['presente'] ?></span>
+                                &nbsp;
+                                <span class="no">✗ <?= $day['attendance']['ausente'] ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Leyenda -->
+        <div style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;font-size:0.8rem;color:#666;">
+            <span><span style="display:inline-block;width:12px;height:12px;background:#f0faf0;border:1px solid #28a745;border-radius:2px;"></span> Con asistencia</span>
+            <span><span style="display:inline-block;width:12px;height:12px;background:#fff8e1;border:1px solid #ffc107;border-radius:2px;"></span> Hoy</span>
+            <span><span style="display:inline-block;width:12px;height:12px;background:#fafafa;border:1px solid #e0e0e0;border-radius:2px;"></span> Fin de semana</span>
+        </div>
+    </div>
+
+    <?php else: ?>
+    <div class="empty-state">
+        <div class="icon">📅</div>
+        <p>Seleccione un curso para ver el calendario.</p>
+    </div>
+    <?php endif; ?>
+
+</div>
+
+<script>
+function loadCalendar() {
+    const id = document.getElementById('course-select').value;
+    if (id) window.location.href = '?action=attendance_calendar&course_id=' + id;
+}
+</script>
 </body>
 </html>

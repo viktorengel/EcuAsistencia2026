@@ -1,4 +1,4 @@
-<?php 
+<?php
 if(isset($_SESSION['user_id'])) {
     header('Location: ?action=dashboard');
     exit;
@@ -10,92 +10,83 @@ if(isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - EcuAsist 2026</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            max-width: 420px;
-            width: 100%;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+               min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: #fff; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+                      max-width: 420px; width: 100%; padding: 40px; }
+        .login-logo { text-align: center; margin-bottom: 28px; }
+        .login-logo .icon { font-size: 3.5rem; margin-bottom: 12px; }
+        .login-logo h2 { font-size: 1.5rem; font-weight: 700; color: #333; }
+        .login-logo p { color: #888; font-size: 0.88rem; margin-top: 4px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600; color: #444; }
+        .form-group input { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px;
+                            font-size: 0.9rem; transition: border-color 0.2s; }
+        .form-group input:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+        .btn-login { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2);
+                     color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+                     cursor: pointer; transition: opacity 0.2s; margin-top: 4px; }
+        .btn-login:hover { opacity: 0.9; }
+        .alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 0.85rem; }
+        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .login-footer { text-align: center; margin-top: 20px; }
+        .login-footer a { color: #667eea; text-decoration: none; font-size: 0.85rem; }
+        .login-footer a:hover { text-decoration: underline; }
+        .divider { border: none; border-top: 1px solid #f0f0f0; margin: 20px 0; }
+        .demo-hint { background: #f8f9fa; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #888; text-align: center; }
+        .demo-hint strong { color: #555; }
     </style>
 </head>
 <body>
-    <div class="login-card p-5">
-        <div class="text-center mb-4">
-            <i class="fas fa-school fa-4x text-primary mb-3"></i>
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="icon">🏫</div>
             <h2>EcuAsist 2026</h2>
-            <p class="text-muted">Sistema de Asistencia Escolar</p>
+            <p>Sistema de Asistencia Escolar</p>
         </div>
-        
+
         <?php if(isset($error)): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <div class="alert alert-danger">⚠️ <?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
-        
+
         <?php if(isset($_GET['registered'])): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> Registro exitoso. Ahora puede iniciar sesión.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <div class="alert alert-success">✓ Registro exitoso. Ahora puede iniciar sesión.</div>
         <?php endif; ?>
-        
+
         <?php if(isset($_GET['reset'])): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> Contraseña restablecida correctamente.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <div class="alert alert-success">✓ Contraseña restablecida correctamente.</div>
         <?php endif; ?>
-        
+
         <form method="POST">
             <?php Security::generateToken(); ?>
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            
-            <div class="mb-3">
-                <label for="email" class="form-label">
-                    <i class="fas fa-user"></i> Usuario o Correo Electrónico
-                </label>
-                <input type="text" class="form-control" id="email" name="email" required autofocus placeholder="Ingrese usuario o email">
+
+            <div class="form-group">
+                <label>👤 Usuario o Correo Electrónico</label>
+                <input type="text" name="email" required autofocus placeholder="Ingrese usuario o email">
             </div>
-            
-            <div class="mb-3">
-                <label for="password" class="form-label">
-                    <i class="fas fa-lock"></i> Contraseña
-                </label>
-                <input type="password" class="form-control" id="password" name="password" required placeholder="Ingrese contraseña">
+
+            <div class="form-group">
+                <label>🔒 Contraseña</label>
+                <input type="password" name="password" required placeholder="Ingrese contraseña">
             </div>
-            
-            <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-            </button>
+
+            <button type="submit" class="btn-login">🔑 Iniciar Sesión</button>
         </form>
-        
-        <div class="text-center">
-            <a href="?action=forgot" class="text-decoration-none small">
-                <i class="fas fa-key"></i> ¿Olvidó su contraseña?
-            </a>
+
+        <div class="login-footer" style="margin-top:16px;">
+            <a href="?action=forgot">¿Olvidó su contraseña?</a>
         </div>
-        
-        <hr class="my-4">
-        
-        <div class="text-center">
-            <small class="text-muted">
-                <i class="fas fa-info-circle"></i> Usuario de prueba: <strong>admin</strong> / <strong>password</strong>
-            </small>
+
+        <hr class="divider">
+
+        <div class="demo-hint">
+            ℹ️ Usuario de prueba: <strong>admin</strong> / <strong>password</strong>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

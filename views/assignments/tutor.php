@@ -3,247 +3,189 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asignar Docente Tutor - EcuAsist</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
-        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; font-size: 14px; }
-        th { background: #f8f9fa; font-weight: bold; }
-        h2 { margin-bottom: 20px; color: #333; }
-    </style>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
-        <div class="container">
-            <?php if(isset($_GET['tutor_success'])): ?>
-                <div class="success">✓ Tutor asignado correctamente</div>
-            <?php endif; ?>
-            <?php if(isset($_GET['tutor_error'])): ?>
-                <div class="error">✗ <?= htmlspecialchars($_GET['tutor_error']) ?></div>
-            <?php endif; ?>
-            <?php if(isset($_GET['tutor_removed'])): ?>
-                <div class="success">✓ Tutor eliminado correctamente</div>
-            <?php endif; ?>
 
-            <div class="card">
-                <h2>Asignar Docente Tutor</h2>
-                <form method="POST" action="?action=set_tutor" id="tutorForm">
-                    <div class="form-group">
-                        <label>Curso</label>
-                        <select name="course_id" id="course_tutor" required>
-                            <option value="">Seleccionar...</option>
-                            <?php foreach($courses as $course): ?>
-                                <option value="<?= $course['id'] ?>">
-                                    <?= $course['name'] ?> - <?= $course['shift_name'] ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-                    <div class="form-group">
-                        <label>Docente Tutor</label>
-                        <select name="teacher_id" id="teacher_tutor" required>
-                            <option value="">Primero seleccione un curso...</option>
-                        </select>
-                    </div>
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
+    <a href="?action=assignments">Asignaciones</a> &rsaquo;
+    Tutores
+</div>
 
-                    <button type="submit">Asignar Tutor</button>
-                </form>
+<div class="container-wide">
 
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-                
-            </div>
+    <?php if(isset($_GET['tutor_success'])): ?><div class="alert alert-success">✓ Tutor asignado correctamente</div><?php endif; ?>
+    <?php if(isset($_GET['tutor_removed'])): ?><div class="alert alert-success">✓ Tutor eliminado correctamente</div><?php endif; ?>
+    <?php if(isset($_GET['tutor_error'])): ?><div class="alert alert-danger">✗ <?= htmlspecialchars($_GET['tutor_error']) ?></div><?php endif; ?>
 
-            <div class="card">
-                <h2>Gestión de Tutores por Curso</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Curso</th>
-                            <th>Docente Tutor</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach($courses as $course): ?>
-                        <?php
-                            // Buscar si el curso tiene tutor
-                            $courseTutor = null;
-                            foreach($assignments as $assignment) {
-                                if ($assignment['course_name'] == $course['name'] && $assignment['is_tutor']) {
-                                    $courseTutor = $assignment;
-                                    break;
-                                }
-                            }
-                        ?>
-                        <tr>
-                            <td><?= $course['name'] ?></td>
-                            <td>
-                                <?php if($courseTutor): ?>
-                                    <?= $courseTutor['teacher_name'] ?>
-                                <?php else: ?>
-                                    <em style="color: #999;">Sin tutor asignado</em>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if($courseTutor): ?>
-                                    <form method="POST" action="?action=remove_tutor" style="display: inline;" onsubmit="return confirmRemoveTutor(event, '<?= $courseTutor['teacher_name'] ?>', '<?= $course['name'] ?>')">
-                                        <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
-                                        <button type="submit" class="btn-danger" style="padding: 5px 10px; font-size: 12px;">
-                                            × Quitar
-                                        </button>
-                                    </form>
-                                <?php else: ?>
-                                    -
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+    <!-- Header -->
+    <div class="page-header orange">
+        <div class="ph-icon">⭐</div>
+        <div>
+            <h1>Asignar Docente Tutor</h1>
+            <p>Cada curso puede tener un único tutor. El docente debe tener asignatura en el curso.</p>
+        </div>
+        <div class="ph-actions">
+            <a href="?action=assignments" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.5);">← Asignaciones</a>
         </div>
     </div>
 
-<script>
-    let currentTutor = null;
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
 
-    document.getElementById('course_tutor').addEventListener('change', function() {
-        const courseId = this.value;
-        const teacherSelect = document.getElementById('teacher_tutor');
-        currentTutor = null;
-        
-        teacherSelect.innerHTML = '<option value="">Cargando...</option>';
-        
-        if (!courseId) {
-            teacherSelect.innerHTML = '<option value="">Primero seleccione un curso...</option>';
-            return;
-        }
-        
-        fetch('?action=check_course_tutor&course_id=' + courseId)
-            .then(response => response.json())
-            .then(tutor => {
-                if (tutor && tutor.tutor_name) {
-                    currentTutor = tutor.tutor_name;
-                }
-            });
-        
-        fetch('?action=get_course_teachers&course_id=' + courseId)
-            .then(response => response.json())
-            .then(data => {
-                if (data.length === 0) {
-                    teacherSelect.innerHTML = '<option value="">No hay docentes asignados a este curso</option>';
-                } else {
-                    teacherSelect.innerHTML = '<option value="">Seleccionar...</option>';
-                    data.forEach(teacher => {
-                        const option = document.createElement('option');
-                        option.value = teacher.teacher_id;
-                        option.textContent = teacher.teacher_name;
-                        teacherSelect.appendChild(option);
-                    });
-                }
-            })
-            .catch(error => {
-                teacherSelect.innerHTML = '<option value="">Error al cargar docentes</option>';
-                console.error('Error:', error);
-            });
-    });
-
-    document.getElementById('tutorForm').addEventListener('submit', function(e) {
-        if (currentTutor) {
-            e.preventDefault();
-            
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-            
-            const modalContent = document.createElement('div');
-            modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-            
-            modalContent.innerHTML = `
-                <h3 style="margin: 0 0 15px 0; color: #333;">⚠️ Confirmar Cambio de Tutor</h3>
-                <p style="margin: 0 0 20px 0; color: #666;">
-                    El curso ya tiene como tutor a: <strong>${currentTutor}</strong>.<br>
-                    ¿Desea reemplazarlo por el nuevo docente?
-                </p>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" id="cancelBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Cancelar
-                    </button>
-                    <button type="button" id="confirmBtn" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Sí, Reemplazar
-                    </button>
+        <!-- Formulario -->
+        <div class="panel">
+            <h3 style="margin-bottom:16px;font-size:1rem;">⭐ Asignar Tutor</h3>
+            <form method="POST" action="?action=set_tutor" id="tutorForm">
+                <div class="form-group">
+                    <label>Curso</label>
+                    <select name="course_id" id="course_tutor" class="form-control" required
+                            onchange="loadTeachers(this.value)">
+                        <option value="">Seleccionar...</option>
+                        <?php foreach($courses as $course): ?>
+                            <option value="<?= $course['id'] ?>">
+                                <?= htmlspecialchars($course['name']) ?> — <?= ucfirst($course['shift_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-            `;
-            
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-            
-            const form = this;
-            
-            document.getElementById('confirmBtn').onclick = function() {
-                document.body.removeChild(modal);
-                currentTutor = null;
-                form.submit();
-            };
-            
-            document.getElementById('cancelBtn').onclick = function() {
-                document.body.removeChild(modal);
-            };
-        }
-    });
 
-    function confirmRemoveTutor(event, tutorName, courseName) {
-        event.preventDefault();
-        
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        
-        modalContent.innerHTML = `
-            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Quitar Tutor</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">
-                ¿Está seguro de quitar a <strong>${tutorName}</strong> como tutor del curso <strong>${courseName}</strong>?
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelRemoveBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="confirmRemoveBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Sí, Quitar
-                </button>
+                <div class="form-group">
+                    <label>Docente Tutor</label>
+                    <select name="teacher_id" id="teacher_tutor" class="form-control" required>
+                        <option value="">Primero seleccione un curso...</option>
+                    </select>
+                </div>
+
+                <div id="tutor-warning" style="display:none;" class="alert alert-warning"></div>
+
+                <button type="submit" class="btn btn-success">⭐ Asignar Tutor</button>
+            </form>
+        </div>
+
+        <!-- Tabla cursos - tutores -->
+        <div class="table-wrap">
+            <div class="table-info">
+                <span>📋 Tutores por Curso</span>
             </div>
-        `;
-        
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        
-        const form = event.target;
-        
-        document.getElementById('confirmRemoveBtn').onclick = function() {
-            document.body.removeChild(modal);
-            form.submit();
-        };
-        
-        document.getElementById('cancelRemoveBtn').onclick = function() {
-            document.body.removeChild(modal);
-        };
-        
-        return false;
+            <table>
+                <thead>
+                    <tr>
+                        <th>Curso</th>
+                        <th>Jornada</th>
+                        <th>Tutor Asignado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($courses as $course):
+                        $courseTutor = null;
+                        foreach($assignments as $a) {
+                            if ($a['course_name'] == $course['name'] && $a['is_tutor']) {
+                                $courseTutor = $a; break;
+                            }
+                        }
+                    ?>
+                    <tr>
+                        <td><strong><?= htmlspecialchars($course['name']) ?></strong></td>
+                        <td><?= ucfirst($course['shift_name']) ?></td>
+                        <td>
+                            <?php if($courseTutor): ?>
+                                <span class="badge badge-green">⭐ <?= htmlspecialchars($courseTutor['teacher_name']) ?></span>
+                            <?php else: ?>
+                                <span style="color:#ccc;font-size:0.82rem;font-style:italic;">Sin tutor</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if($courseTutor): ?>
+                                <button class="btn btn-danger btn-sm"
+                                    onclick="openModal('modalRem<?= $course['id'] ?>')">× Quitar</button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modales quitar tutor -->
+<?php foreach($courses as $course):
+    $courseTutor = null;
+    foreach($assignments as $a) {
+        if ($a['course_name'] == $course['name'] && $a['is_tutor']) {
+            $courseTutor = $a; break;
+        }
     }
-    </script>
+    if(!$courseTutor) continue;
+?>
+<div class="modal-overlay" id="modalRem<?= $course['id'] ?>">
+    <div class="modal-box" style="max-width:400px;">
+        <h3>⭐ Quitar Tutor</h3>
+        <p style="margin:12px 0 20px;color:#555;">
+            ¿Quitar a <strong><?= htmlspecialchars($courseTutor['teacher_name']) ?></strong>
+            como tutor de <strong><?= htmlspecialchars($course['name']) ?></strong>?
+        </p>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modalRem<?= $course['id'] ?>')">Cancelar</button>
+            <form method="POST" action="?action=remove_tutor" style="display:inline;">
+                <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
+                <button type="submit" class="btn btn-danger">× Quitar Tutor</button>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endforeach; ?>
+
+<script>
+function loadTeachers(courseId) {
+    const sel = document.getElementById('teacher_tutor');
+    const warn = document.getElementById('tutor-warning');
+    if (!courseId) {
+        sel.innerHTML = '<option value="">Primero seleccione un curso...</option>';
+        warn.style.display = 'none';
+        return;
+    }
+    sel.innerHTML = '<option value="">Cargando...</option>';
+    fetch('?action=get_course_teachers&course_id=' + courseId)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.length) {
+                sel.innerHTML = '<option value="">No hay docentes asignados a este curso</option>';
+                return;
+            }
+            sel.innerHTML = '<option value="">Seleccionar...</option>';
+            data.forEach(t => {
+                const o = document.createElement('option');
+                o.value = t.teacher_id;
+                o.textContent = t.teacher_name;
+                sel.appendChild(o);
+            });
+        });
+
+    // Verificar si el curso ya tiene tutor
+    fetch('?action=check_course_tutor&course_id=' + courseId)
+        .then(r => r.json())
+        .then(data => {
+            if (data.has_tutor) {
+                warn.textContent = '⚠️ Este curso ya tiene tutor: ' + data.teacher_name + '. Si continúas, será reemplazado.';
+                warn.style.display = 'block';
+            } else {
+                warn.style.display = 'none';
+            }
+        });
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('on'); }
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if(e.target === m) closeModal(m.id); });
+});
+</script>
 </body>
 </html>
