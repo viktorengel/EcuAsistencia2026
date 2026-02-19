@@ -27,25 +27,40 @@ class JustificationController {
             die('Acceso denegado');
         }
 
-        $attendanceId = isset($_GET['attendance_id']) ? (int)$_GET['attendance_id'] : null;
+        $studentId = Security::hasRole('estudiante')
+            ? $_SESSION['user_id']
+            : (isset($_GET['student_id']) ? (int)$_GET['student_id'] : null);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-            // Validar fechas
-            $dateFrom = $_POST['date_from'] ?? '';
-            $dateTo   = $_POST['date_to']   ?? $dateFrom;
+            $studentId = Security::hasRole('estudiante')
+                ? $_SESSION['user_id']
+                : (int)$_POST['student_id'];
 
-            if (empty($dateFrom)) {
-                header('Location: ?action=submit_justification&error=no_date');
-                exit;
-            }
-            if (strtotime($dateTo) < strtotime($dateFrom)) {
-                header('Location: ?action=submit_justification&error=date_range');
+            // Ausencias seleccionadas
+            $attendanceIds = $_POST['attendance_ids'] ?? [];
+            if (empty($attendanceIds)) {
+                header('Location: ?action=submit_justification&error=no_absences');
                 exit;
             }
 
-            // Días laborables y quién puede aprobar
-            $workingDays = Justification::countWorkingDays($dateFrom, $dateTo);
+            // Obtener fechas de las ausencias seleccionadas para calcular días laborables
+            $db  = new Database();
+            $pdo = $db->connect();
+            $in  = implode(',', array_map('intval', $attendanceIds));
+            $rows = $pdo->query(
+                "SELECT date FROM attendances WHERE id IN ($in) AND student_id = $studentId ORDER BY date"
+            )->fetchAll();
+
+            if (empty($rows)) {
+                header('Location: ?action=submit_justification&error=no_absences');
+                exit;
+            }
+
+            $dates       = array_column($rows, 'date');
+            $dateFrom    = min($dates);
+            $dateTo      = max($dates);
+            $workingDays = count($attendanceIds); // cada ausencia = 1 día (pueden ser no consecutivos)
             $canApprove  = Justification::resolveApprover($workingDays);
 
             // Subir documento
@@ -53,8 +68,8 @@ class JustificationController {
             if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
                 $uploadDir = BASE_PATH . '/uploads/justifications/';
                 if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
-                $ext      = strtolower(pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION));
-                $allowed  = ['pdf','jpg','jpeg','png'];
+                $ext     = strtolower(pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION));
+                $allowed = ['pdf','jpg','jpeg','png'];
                 if (in_array($ext, $allowed) && $_FILES['document']['size'] <= 5 * 1024 * 1024) {
                     $filename = uniqid() . '.' . $ext;
                     if (move_uploaded_file($_FILES['document']['tmp_name'], $uploadDir . $filename)) {
@@ -63,20 +78,12 @@ class JustificationController {
                 }
             }
 
-            // Motivo: tipo predefinido o "Otro"
-            $reasonType = Security::sanitize($_POST['reason_type'] ?? '');
-            $reasonText = Security::sanitize($_POST['reason'] ?? '');
-            if ($reasonType === 'Otro') {
-                $reasonFinal = $reasonText;
-            } elseif ($reasonType) {
-                $reasonFinal = $reasonType . ($reasonText ? ': ' . $reasonText : '');
-            } else {
-                $reasonFinal = $reasonText;
-            }
-
-            $studentId = Security::hasRole('estudiante')
-                ? $_SESSION['user_id']
-                : (int)$_POST['student_id'];
+            // Motivo
+            $reasonType  = Security::sanitize($_POST['reason_type'] ?? '');
+            $reasonText  = Security::sanitize($_POST['reason']      ?? '');
+            $reasonFinal = ($reasonType === 'Otro')
+                ? $reasonText
+                : ($reasonType . ($reasonText ? ': ' . $reasonText : ''));
 
             $data = [
                 ':student_id'    => $studentId,
@@ -90,24 +97,20 @@ class JustificationController {
                 ':can_approve'   => $canApprove,
             ];
 
-            $this->justificationModel->createByRange($data);
+            $this->justificationModel->createForAttendances($attendanceIds, $data);
 
-            // Notificar según quien debe aprobar
+            // Notificar
             if ($canApprove === 'tutor') {
-                // Buscar tutor del curso del estudiante
-                $db   = new Database();
-                $pdo  = $db->connect();
                 $stmt = $pdo->prepare(
                     "SELECT ta.teacher_id FROM teacher_assignments ta
                      INNER JOIN course_students cs ON ta.course_id = cs.course_id
-                     WHERE cs.student_id = :sid AND ta.is_tutor = 1
-                     LIMIT 1"
+                     WHERE cs.student_id = :sid AND ta.is_tutor = 1 LIMIT 1"
                 );
                 $stmt->execute([':sid' => $studentId]);
-                $tutor = $stmt->fetchColumn();
-                if ($tutor) {
+                $tutorId = $stmt->fetchColumn();
+                if ($tutorId) {
                     $this->notificationModel->create(
-                        $tutor,
+                        $tutorId,
                         '📝 Justificación pendiente (tutor)',
                         "Un estudiante de tu curso necesita justificación por $workingDays día(s).",
                         'info',
@@ -117,7 +120,7 @@ class JustificationController {
             } else {
                 $this->_notifyReviewers(
                     '📝 Nueva justificación pendiente',
-                    "Justificación de $workingDays días laborables requiere revisión.",
+                    "Justificación de $workingDays día(s) requiere revisión.",
                     'info',
                     '?action=pending_justifications'
                 );
@@ -127,20 +130,26 @@ class JustificationController {
             exit;
         }
 
-        // GET: cargar vista
-        $attendanceDate = null;
-        if ($attendanceId) {
+        // GET: cargar ausencias no justificadas
+        $absences = $this->attendanceModel->getUnjustifiedAbsences($studentId ?? $_SESSION['user_id']);
+
+        // Si representante, cargar sus hijos
+        $myChildren = [];
+        if (Security::hasRole('representante')) {
             $db   = new Database();
-            $stmt = $db->connect()->prepare("SELECT date FROM attendances WHERE id=:id");
-            $stmt->execute([':id' => $attendanceId]);
-            $row  = $stmt->fetch();
-            $attendanceDate = $row ? $row['date'] : null;
+            $stmt = $db->connect()->prepare(
+                "SELECT u.id, CONCAT(u.last_name,' ',u.first_name) as full_name
+                 FROM users u INNER JOIN representatives r ON u.id = r.student_id
+                 WHERE r.representative_id = :rid ORDER BY u.last_name"
+            );
+            $stmt->execute([':rid' => $_SESSION['user_id']]);
+            $myChildren = $stmt->fetchAll();
         }
 
         include BASE_PATH . '/views/justifications/submit.php';
     }
 
-    // ── Justificaciones pendientes para el tutor ──────────────────────
+
     public function pendingForTutor() {
         if (!Security::hasRole('docente')) die('Acceso denegado');
 

@@ -257,4 +257,33 @@ class Justification {
         }
         return $result;
     }
+
+    // Crear una justificación por cada asistencia seleccionada
+    public function createForAttendances($attendanceIds, $data) {
+        $sql = "INSERT INTO justifications
+                    (attendance_id, student_id, submitted_by,
+                     date_from, date_to, working_days,
+                     reason_type, reason, document_path, can_approve, status)
+                VALUES
+                    (:attendance_id, :student_id, :submitted_by,
+                     :date_from, :date_to, :working_days,
+                     :reason_type, :reason, :document_path, :can_approve, 'pendiente')";
+        $stmt = $this->db->prepare($sql);
+        $ok = true;
+        foreach ($attendanceIds as $attId) {
+            $row = $data;
+            $row[':attendance_id'] = (int)$attId;
+            if (!$stmt->execute($row)) $ok = false;
+        }
+        return $ok;
+    }
+
+    // Contar ausencias ya justificadas (pendiente o aprobada) para un estudiante en un rango
+    public function countPendingJustifications($studentId) {
+        $sql = "SELECT COUNT(*) FROM justifications
+                WHERE student_id = :sid AND status = 'pendiente'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':sid' => $studentId]);
+        return (int)$stmt->fetchColumn();
+    }
 }
