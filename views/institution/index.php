@@ -5,266 +5,362 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración de Institución - EcuAsist</title>
+    <style>
+        /* ── Jornadas toggle ── */
+        .shifts-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+        .shift-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 20px; border-radius: 10px; cursor: pointer;
+            border: 2px solid #e0e0e0; background: #f9f9f9;
+            transition: all .2s; user-select: none; min-width: 150px;
+        }
+        .shift-card:hover { border-color: #90caf9; background: #e3f2fd; }
+        .shift-card.active { border-color: #1976d2; background: #e3f2fd; }
+        .shift-card .shift-icon { font-size: 22px; }
+        .shift-card .shift-info { flex: 1; }
+        .shift-card .shift-name { font-weight: 600; font-size: 14px; color: #333; }
+        .shift-card .shift-status { font-size: 11px; margin-top: 2px; }
+        .shift-card.active .shift-status { color: #1565c0; }
+        .shift-card:not(.active) .shift-status { color: #999; }
+        .shift-card .shift-toggle {
+            width: 36px; height: 20px; border-radius: 10px; position: relative;
+            background: #ccc; transition: background .2s; flex-shrink: 0;
+        }
+        .shift-card.active .shift-toggle { background: #1976d2; }
+        .shift-card .shift-toggle::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px; border-radius: 50%; background: #fff;
+            transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+        }
+        .shift-card.active .shift-toggle::after { left: 18px; }
+        .shift-saving { opacity: .5; pointer-events: none; }
+
+        /* ── Logo preview ── */
+        .logo-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .logo-preview {
+            width: 100px; height: 100px; border-radius: 8px; border: 2px dashed #ddd;
+            display: flex; align-items: center; justify-content: center;
+            background: #fafafa; overflow: hidden; flex-shrink: 0;
+        }
+        .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .logo-preview .no-logo { font-size: 32px; color: #ccc; }
+        .logo-upload-btn {
+            display: inline-block; padding: 8px 16px; background: #f0f7ff;
+            border: 1.5px solid #90caf9; border-radius: 6px; cursor: pointer;
+            font-size: 13px; color: #1565c0; transition: all .2s;
+        }
+        .logo-upload-btn:hover { background: #e3f2fd; }
+        #logo-input { display: none; }
+    </style>
 </head>
 <body>
 
 <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
 <div class="breadcrumb">
-    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
-    Configuración de Institución
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Configuración de Institución
 </div>
 
 <div class="container">
 
-    <?php
-    $msgs = [
-        'success'        => '✓ Información actualizada correctamente',
-        'shift_assigned' => '✓ Jornada asignada correctamente',
-        'shift_removed'  => '✓ Jornada eliminada correctamente',
-    ];
-    foreach($msgs as $key => $msg):
-        if(isset($_GET[$key])): ?>
-        <div class="alert alert-success"><?= $msg ?></div>
-    <?php endif; endforeach; ?>
+    <?php if(isset($_GET['success'])): ?>
+        <div class="alert alert-success">✓ Información actualizada correctamente</div>
+    <?php endif; ?>
 
-    <!-- Header -->
-    <div class="page-header" style="background:linear-gradient(135deg,#2d6a4f,#40916c);">
+    <div class="page-header" style="background:linear-gradient(135deg,#1a237e,#283593);">
         <div class="ph-icon">🏫</div>
         <div>
             <h1>Configuración de Institución</h1>
-            <p>Datos generales, logo y jornadas de la institución</p>
+            <p>Datos generales, jornadas y logotipo</p>
         </div>
     </div>
 
-    <!-- Grid: Formulario | Logo + Jornadas -->
-    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start;">
+    <form method="POST" action="?action=update_institution" enctype="multipart/form-data" id="instForm">
 
-        <!-- Formulario datos -->
-        <div class="panel">
-            <h3 style="margin-bottom:16px;font-size:1rem;">📋 Datos Generales</h3>
-            <form method="POST" action="?action=update_institution" enctype="multipart/form-data">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
 
-                <div class="form-row">
+            <!-- ── Panel izquierdo: datos ── -->
+            <div>
+                <div class="panel" style="margin-bottom:16px;">
+                    <h3 style="font-size:.95rem;color:#555;margin-bottom:14px;">📋 Datos de la Institución</h3>
                     <div class="form-group">
-                        <label>Nombre de la Institución *</label>
-                        <input type="text" name="name" class="form-control"
-                               value="<?= htmlspecialchars($institution['name'] ?? '') ?>" required>
+                        <label>Nombre de la institución *</label>
+                        <input type="text" name="name" class="form-control" required
+                               value="<?= htmlspecialchars($institution['name'] ?? '') ?>">
                     </div>
-                    <div class="form-group">
-                        <label>Código AMIE</label>
-                        <input type="text" name="amie_code" class="form-control"
-                               value="<?= htmlspecialchars($institution['amie_code'] ?? '') ?>"
-                               placeholder="Ej: 17H00001">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Provincia</label>
-                        <select name="province" id="province" class="form-control" onchange="loadCities()">
-                            <option value="">Seleccionar provincia...</option>
-                            <?php
-                            $provincias = [
-                                'Pichincha','Guayas','Azuay','Manabí','El Oro','Tungurahua',
-                                'Loja','Imbabura','Chimborazo','Cotopaxi','Los Ríos','Bolívar',
-                                'Cañar','Carchi','Esmeraldas','Galápagos','Morona Santiago',
-                                'Napo','Orellana','Pastaza','Santa Elena','Santo Domingo de los Tsáchilas',
-                                'Sucumbíos','Zamora Chinchipe'
-                            ];
-                            foreach($provincias as $p):
-                                $sel = ($institution['province'] ?? '') === $p ? 'selected' : ''; ?>
-                                <option value="<?= $p ?>" <?= $sel ?>><?= $p ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Ciudad</label>
-                        <select name="city" id="city" class="form-control">
-                            <option value="<?= htmlspecialchars($institution['city'] ?? '') ?>">
-                                <?= htmlspecialchars($institution['city'] ?? 'Seleccionar ciudad...') ?>
-                            </option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Teléfono</label>
-                        <input type="text" name="phone" class="form-control"
-                               value="<?= htmlspecialchars($institution['phone'] ?? '') ?>"
-                               placeholder="02-XXX-XXXX">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Código AMIE</label>
+                            <input type="text" name="amie_code" class="form-control"
+                                   value="<?= htmlspecialchars($institution['amie_code'] ?? '') ?>"
+                                   placeholder="17H01988">
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" name="phone" class="form-control"
+                                   value="<?= htmlspecialchars($institution['phone'] ?? '') ?>"
+                                   placeholder="02-2345678">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Email institucional</label>
                         <input type="email" name="email" class="form-control"
                                value="<?= htmlspecialchars($institution['email'] ?? '') ?>"
-                               placeholder="info@colegio.edu.ec">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Director / Rectora</label>
-                        <input type="text" name="director_name" class="form-control"
-                               value="<?= htmlspecialchars($institution['director_name'] ?? '') ?>"
-                               placeholder="Nombre completo">
+                               placeholder="info@institucion.edu.ec">
                     </div>
                     <div class="form-group">
                         <label>Sitio web</label>
-                        <input type="text" name="website" id="website" class="form-control"
+                        <input type="text" name="website" class="form-control" id="website"
                                value="<?= htmlspecialchars($institution['website'] ?? '') ?>"
-                               placeholder="www.colegio.edu.ec"
-                               onblur="fixUrl(this)">
+                               placeholder="www.institucion.edu.ec"
+                               onblur="autoHttps(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Director/Rector</label>
+                        <input type="text" name="director_name" class="form-control"
+                               value="<?= htmlspecialchars($institution['director_name'] ?? '') ?>"
+                               placeholder="MSc. Nombre Apellido">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Dirección</label>
-                    <input type="text" name="address" class="form-control"
-                           value="<?= htmlspecialchars($institution['address'] ?? '') ?>"
-                           placeholder="Calle principal y secundaria">
-                </div>
-
-                <div class="form-group">
-                    <label>Logo <span style="color:#999;font-weight:400;">(PNG/JPG, máx. 2MB)</span></label>
-                    <?php if(!empty($institution['logo_path'])): ?>
-                        <div style="margin-bottom:8px;">
-                            <img src="<?= BASE_URL ?>/uploads/institution/<?= htmlspecialchars($institution['logo_path']) ?>"
-                                 alt="Logo actual" style="height:60px;border:1px solid #ddd;border-radius:4px;padding:4px;">
-                            <span style="font-size:12px;color:#999;margin-left:8px;">Logo actual</span>
+                <div class="panel" style="margin-bottom:16px;">
+                    <h3 style="font-size:.95rem;color:#555;margin-bottom:14px;">📍 Ubicación</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Provincia</label>
+                            <select name="province" id="province" class="form-control" onchange="loadCities()">
+                                <option value="">Seleccionar...</option>
+                                <?php foreach(getProvinces() as $prov): ?>
+                                <option value="<?= $prov ?>" <?= ($institution['province'] ?? '') === $prov ? 'selected' : '' ?>>
+                                    <?= $prov ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                    <?php endif; ?>
-                    <input type="file" name="logo" class="form-control" accept="image/png,image/jpeg">
-                </div>
-
-                <button type="submit" class="btn btn-success">💾 Guardar Información</button>
-            </form>
-        </div>
-
-        <!-- Panel derecho: Jornadas + Vista previa -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-
-            <!-- Vista previa logo -->
-            <div class="panel" style="text-align:center;padding:20px;">
-                <div style="font-size:48px;margin-bottom:8px;">
-                    <?php if(!empty($institution['logo_path'])): ?>
-                        <img src="<?= BASE_URL ?>/uploads/institution/<?= htmlspecialchars($institution['logo_path']) ?>"
-                             style="max-height:80px;max-width:100%;">
-                    <?php else: ?>
-                        🏫
-                    <?php endif; ?>
-                </div>
-                <div style="font-weight:700;font-size:1rem;color:#333;">
-                    <?= htmlspecialchars($institution['name'] ?? 'Nombre de Institución') ?>
-                </div>
-                <?php if(!empty($institution['city'])): ?>
-                    <div style="font-size:12px;color:#666;margin-top:4px;">
-                        📍 <?= htmlspecialchars($institution['city']) ?>, <?= htmlspecialchars($institution['province']) ?>
+                        <div class="form-group">
+                            <label>Ciudad</label>
+                            <select name="city" id="city" class="form-control">
+                                <option value="<?= htmlspecialchars($institution['city'] ?? '') ?>">
+                                    <?= htmlspecialchars($institution['city'] ?? 'Seleccionar provincia...') ?>
+                                </option>
+                            </select>
+                        </div>
                     </div>
-                <?php endif; ?>
-                <?php if(!empty($institution['amie_code'])): ?>
-                    <div style="font-size:11px;color:#999;margin-top:4px;">
-                        AMIE: <?= htmlspecialchars($institution['amie_code']) ?>
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" name="address" class="form-control"
+                               value="<?= htmlspecialchars($institution['address'] ?? '') ?>"
+                               placeholder="Av. Principal 123">
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
 
-            <!-- Jornadas -->
-            <div class="panel">
-                <h3 style="margin-bottom:12px;font-size:1rem;">🌅 Jornadas Asignadas</h3>
+            <!-- ── Panel derecho: logo + jornadas ── -->
+            <div>
+                <!-- Logo -->
+                <div class="panel" style="margin-bottom:16px;">
+                    <h3 style="font-size:.95rem;color:#555;margin-bottom:14px;">🖼️ Logo Institucional</h3>
+                    <div class="logo-wrap">
+                        <div class="logo-preview" id="logoPreview">
+                            <?php
+                            $logoUrl = '';
+                            if (!empty($institution['logo_path'])) {
+                                $logoUrl = BASE_URL . '/' . ltrim($institution['logo_path'], '/');
+                            }
+                            ?>
+                            <?php if($logoUrl): ?>
+                                <img src="<?= $logoUrl ?>?v=<?= time() ?>" id="logoImg" alt="Logo">
+                            <?php else: ?>
+                                <span class="no-logo" id="noLogoIcon">🏫</span>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <label for="logo-input" class="logo-upload-btn">📁 Seleccionar imagen</label>
+                            <input type="file" name="logo" id="logo-input" accept=".jpg,.jpeg,.png,.gif,.webp"
+                                   onchange="previewLogo(this)">
+                            <p style="font-size:12px;color:#999;margin-top:6px;">JPG, PNG o WebP — máx. 2MB</p>
+                            <?php if($logoUrl): ?>
+                            <p style="font-size:12px;color:#2e7d32;margin-top:4px;">✓ Logo actual cargado</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
 
-                <?php if(empty($assignedShifts)): ?>
-                    <div style="color:#999;font-size:13px;margin-bottom:12px;">Sin jornadas asignadas</div>
-                <?php else: ?>
-                    <div style="margin-bottom:12px;">
-                        <?php foreach($assignedShifts as $s): ?>
-                            <span class="badge badge-teal" style="display:inline-flex;align-items:center;gap:6px;margin:2px;">
-                                <?= ucfirst(htmlspecialchars($s['name'])) ?>
-                                <form method="POST" action="?action=remove_institution_shift" style="display:inline;">
-                                    <input type="hidden" name="shift_id" value="<?= $s['id'] ?>">
-                                    <button type="submit"
-                                        style="background:none;border:none;color:inherit;cursor:pointer;font-size:14px;line-height:1;padding:0;"
-                                        onclick="return confirm('¿Quitar esta jornada?')">×</button>
-                                </form>
-                            </span>
+                <!-- Jornadas toggle -->
+                <div class="panel">
+                    <h3 style="font-size:.95rem;color:#555;margin-bottom:6px;">⏰ Jornadas de la Institución</h3>
+                    <p style="font-size:12px;color:#999;margin-bottom:14px;">Clic para activar o desactivar cada jornada</p>
+
+                    <?php
+                    $shiftIcons = [
+                        'matutina'   => ['🌅', 'Mañana'],
+                        'vespertina' => ['🌞', 'Tarde'],
+                        'nocturna'   => ['🌙', 'Noche'],
+                    ];
+                    ?>
+                    <div class="shifts-grid" id="shiftsGrid">
+                        <?php foreach($allShifts as $shift):
+                            $isActive = in_array($shift['id'], $assignedShiftIds);
+                            $icon     = $shiftIcons[strtolower($shift['name'])][0] ?? '⏰';
+                            $timeLabel= $shiftIcons[strtolower($shift['name'])][1] ?? ucfirst($shift['name']);
+                        ?>
+                        <div class="shift-card <?= $isActive ? 'active' : '' ?>"
+                             id="shift-<?= $shift['id'] ?>"
+                             onclick="toggleShift(<?= $shift['id'] ?>, this)"
+                             title="Clic para <?= $isActive ? 'desactivar' : 'activar' ?>">
+                            <span class="shift-icon"><?= $icon ?></span>
+                            <div class="shift-info">
+                                <div class="shift-name"><?= ucfirst($shift['name']) ?></div>
+                                <div class="shift-status"><?= $isActive ? '✓ Activa' : 'Inactiva' ?></div>
+                            </div>
+                            <div class="shift-toggle"></div>
+                        </div>
                         <?php endforeach; ?>
                     </div>
-                <?php endif; ?>
 
-                <?php
-                $assignedIds = array_column($assignedShifts ?? [], 'id');
-                $available = array_filter($allShifts ?? [], fn($s) => !in_array($s['id'], $assignedIds));
-                ?>
-                <?php if(!empty($available)): ?>
-                    <form method="POST" action="?action=assign_institution_shift" style="display:flex;gap:8px;">
-                        <select name="shift_id" class="form-control" required style="font-size:13px;">
-                            <option value="">Agregar jornada...</option>
-                            <?php foreach($available as $s): ?>
-                                <option value="<?= $s['id'] ?>"><?= ucfirst(htmlspecialchars($s['name'])) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <button type="submit" class="btn btn-primary btn-sm" style="white-space:nowrap;">+ Agregar</button>
-                    </form>
-                <?php else: ?>
-                    <div style="font-size:12px;color:#999;">Todas las jornadas están asignadas</div>
-                <?php endif; ?>
+                    <div id="shift-msg" style="font-size:12px;margin-top:10px;min-height:18px;"></div>
+                </div>
             </div>
-
         </div>
-    </div>
 
+        <div style="display:flex;gap:10px;">
+            <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
+            <a href="?action=dashboard" class="btn btn-outline">Cancelar</a>
+        </div>
+
+    </form>
 </div>
 
 <script>
-const cities = {
-    'Pichincha':    ['Quito','Cayambe','Machachi','Sangolquí','Tabacundo'],
-    'Guayas':       ['Guayaquil','Samborondón','Durán','Milagro','Daule','Playas','El Triunfo'],
-    'Azuay':        ['Cuenca','Gualaceo','Paute','Santa Isabel','Sigsig'],
-    'Manabí':       ['Portoviejo','Manta','Chone','Bahía de Caráquez','El Carmen','Jipijapa'],
-    'El Oro':       ['Machala','Pasaje','Santa Rosa','Huaquillas','Zaruma','Piñas'],
-    'Tungurahua':   ['Ambato','Baños','Pelileo','Pillaro','Mocha'],
-    'Loja':         ['Loja','Catamayo','Cariamanga','Macará','Espíndola'],
-    'Imbabura':     ['Ibarra','Otavalo','Cotacachi','Atuntaqui','Pimampiro'],
-    'Chimborazo':   ['Riobamba','Alausí','Colta','Chambo','Guano'],
-    'Cotopaxi':     ['Latacunga','La Maná','Salcedo','Pujilí','Saquisilí'],
-    'Los Ríos':     ['Babahoyo','Quevedo','Ventanas','Vinces','Baba'],
-    'Bolívar':      ['Guaranda','Chillanes','San Miguel','Chimbo'],
-    'Cañar':        ['Azogues','Cañar','La Troncal','Biblián'],
-    'Carchi':       ['Tulcán','Montúfar','Mira','Espejo'],
-    'Esmeraldas':   ['Esmeraldas','Atacames','Muisne','Quinindé','San Lorenzo'],
-    'Galápagos':    ['Puerto Baquerizo Moreno','Puerto Ayora','Puerto Villamil'],
-    'Morona Santiago':['Macas','Gualaquiza','Palora','Sucúa'],
-    'Napo':         ['Tena','Archidona','El Chaco','Quijos'],
-    'Orellana':     ['Puerto Francisco de Orellana','La Joya de los Sachas','Loreto'],
-    'Pastaza':      ['Puyo','Mera','Santa Clara','Arajuno'],
-    'Santa Elena':  ['Santa Elena','Salinas','La Libertad'],
-    'Santo Domingo de los Tsáchilas':['Santo Domingo','La Concordia'],
-    'Sucumbíos':    ['Nueva Loja (Lago Agrio)','Shushufindi','Gonzalo Pizarro'],
-    'Zamora Chinchipe':['Zamora','Yantzaza','El Pangui','Centinela del Cóndor'],
+// ── Toggle jornada vía AJAX ──────────────────────────────────
+function toggleShift(shiftId, card) {
+    card.classList.add('shift-saving');
+    var msg = document.getElementById('shift-msg');
+    msg.textContent = 'Guardando...';
+    msg.style.color = '#999';
+
+    var fd = new FormData();
+    fd.append('shift_id', shiftId);
+
+    fetch('?action=toggle_institution_shift', { method: 'POST', body: fd })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            card.classList.remove('shift-saving');
+            var statusEl = card.querySelector('.shift-status');
+            if (data.action === 'assigned') {
+                card.classList.add('active');
+                statusEl.textContent = '✓ Activa';
+                msg.textContent = '✓ Jornada activada';
+                msg.style.color = '#2e7d32';
+            } else {
+                card.classList.remove('active');
+                statusEl.textContent = 'Inactiva';
+                msg.textContent = '✓ Jornada desactivada';
+                msg.style.color = '#f57f17';
+            }
+            setTimeout(function(){ msg.textContent = ''; }, 2500);
+        })
+        .catch(function() {
+            card.classList.remove('shift-saving');
+            msg.textContent = '✗ Error al guardar';
+            msg.style.color = '#c62828';
+        });
+}
+
+// ── Preview logo antes de guardar ───────────────────────────
+function previewLogo(input) {
+    if (!input.files || !input.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var preview = document.getElementById('logoPreview');
+        var noIcon  = document.getElementById('noLogoIcon');
+        var img     = document.getElementById('logoImg');
+        if (!img) {
+            img = document.createElement('img');
+            img.id = 'logoImg';
+            img.alt = 'Logo';
+            preview.innerHTML = '';
+            preview.appendChild(img);
+        }
+        if (noIcon) noIcon.style.display = 'none';
+        img.src = e.target.result;
+        img.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+// ── Auto https en website ────────────────────────────────────
+function autoHttps(input) {
+    var v = input.value.trim();
+    if (v && !v.startsWith('http')) {
+        input.value = 'https://' + v;
+    }
+}
+
+// ── Ciudades por provincia ───────────────────────────────────
+var cities = {
+    'Pichincha':       ['Quito','Cayambe','Mejía','Pedro Moncayo','Rumiñahui','San Miguel de los Bancos'],
+    'Guayas':          ['Guayaquil','Daule','Durán','El Triunfo','Milagro','Naranjal','Playas','Samborondón'],
+    'Azuay':           ['Cuenca','Gualaceo','Paute','Santa Isabel','Sigsig'],
+    'Manabí':          ['Portoviejo','Manta','Bahía de Caráquez','Chone','El Carmen','Jipijapa','Montecristi'],
+    'Los Ríos':        ['Babahoyo','Quevedo','Ventanas','Vinces'],
+    'El Oro':          ['Machala','Pasaje','Santa Rosa','Zaruma'],
+    'Loja':            ['Loja','Catamayo','Macará','Saraguro'],
+    'Tungurahua':      ['Ambato','Baños','Pelileo','Píllaro'],
+    'Chimborazo':      ['Riobamba','Alausí','Colta','Guano'],
+    'Imbabura':        ['Ibarra','Antonio Ante','Cotacachi','Otavalo','Pimampiro'],
+    'Cotopaxi':        ['Latacunga','La Maná','Pujilí','Salcedo','Saquisilí'],
+    'Bolívar':         ['Guaranda','Chillanes','San Miguel'],
+    'Cañar':           ['Azogues','Biblián','Cañar','La Troncal'],
+    'Carchi':          ['Tulcán','Bolívar','Espejo','Mira'],
+    'Esmeraldas':      ['Esmeraldas','Atacames','La Concordia','Muisne','Quinindé'],
+    'Napo':            ['Tena','Archidona','El Chaco'],
+    'Pastaza':         ['Puyo','Mera','Santa Clara'],
+    'Morona Santiago': ['Macas','Gualaquiza','Limón Indanza','Palora'],
+    'Zamora Chinchipe':['Zamora','Chinchipe','Nangaritza','Yantzaza'],
+    'Sucumbíos':       ['Nueva Loja','Cascales','Cuyabeno','Lago Agrio'],
+    'Orellana':        ['Puerto Francisco de Orellana','Aguarico','La Joya de los Sachas'],
+    'Galápagos':       ['Puerto Baquerizo Moreno','Puerto Ayora','Puerto Villamil'],
+    'Santo Domingo':   ['Santo Domingo'],
+    'Santa Elena':     ['Santa Elena','La Libertad','Salinas'],
 };
 
-const currentCity = "<?= addslashes($institution['city'] ?? '') ?>";
-
-function loadCities(selected) {
-    const prov = document.getElementById('province').value;
-    const sel  = document.getElementById('city');
-    const opts = cities[prov] || [];
+function loadCities() {
+    var prov  = document.getElementById('province').value;
+    var sel   = document.getElementById('city');
+    var list  = cities[prov] || [];
     sel.innerHTML = '<option value="">Seleccionar ciudad...</option>';
-    opts.forEach(c => {
-        const o = document.createElement('option');
-        o.value = o.textContent = c;
-        if(c === (selected || currentCity)) o.selected = true;
-        sel.appendChild(o);
+    list.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        sel.appendChild(opt);
     });
 }
-function fixUrl(el) {
-    const v = el.value.trim();
-    if(v && !v.startsWith('http')) el.value = 'https://' + v;
-}
-// init
-loadCities(currentCity);
+
+// Cargar ciudades al inicio si hay provincia seleccionada
+(function(){
+    var prov = document.getElementById('province').value;
+    var currentCity = '<?= addslashes($institution['city'] ?? '') ?>';
+    if (prov) {
+        loadCities();
+        var sel = document.getElementById('city');
+        for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === currentCity) {
+                sel.selectedIndex = i; break;
+            }
+        }
+    }
+})();
 </script>
+
+<?php
+function getProvinces() {
+    return ['Azuay','Bolívar','Cañar','Carchi','Chimborazo','Cotopaxi','El Oro',
+            'Esmeraldas','Galápagos','Guayas','Imbabura','Loja','Los Ríos','Manabí',
+            'Morona Santiago','Napo','Orellana','Pastaza','Pichincha','Santa Elena',
+            'Santo Domingo','Sucumbíos','Tungurahua','Zamora Chinchipe'];
+}
+?>
 
 </body>
 </html>

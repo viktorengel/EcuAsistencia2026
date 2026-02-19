@@ -257,11 +257,6 @@ switch ($action) {
         $justCtrl->review();
         break;
 
-    case 'tutor_pending_justifications':
-        require_once BASE_PATH . '/controllers/JustificationController.php';
-        (new JustificationController())->pendingForTutor();
-        break;
-
     case 'backups':
         require_once BASE_PATH . '/controllers/BackupController.php';
         $backupCtrl = new BackupController();
@@ -380,6 +375,11 @@ switch ($action) {
         require_once BASE_PATH . '/controllers/InstitutionController.php';
         $controller = new InstitutionController();
         $controller->removeShift();
+        break;
+
+    case 'toggle_institution_shift':
+        require_once BASE_PATH . '/controllers/InstitutionController.php';
+        (new InstitutionController())->toggleShift();
         break;
     
     case 'create_user':
@@ -510,16 +510,6 @@ switch ($action) {
     case 'tutor_course_attendance_ajax':
         require_once BASE_PATH . '/controllers/TutorController.php';
         (new TutorController())->ajax();
-        break;
-
-    case 'tutor_dashboard':
-        require_once BASE_PATH . '/controllers/TutorController.php';
-        (new TutorController())->dashboard();
-        break;
-
-    case 'tutor_search_students':
-        require_once BASE_PATH . '/controllers/TutorController.php';
-        (new TutorController())->searchStudents();
         break;
 
     default:

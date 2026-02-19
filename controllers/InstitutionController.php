@@ -16,82 +16,107 @@ class InstitutionController {
         }
 
         $db = new Database();
-        $this->institutionModel = new Institution($db);
+        $this->institutionModel      = new Institution($db);
         $this->institutionShiftModel = new InstitutionShift($db);
-        $this->shiftModel = new Shift($db);
+        $this->shiftModel            = new Shift($db);
     }
 
     public function index() {
-        $institution = $this->institutionModel->getById(1); // Por ahora solo una institución
-        $allShifts = $this->shiftModel->getAll();
+        $institution      = $this->institutionModel->getById(1);
+        $allShifts        = $this->shiftModel->getAll();
         $assignedShiftIds = $this->institutionShiftModel->getInstitutionShiftIds(1);
 
         include BASE_PATH . '/views/institution/index.php';
     }
 
     public function update() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $logoPath = null;
-            
-            // Subir logo si existe
-            if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
-                $uploadDir = BASE_PATH . '/uploads/institution/';
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
 
-                $extension = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
-                $filename = 'logo_' . time() . '.' . $extension;
+        $current  = $this->institutionModel->getById(1);
+        $logoPath = $current['logo_path']; // Mantener logo actual por defecto
+
+        if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
+            $uploadDir = BASE_PATH . '/uploads/institution/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $ext      = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+            $allowed  = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            $maxSize  = 2 * 1024 * 1024; // 2MB
+
+            if (in_array($ext, $allowed) && $_FILES['logo']['size'] <= $maxSize) {
+                $filename   = 'logo_' . time() . '.' . $ext;
                 $uploadPath = $uploadDir . $filename;
 
                 if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadPath)) {
-                    $logoPath = 'uploads/institution/' . $filename;
-                    
-                    // Eliminar logo anterior si existe
-                    $current = $this->institutionModel->getById(1);
+                    // Eliminar logo anterior
                     if ($current['logo_path'] && file_exists(BASE_PATH . '/' . $current['logo_path'])) {
                         unlink(BASE_PATH . '/' . $current['logo_path']);
                     }
+                    $logoPath = 'uploads/institution/' . $filename;
                 }
             }
-
-            $data = [
-                'name' => Security::sanitize($_POST['name']),
-                'address' => Security::sanitize($_POST['address']),
-                'province' => Security::sanitize($_POST['province']),
-                'city' => Security::sanitize($_POST['city']),
-                'phone' => Security::sanitize($_POST['phone']),
-                'email' => Security::sanitize($_POST['email']),
-                'director_name' => Security::sanitize($_POST['director_name']),
-                'amie_code' => Security::sanitize($_POST['amie_code']),
-                'website' => Security::sanitize($_POST['website']),
-                'logo_path' => $logoPath
-            ];
-
-            $this->institutionModel->update(1, $data);
-            header('Location: ?action=institution&success=1');
-            exit;
         }
+
+        $data = [
+            'name'         => Security::sanitize($_POST['name']),
+            'address'      => Security::sanitize($_POST['address']),
+            'province'     => Security::sanitize($_POST['province']),
+            'city'         => Security::sanitize($_POST['city']),
+            'phone'        => Security::sanitize($_POST['phone']),
+            'email'        => Security::sanitize($_POST['email']),
+            'director_name'=> Security::sanitize($_POST['director_name']),
+            'amie_code'    => Security::sanitize($_POST['amie_code']),
+            'website'      => Security::sanitize($_POST['website']),
+            'logo_path'    => $logoPath,
+        ];
+
+        $this->institutionModel->update(1, $data);
+        header('Location: ?action=institution&success=1');
+        exit;
     }
 
+    // Toggle: si está asignada la quita, si no la asigna — responde JSON para AJAX
+    public function toggleShift() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['error' => 'Método no permitido']); exit;
+        }
+
+        $shiftId          = (int)$_POST['shift_id'];
+        $assignedShiftIds = $this->institutionShiftModel->getInstitutionShiftIds(1);
+
+        if (in_array($shiftId, $assignedShiftIds)) {
+            $this->institutionShiftModel->remove(1, $shiftId);
+            echo json_encode(['action' => 'removed', 'shift_id' => $shiftId]);
+        } else {
+            $this->institutionShiftModel->assign([
+                ':institution_id' => 1,
+                ':shift_id'       => $shiftId,
+            ]);
+            echo json_encode(['action' => 'assigned', 'shift_id' => $shiftId]);
+        }
+        exit;
+    }
+
+    // Mantener compatibilidad con rutas antiguas
     public function assignShift() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
+            $this->institutionShiftModel->assign([
                 ':institution_id' => 1,
-                ':shift_id' => (int)$_POST['shift_id']
-            ];
-
-            $this->institutionShiftModel->assign($data);
-            header('Location: ?action=institution&shift_assigned=1');
+                ':shift_id'       => (int)$_POST['shift_id'],
+            ]);
+            header('Location: ?action=institution&success=1');
             exit;
         }
     }
 
     public function removeShift() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $shiftId = (int)$_POST['shift_id'];
-            $this->institutionShiftModel->remove(1, $shiftId);
-            header('Location: ?action=institution&shift_removed=1');
+            $this->institutionShiftModel->remove(1, (int)$_POST['shift_id']);
+            header('Location: ?action=institution&success=1');
             exit;
         }
     }

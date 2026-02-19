@@ -35,9 +35,15 @@ class Security {
     }
 
     public static function hasRole($roleNames) {
+        // Superusuario siempre tiene acceso
+        if (!empty($_SESSION['is_superadmin'])) return true;
         if (!isset($_SESSION['roles'])) return false;
         $roleNames = (array) $roleNames;
         return count(array_intersect($roleNames, $_SESSION['roles'])) > 0;
+    }
+
+    public static function isSuperAdmin() {
+        return !empty($_SESSION['is_superadmin']);
     }
 
     public static function startSession($rememberMe = false) {
