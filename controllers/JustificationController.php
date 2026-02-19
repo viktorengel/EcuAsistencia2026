@@ -5,6 +5,7 @@
 require_once BASE_PATH . '/config/config.php';
 require_once BASE_PATH . '/models/Justification.php';
 require_once BASE_PATH . '/models/Attendance.php';
+require_once BASE_PATH . '/models/Attendance.php';
 require_once BASE_PATH . '/models/Notification.php';
 
 class JustificationController {
@@ -26,26 +27,51 @@ class JustificationController {
             die('Acceso denegado');
         }
 
-        $attendanceId = (int)$_GET['attendance_id'];
+        $attendanceId = isset($_GET['attendance_id']) ? (int)$_GET['attendance_id'] : null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if ($this->justificationModel->existsByAttendance($attendanceId)) {
-                header('Location: ?action=my_attendance&error=already_justified');
+
+            // Validar fechas
+            $dateFrom = $_POST['date_from'] ?? '';
+            $dateTo   = $_POST['date_to']   ?? $dateFrom;
+
+            if (empty($dateFrom)) {
+                header('Location: ?action=submit_justification&error=no_date');
+                exit;
+            }
+            if (strtotime($dateTo) < strtotime($dateFrom)) {
+                header('Location: ?action=submit_justification&error=date_range');
                 exit;
             }
 
-            $documentPath = null;
+            // Días laborables y quién puede aprobar
+            $workingDays = Justification::countWorkingDays($dateFrom, $dateTo);
+            $canApprove  = Justification::resolveApprover($workingDays);
 
+            // Subir documento
+            $documentPath = null;
             if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
                 $uploadDir = BASE_PATH . '/uploads/justifications/';
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
+                if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
+                $ext      = strtolower(pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION));
+                $allowed  = ['pdf','jpg','jpeg','png'];
+                if (in_array($ext, $allowed) && $_FILES['document']['size'] <= 5 * 1024 * 1024) {
+                    $filename = uniqid() . '.' . $ext;
+                    if (move_uploaded_file($_FILES['document']['tmp_name'], $uploadDir . $filename)) {
+                        $documentPath = 'uploads/justifications/' . $filename;
+                    }
                 }
-                $extension = pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION);
-                $filename  = uniqid() . '.' . $extension;
-                if (move_uploaded_file($_FILES['document']['tmp_name'], $uploadDir . $filename)) {
-                    $documentPath = 'uploads/justifications/' . $filename;
-                }
+            }
+
+            // Motivo: tipo predefinido o "Otro"
+            $reasonType = Security::sanitize($_POST['reason_type'] ?? '');
+            $reasonText = Security::sanitize($_POST['reason'] ?? '');
+            if ($reasonType === 'Otro') {
+                $reasonFinal = $reasonText;
+            } elseif ($reasonType) {
+                $reasonFinal = $reasonType . ($reasonText ? ': ' . $reasonText : '');
+            } else {
+                $reasonFinal = $reasonText;
             }
 
             $studentId = Security::hasRole('estudiante')
@@ -53,33 +79,81 @@ class JustificationController {
                 : (int)$_POST['student_id'];
 
             $data = [
-                ':attendance_id' => $attendanceId,
                 ':student_id'    => $studentId,
                 ':submitted_by'  => $_SESSION['user_id'],
-                ':reason'        => Security::sanitize($_POST['reason']),
-                ':document_path' => $documentPath
+                ':date_from'     => $dateFrom,
+                ':date_to'       => $dateTo,
+                ':working_days'  => $workingDays,
+                ':reason_type'   => $reasonType,
+                ':reason'        => $reasonFinal,
+                ':document_path' => $documentPath,
+                ':can_approve'   => $canApprove,
             ];
 
-            $this->justificationModel->create($data);
+            $this->justificationModel->createByRange($data);
 
-            // Notificar a autoridades/inspectores — enlace directo a pendientes
-            $this->_notifyReviewers(
-                '📝 Nueva justificación pendiente',
-                'Un estudiante envió una justificación que requiere revisión.',
-                'justificacion',
-                '?action=pending_justifications'
-            );
+            // Notificar según quien debe aprobar
+            if ($canApprove === 'tutor') {
+                // Buscar tutor del curso del estudiante
+                $db   = new Database();
+                $pdo  = $db->connect();
+                $stmt = $pdo->prepare(
+                    "SELECT ta.teacher_id FROM teacher_assignments ta
+                     INNER JOIN course_students cs ON ta.course_id = cs.course_id
+                     WHERE cs.student_id = :sid AND ta.is_tutor = 1
+                     LIMIT 1"
+                );
+                $stmt->execute([':sid' => $studentId]);
+                $tutor = $stmt->fetchColumn();
+                if ($tutor) {
+                    $this->notificationModel->create(
+                        $tutor,
+                        '📝 Justificación pendiente (tutor)',
+                        "Un estudiante de tu curso necesita justificación por $workingDays día(s).",
+                        'info',
+                        '?action=tutor_pending_justifications'
+                    );
+                }
+            } else {
+                $this->_notifyReviewers(
+                    '📝 Nueva justificación pendiente',
+                    "Justificación de $workingDays días laborables requiere revisión.",
+                    'info',
+                    '?action=pending_justifications'
+                );
+            }
 
             header('Location: ?action=my_justifications&success=1');
             exit;
         }
 
-        if ($this->justificationModel->existsByAttendance($attendanceId)) {
-            header('Location: ?action=my_attendance&error=already_justified');
-            exit;
+        // GET: cargar vista
+        $attendanceDate = null;
+        if ($attendanceId) {
+            $db   = new Database();
+            $stmt = $db->connect()->prepare("SELECT date FROM attendances WHERE id=:id");
+            $stmt->execute([':id' => $attendanceId]);
+            $row  = $stmt->fetch();
+            $attendanceDate = $row ? $row['date'] : null;
         }
 
         include BASE_PATH . '/views/justifications/submit.php';
+    }
+
+    // ── Justificaciones pendientes para el tutor ──────────────────────
+    public function pendingForTutor() {
+        if (!Security::hasRole('docente')) die('Acceso denegado');
+
+        $db           = new Database();
+        $attModel     = new Attendance($db);
+        $courseId     = $attModel->getTutorCourseId($_SESSION['user_id']);
+
+        if (!$courseId) {
+            header('Location: ?action=dashboard&error=not_tutor'); exit;
+        }
+
+        $justifications = $this->justificationModel->getPendingForTutor($courseId);
+        include BASE_PATH . '/views/justifications/pending.php';
     }
 
     public function myJustifications() {
@@ -113,7 +187,7 @@ class JustificationController {
             $justification = $this->justificationModel->getById($justificationId);
 
             if ($action === 'approve') {
-                $this->justificationModel->approve($justificationId, $_SESSION['user_id'], $notes);
+                $this->justificationModel->approveRange($justificationId, $_SESSION['user_id'], $notes);
 
                 if ($justification) {
                     // Notificar al estudiante — enlace a sus justificaciones

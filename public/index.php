@@ -257,6 +257,11 @@ switch ($action) {
         $justCtrl->review();
         break;
 
+    case 'tutor_pending_justifications':
+        require_once BASE_PATH . '/controllers/JustificationController.php';
+        (new JustificationController())->pendingForTutor();
+        break;
+
     case 'backups':
         require_once BASE_PATH . '/controllers/BackupController.php';
         $backupCtrl = new BackupController();
