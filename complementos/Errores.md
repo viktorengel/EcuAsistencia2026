@@ -14,4 +14,12 @@ Al registar un docente se deberia tomar en cuenta su titulo y experienca.
 
 Menú se daña al hacerce mas pequeña la pantalla
 
-Generación de Reportes en el menú curso aparece 1.° BT &quote;Aquote; Informática (Soporte Técnico) - Matutina - Matutina
+Generación de Reportes y Calendario de Asistencia en el menú seleccinar curso aparece 1.° BT &quote;Aquote; Informática (Soporte Técnico) - Matutina - Matutina
+
+En el buscador de representantes busque López y si funciono pero Lopez no funcion, quiero que seas mas inteligente y omitas tildes, 
+
+El buscador de Gestor de Representantes implementar en Gestíon de usuarios
+
+Popup de Notificaciones al dar clic en limpiar quiero el que estamos trabajando en los otros modulos Eliminar todas las notificaciones Leídas?
+
+En Gestion de usuarios No quiero el filto FIlrar por Rol, en su lugar quiero botones como en el módulo Justificaciones Revisadas que se selecciona y se va filtrando
