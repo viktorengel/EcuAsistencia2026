@@ -13,3 +13,5 @@ Quiero póder importar desde excel o csv los datos de los estudiantes, docentes,
 Al registar un docente se deberia tomar en cuenta su titulo y experienca.
 
 Menú se daña al hacerce mas pequeña la pantalla
+
+Generación de Reportes en el menú curso aparece 1.° BT &quote;Aquote; Informática (Soporte Técnico) - Matutina - Matutina
