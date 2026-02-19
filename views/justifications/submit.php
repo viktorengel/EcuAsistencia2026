@@ -73,14 +73,14 @@
                     <label>Fecha de inicio de ausencia *</label>
                     <input type="date" name="date_from" id="date_from" class="form-control" required
                            max="<?= date('Y-m-d') ?>"
-                           value="<?= date('Y-m-d') ?>"
+                           value="<?= $attendanceDate ?? date('Y-m-d') ?>"
                            onchange="calcDays()">
                 </div>
                 <div class="form-group">
                     <label>Fecha de fin <span style="color:#999;font-weight:400;">(si fue un solo día, dejar igual)</span></label>
                     <input type="date" name="date_to" id="date_to" class="form-control"
                            max="<?= date('Y-m-d') ?>"
-                           value="<?= date('Y-m-d') ?>"
+                           value="<?= $attendanceDate ?? date('Y-m-d') ?>"
                            onchange="calcDays()">
                 </div>
             </div>
