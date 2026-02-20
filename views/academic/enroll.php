@@ -83,7 +83,7 @@
                 Solo se muestran estudiantes que aún NO están matriculados en ningún curso del año lectivo actual.
             </p>
             
-            <form method="POST">
+            <form method="POST" action="?action=enroll_students">
                 <div class="form-group">
                     <label>Curso</label>
                     <select name="course_id" required>
