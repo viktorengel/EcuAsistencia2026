@@ -14,7 +14,7 @@
     🏠 Inicio &rsaquo; Dashboard
 </div>
 
-<div class="container-wide">
+<div class="container">
 
     <!-- Header de bienvenida -->
     <div class="page-header" style="background: linear-gradient(135deg, #667eea, #764ba2);">

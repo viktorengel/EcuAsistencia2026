@@ -14,7 +14,7 @@
     <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Estadísticas
 </div>
 
-<div class="container-wide">
+<div class="container">
 
     <!-- Header -->
     <div class="page-header purple">
