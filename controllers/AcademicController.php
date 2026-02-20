@@ -40,6 +40,17 @@ class AcademicController {
     public function createCourse() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
 
+        // Guardar datos del form en sesión para repoblar si hay error
+        $_SESSION['course_form'] = [
+            'education_type' => $_POST['education_type'] ?? '',
+            'grade_level'    => $_POST['grade_level']    ?? '',
+            'specialty'      => $_POST['specialty']      ?? '',
+            'carrera'        => $_POST['carrera']        ?? '',
+            'parallel'       => $_POST['parallel']       ?? '',
+            'shift_id'       => $_POST['shift_id']       ?? '',
+            'name'           => $_POST['name']           ?? '',
+        ];
+
         $activeYear = $this->schoolYearModel->getActive();
         if (!$activeYear) {
             header('Location: ?action=academic&error=no_active_year'); exit;
@@ -92,6 +103,9 @@ class AcademicController {
                 $this->linkSubjectToCourse($courseId, $sid);
             }
         }
+
+        // Éxito: limpiar datos guardados
+        unset($_SESSION['course_form']);
         header('Location: ?action=academic&course_success=1&subjects_loaded='.$nuevas); exit;
     }
 

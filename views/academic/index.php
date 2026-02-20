@@ -202,33 +202,54 @@
         <div class="grid">
             <!-- Crear Curso -->
             <div class="card">
-                <h2>Crear Curso</h2>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #f0f0f0;">
+                    <div style="width:36px;height:36px;background:linear-gradient(135deg,#1a237e,#283593);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🏫</div>
+                    <div>
+                        <h2 style="margin:0;font-size:17px;color:#1a237e;">Crear Nuevo Curso</h2>
+                        <p style="margin:0;font-size:12px;color:#888;">Las asignaturas se cargan automáticamente según el nivel</p>
+                    </div>
+                </div>
+
                 <form method="POST" action="?action=create_course" id="courseForm">
+                <?php
+                $cf = $_SESSION['course_form'] ?? [];
+                unset($_SESSION['course_form']);
+                ?>
 
-                    <!-- NIVEL EDUCATIVO -->
-                    <div class="form-group">
-                        <label>Nivel Educativo</label>
-                        <select name="education_type" id="education_type" required onchange="updateGradeLevels()">
-                            <option value="">Seleccionar tipo...</option>
-                            <option value="inicial">🧒 Educación Inicial</option>
-                            <option value="egb">📘 Educación General Básica (EGB)</option>
-                            <option value="bgu">🎓 Bachillerato General Unificado (BGU)</option>
-                            <option value="bt">🛠 Bachillerato Técnico (BT)</option>
-                        </select>
+                    <!-- Fila 1: Nivel + Grado -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block;">Nivel Educativo *</label>
+                            <select name="education_type" id="education_type" required onchange="updateGradeLevels()"
+                                style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;background:#fafafa;color:#333;outline:none;transition:border-color .2s;"
+                                onfocus="this.style.borderColor='#1a237e'" onblur="this.style.borderColor='#e0e0e0'">
+                                <option value="">Seleccionar...</option>
+                                <option value="inicial" <?= ($cf['education_type']??'')==='inicial'?'selected':'' ?>>🧒 Educación Inicial</option>
+                                <option value="egb"     <?= ($cf['education_type']??'')==='egb'    ?'selected':'' ?>>📘 EGB</option>
+                                <option value="bgu"     <?= ($cf['education_type']??'')==='bgu'    ?'selected':'' ?>>🎓 BGU</option>
+                                <option value="bt"      <?= ($cf['education_type']??'')==='bt'     ?'selected':'' ?>>🛠 Bachillerato Técnico</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="group_grade" style="margin:0;">
+                            <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block;">Grado / Año *</label>
+                            <select name="grade_level" id="grade_level" required onchange="onGradeChange()"
+                                style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;background:#fafafa;color:#333;outline:none;transition:border-color .2s;"
+                                onfocus="this.style.borderColor='#1a237e'" onblur="this.style.borderColor='#e0e0e0'">
+                                <option value="">Seleccione nivel primero...</option>
+                                <?php if(!empty($cf['grade_level'])): ?>
+                                <option value="<?= htmlspecialchars($cf['grade_level']) ?>" selected>
+                                    <?= htmlspecialchars($cf['grade_level']) ?>
+                                </option>
+                                <?php endif; ?>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- GRADO -->
-                    <div class="form-group" id="group_grade">
-                        <label>Grado / Año</label>
-                        <select name="grade_level" id="grade_level" required onchange="onGradeChange()">
-                            <option value="">Seleccione nivel primero...</option>
-                        </select>
-                    </div>
-
-                    <!-- FIGURA PROFESIONAL (solo BT) -->
-                    <div class="form-group" id="group_specialty" style="display:none;">
-                        <label>Figura Profesional</label>
-                        <select name="specialty" id="specialty" onchange="updateCarreras()">
+                    <!-- BT: Figura + Carrera (ocultas por defecto) -->
+                    <div id="group_specialty" style="display:none;margin-bottom:14px;">
+                        <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block;">Figura Profesional</label>
+                        <select name="specialty" id="specialty" onchange="updateCarreras()"
+                            style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;background:#fafafa;color:#333;">
                             <option value="">Seleccionar figura...</option>
                             <option value="Informática">Informática</option>
                             <option value="Administración">Administración</option>
@@ -257,47 +278,62 @@
                             <option value="Logística y Transporte">Logística y Transporte</option>
                         </select>
                     </div>
-
-                    <!-- ESPECIALIDAD / CARRERA (solo BT) -->
-                    <div class="form-group" id="group_carrera" style="display:none;">
-                        <label>Especialidad / Carrera <span style="color:#999; font-weight:normal;">(opcional)</span></label>
-                        <select name="carrera" id="carrera" onchange="generateCourseName()">
+                    <div id="group_carrera" style="display:none;margin-bottom:14px;">
+                        <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block;">Especialidad / Carrera <span style="color:#aaa;font-weight:400;">(opcional)</span></label>
+                        <select name="carrera" id="carrera" onchange="generateCourseName()"
+                            style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;background:#fafafa;color:#333;">
                             <option value="">Sin especificar</option>
                         </select>
                     </div>
 
-                    <!-- PARALELO -->
-                    <div class="form-group">
-                        <label>Paralelo</label>
-                        <select name="parallel" id="parallel" required onchange="generateCourseName()">
-                            <option value="">Seleccionar...</option>
-                            <?php foreach(range('A', 'J') as $letter): ?>
-                                <option value="<?= $letter ?>"><?= $letter ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <!-- Fila 2: Paralelo + Jornada -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                        <div>
+                            <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block;">Paralelo *</label>
+                            <select name="parallel" id="parallel" required onchange="generateCourseName()"
+                                style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;background:#fafafa;color:#333;outline:none;transition:border-color .2s;"
+                                onfocus="this.style.borderColor='#1a237e'" onblur="this.style.borderColor='#e0e0e0'">
+                                <option value="">Seleccionar...</option>
+                                <?php foreach(range('A', 'J') as $letter): ?>
+                                    <option value="<?= $letter ?>" <?= ($cf['parallel']??'')===$letter?'selected':'' ?>><?= $letter ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block;">Jornada *</label>
+                            <select name="shift_id" id="shift_id" required onchange="generateCourseName()"
+                                style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;background:#fafafa;color:#333;outline:none;transition:border-color .2s;"
+                                onfocus="this.style.borderColor='#1a237e'" onblur="this.style.borderColor='#e0e0e0'">
+                                <option value="">Seleccionar...</option>
+                                <?php foreach($shifts as $shift): ?>
+                                    <option value="<?= $shift['id'] ?>" data-shift="<?= $shift['name'] ?>"
+                                        <?= ($cf['shift_id']??'')==$shift['id']?'selected':'' ?>>
+                                        <?= ucfirst($shift['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- JORNADA -->
-                    <div class="form-group">
-                        <label>Jornada</label>
-                        <select name="shift_id" id="shift_id" required onchange="generateCourseName()">
-                            <option value="">Seleccionar...</option>
-                            <?php foreach($shifts as $shift): ?>
-                                <option value="<?= $shift['id'] ?>" data-shift="<?= $shift['name'] ?>">
-                                    <?= ucfirst($shift['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <!-- Nombre generado -->
+                    <div style="margin-bottom:18px;">
+                        <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block;">
+                            Nombre del Curso
+                            <span style="font-weight:400;color:#aaa;margin-left:4px;">← generado automáticamente</span>
+                        </label>
+                        <div style="position:relative;">
+                            <input type="text" name="name" id="course_name" readonly
+                                value="<?= htmlspecialchars($cf['name'] ?? '') ?>"
+                                style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;font-weight:600;color:#1a237e;background:#eef2ff;letter-spacing:0.3px;">
+                            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;">✏️</span>
+                        </div>
                     </div>
 
-                    <!-- NOMBRE GENERADO -->
-                    <div class="form-group">
-                        <label>Nombre del Curso <span style="color:#999; font-weight:normal;">(generado automáticamente)</span></label>
-                        <input type="text" name="name" id="course_name" readonly 
-                               style="background: #f0f0f0; font-weight: bold; color: #333;">
-                    </div>
-
-                    <button type="submit">Crear Curso</button>
+                    <button type="submit"
+                        style="width:100%;padding:11px;background:linear-gradient(135deg,#1a237e,#283593);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0.3px;transition:opacity .2s;"
+                        onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
+                        🏫 Crear Curso
+                    </button>
                 </form>
             </div>
 
@@ -444,6 +480,33 @@
                 name += ' - ' + shiftName.charAt(0).toUpperCase() + shiftName.slice(1);
                 document.getElementById('course_name').value = name;
             }
+
+            // ── Restaurar form si volvió con error ──────────────────
+            (function restoreForm() {
+                var savedType  = <?= json_encode($cf['education_type'] ?? '') ?>;
+                var savedGrade = <?= json_encode($cf['grade_level']    ?? '') ?>;
+                var savedSpec  = <?= json_encode($cf['specialty']      ?? '') ?>;
+                if (!savedType) return;
+                document.getElementById('education_type').value = savedType;
+                updateGradeLevels();
+                setTimeout(function() {
+                    if (savedGrade) {
+                        document.getElementById('grade_level').value = savedGrade;
+                        onGradeChange();
+                    }
+                    if (savedType === 'bt' && savedSpec) {
+                        var s = document.getElementById('specialty');
+                        if (s) { s.value = savedSpec; updateCarreras(); }
+                        setTimeout(function() {
+                            var c = document.getElementById('carrera');
+                            if (c) c.value = <?= json_encode($cf['carrera'] ?? '') ?>;
+                            generateCourseName();
+                        }, 60);
+                    } else {
+                        generateCourseName();
+                    }
+                }, 60);
+            })();
             </script>
 
         </div>
