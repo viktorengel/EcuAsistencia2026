@@ -19,3 +19,15 @@ En el buscador de representantes busque López y si funciono pero Lopez no funci
 El buscador de Gestor de Representantes implementar en Gestíon de usuarios
 
 Popup de Notificaciones al dar clic en limpiar quiero el que estamos trabajando en los otros modulos Eliminar todas las notificaciones Leídas?
+
+Menu superior un color mas claro
+
+Si es extranjero falta mostrar el campo pasarporte en el formualario
+
+http://localhost/ecuasistencia2026/public/index.php?action=create_user falta el titulo superior
+
+en Configiración academica en la sección Cursos registrados mostrar el filtro que hay en 📚
+Asignaciones Docente — Materia y eliminar este modulo por que está de mas
+
+en Cursos Registrados mustrar el nombre del tutor o si no tiene, en el boton estudiantes de las acciones quiero que sea el que permita matricular estudiantes y eliminamos la página estudiantes matriculados y ahi se debe mostrar los estudiantes matriculados en ese curso.
+
