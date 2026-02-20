@@ -26,7 +26,20 @@
 </head>
 <body>
     <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
-        <div class="container">
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Asignar Docente Tutor
+</div>
+
+<div class="container">
+
+    <div class="page-header" style="background:linear-gradient(135deg,#6a1b9a,#8e24aa);">
+        <div class="ph-icon">👨‍🏫</div>
+        <div>
+            <h1>Asignar Docente Tutor</h1>
+            <p>Designa el tutor responsable de cada curso</p>
+        </div>
+    </div>
+        
             <?php if(isset($_GET['tutor_success'])): ?>
                 <div class="success">✓ Tutor asignado correctamente</div>
             <?php endif; ?>

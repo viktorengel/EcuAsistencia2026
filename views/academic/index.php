@@ -30,14 +30,25 @@
 </head>
 <body>
     <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Configuración Académica
+</div>
 
-    <div class="container">
+<div class="container">
+
+    <div class="page-header" style="background:linear-gradient(135deg,#1a237e,#283593);">
+        <div class="ph-icon">🎓</div>
+        <div>
+            <h1>Configuración Académica</h1>
+            <p>Años lectivos, cursos y asignaturas</p>
+        </div>
+    </div>
+
         <?php if(isset($_GET['course_success'])): ?>
-            <div class="success">
-                ✓ Curso creado correctamente.
-                <?php if(isset($_GET['subjects_loaded']) && $_GET['subjects_loaded'] > 0): ?>
+            <div class="success">✓ Curso creado correctamente.
+                <?php if(isset($_GET['subjects_loaded']) && (int)$_GET['subjects_loaded'] > 0): ?>
                     Se pre-cargaron <strong><?= (int)$_GET['subjects_loaded'] ?> asignaturas</strong> según la malla curricular.
-                <?php elseif(isset($_GET['subjects_loaded']) && $_GET['subjects_loaded'] == 0): ?>
+                <?php elseif(isset($_GET['subjects_loaded'])): ?>
                     Las asignaturas de este nivel ya estaban registradas.
                 <?php endif; ?>
             </div>
@@ -86,6 +97,9 @@
         <?php endif; ?>
         <?php if(isset($_GET['error']) && $_GET['error'] === 'course_has_assignments'): ?>
             <div class="error">✗ No se puede eliminar el curso porque tiene asignaciones docentes</div>
+        <?php endif; ?>
+        <?php if(isset($_GET['error']) && $_GET['error'] === 'course_duplicate'): ?>
+            <div class="error">✗ Ya existe un curso con ese nivel, paralelo y jornada en el año lectivo activo. Elige un paralelo diferente.</div>
         <?php endif; ?>
         <?php if(isset($_GET['error']) && $_GET['error'] === 'subject_not_found'): ?>
             <div class="error">✗ Asignatura no encontrada</div>
@@ -432,21 +446,6 @@
             }
             </script>
 
-            <!-- Crear Asignatura -->
-            <div class="card">
-                <h2>Crear Asignatura</h2>
-                <form method="POST" action="?action=create_subject">
-                    <div class="form-group">
-                        <label>Nombre</label>
-                        <input type="text" name="name" placeholder="Ej: Matemáticas" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Código</label>
-                        <input type="text" name="code" placeholder="Ej: MAT" required>
-                    </div>
-                    <button type="submit">Crear Asignatura</button>
-                </form>
-            </div>
         </div>
 
         <!-- Lista de Cursos -->
@@ -472,6 +471,10 @@
                         <td><?= htmlspecialchars($course['parallel']) ?></td>
                         <td><?= ucfirst($course['shift_name']) ?></td>
                         <td style="white-space: nowrap;">
+                            <button onclick="location.href='?action=course_subjects&course_id=<?= $course['id'] ?>'" 
+                                    style="padding: 5px 10px; font-size: 12px; background: #6f42c1; color:white;">
+                                📚 Asignaturas
+                            </button>
                             <button onclick="location.href='?action=view_course_students&course_id=<?= $course['id'] ?>'" 
                                     style="padding: 5px 10px; font-size: 12px; background: #007bff;">
                                 👥 Estudiantes
@@ -497,42 +500,6 @@
             </button>
         </div>
 
-        <!-- Lista de Asignaturas -->
-        <div class="card">
-            <h2>Asignaturas Registradas</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Código</th>
-                        <th>Nombre</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($subjects as $subject): ?>
-                    <tr>
-                        <td><?= $subject['id'] ?></td>
-                        <td><?= htmlspecialchars($subject['code']) ?></td>
-                        <td><?= htmlspecialchars($subject['name']) ?></td>
-                        <td style="white-space: nowrap;">
-                            <button onclick="location.href='?action=edit_subject&id=<?= $subject['id'] ?>'" 
-                                    style="padding: 5px 10px; font-size: 12px; background: #ffc107; color: #000;">
-                                ✏️ Editar
-                            </button>
-                            <form method="POST" action="?action=delete_subject" style="display: inline;" 
-                                  onsubmit="return confirmDeleteSubject(event, '<?= htmlspecialchars(addslashes($subject['name'])) ?>')">
-                                <input type="hidden" name="subject_id" value="<?= $subject['id'] ?>">
-                                <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">
-                                    🗑️ Eliminar
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <script>
@@ -558,27 +525,6 @@
         return false;
     }
 
-    function confirmDeleteSubject(event, subjectName) {
-        event.preventDefault();
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-        modalContent.innerHTML = `
-            <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Asignatura</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">¿Está seguro de eliminar la asignatura <strong>${subjectName}</strong>?</p>
-            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;"><strong>Nota:</strong> No se puede eliminar si tiene asignaciones docentes.</p>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" id="cancelSubBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                <button type="button" id="confirmSubBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Sí, Eliminar</button>
-            </div>`;
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        const form = event.target;
-        document.getElementById('confirmSubBtn').onclick = function() { document.body.removeChild(modal); form.submit(); };
-        document.getElementById('cancelSubBtn').onclick = function() { document.body.removeChild(modal); };
-        return false;
-    }
 
     function confirmDelete(event, yearName) {
         event.preventDefault();
