@@ -33,7 +33,14 @@
 
     <div class="container">
         <?php if(isset($_GET['course_success'])): ?>
-            <div class="success">✓ Curso creado correctamente</div>
+            <div class="success">
+                ✓ Curso creado correctamente.
+                <?php if(isset($_GET['subjects_loaded']) && $_GET['subjects_loaded'] > 0): ?>
+                    Se pre-cargaron <strong><?= (int)$_GET['subjects_loaded'] ?> asignaturas</strong> según la malla curricular.
+                <?php elseif(isset($_GET['subjects_loaded']) && $_GET['subjects_loaded'] == 0): ?>
+                    Las asignaturas de este nivel ya estaban registradas.
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
         <?php if(isset($_GET['course_updated'])): ?>
             <div class="success">✓ Curso actualizado correctamente</div>

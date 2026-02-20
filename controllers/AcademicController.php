@@ -39,23 +39,93 @@ class AcademicController {
     public function createCourse() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $activeYear = $this->schoolYearModel->getActive();
-            
+
             if (!$activeYear) {
                 header('Location: ?action=academic&error=no_active_year');
                 exit;
             }
-            
+
+            $gradeLevel = html_entity_decode(
+                Security::sanitize($_POST['grade_level']), ENT_QUOTES, 'UTF-8'
+            );
+
             $data = [
                 ':institution_id' => $_SESSION['institution_id'],
                 ':school_year_id' => $activeYear['id'],
-                ':name' => html_entity_decode(Security::sanitize($_POST['name']), ENT_QUOTES, 'UTF-8'),
-                ':grade_level' => html_entity_decode(Security::sanitize($_POST['grade_level']), ENT_QUOTES, 'UTF-8'),
-                ':parallel' => Security::sanitize($_POST['parallel']),
-                ':shift_id' => (int)$_POST['shift_id']
+                ':name'           => html_entity_decode(Security::sanitize($_POST['name']), ENT_QUOTES, 'UTF-8'),
+                ':grade_level'    => $gradeLevel,
+                ':parallel'       => Security::sanitize($_POST['parallel']),
+                ':shift_id'       => (int)$_POST['shift_id']
             ];
 
             $this->courseModel->create($data);
-            header('Location: ?action=academic&course_success=1');
+
+            // ── AUTO-CARGA DE ASIGNATURAS SEGÚN MALLA CURRICULAR ──────────
+            // Las claves coinciden EXACTAMENTE con los valores del JS en index.php
+            $mallaCurricular = [
+                // EDUCACIÓN INICIAL
+                'Inicial 1 (0-3 años)' => [
+                    'Desarrollo Personal y Social',
+                    'Expresión y Comunicación',
+                    'Relación con el Entorno Natural y Cultural'
+                ],
+                'Inicial 2 (3-5 años)' => [
+                    'Desarrollo Personal y Social',
+                    'Expresión y Comunicación',
+                    'Relación con el Entorno Natural y Cultural'
+                ],
+                // EGB PREPARATORIA
+                '1.º EGB - Preparatoria' => [
+                    'Currículo Integrador',
+                    'Educación Física',
+                    'Educación Cultural y Artística'
+                ],
+                // EGB ELEMENTAL
+                '2.º EGB' => ['Lengua y Literatura','Matemática','Entorno Natural y Social','Inglés','Educación Física','Educación Cultural y Artística'],
+                '3.º EGB' => ['Lengua y Literatura','Matemática','Entorno Natural y Social','Inglés','Educación Física','Educación Cultural y Artística'],
+                '4.º EGB' => ['Lengua y Literatura','Matemática','Entorno Natural y Social','Inglés','Educación Física','Educación Cultural y Artística'],
+                // EGB MEDIA
+                '5.º EGB' => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+                '6.º EGB' => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+                '7.º EGB' => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+                // EGB SUPERIOR
+                '8.º EGB' => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+                '9.º EGB' => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+                '10.º EGB' => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+                // BGU
+                '1.º BGU' => ['Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Lengua y Literatura','Inglés','Educación Cultural y Artística','Educación Física','Emprendimiento y Gestión'],
+                '2.º BGU' => ['Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Lengua y Literatura','Inglés','Educación Cultural y Artística','Educación Física','Emprendimiento y Gestión'],
+                '3.º BGU' => ['Matemática','Física','Química','Biología','Historia','Lengua y Literatura','Inglés','Educación Física','Emprendimiento y Gestión'],
+                // BACHILLERATO TÉCNICO
+                '1.º BT' => ['Lengua y Literatura','Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Inglés','Educación Física','Educación Cultural y Artística','Emprendimiento y Gestión','Módulos Técnicos'],
+                '2.º BT' => ['Lengua y Literatura','Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Inglés','Educación Física','Educación Cultural y Artística','Emprendimiento y Gestión','Módulos Técnicos'],
+                '3.º BT' => ['Lengua y Literatura','Matemática','Física','Química','Biología','Historia','Inglés','Educación Física','Emprendimiento y Gestión','Módulos Técnicos'],
+            ];
+
+            $asignaturasAgregadas = 0;
+
+            if (isset($mallaCurricular[$gradeLevel])) {
+                // Traer nombres de asignaturas ya existentes para no duplicar
+                $existentes = $this->subjectModel->getAll();
+                $nombresExistentes = array_map(
+                    fn($s) => strtolower(trim($s['name'])), $existentes
+                );
+
+                foreach ($mallaCurricular[$gradeLevel] as $nombreAsig) {
+                    if (!in_array(strtolower(trim($nombreAsig)), $nombresExistentes)) {
+                        $this->subjectModel->create([
+                            ':institution_id' => $_SESSION['institution_id'],
+                            ':name'           => $nombreAsig,
+                            ':code'           => ''
+                        ]);
+                        $nombresExistentes[] = strtolower(trim($nombreAsig));
+                        $asignaturasAgregadas++;
+                    }
+                }
+            }
+            // ── FIN AUTO-CARGA ────────────────────────────────────────────
+
+            header('Location: ?action=academic&course_success=1&subjects_loaded=' . $asignaturasAgregadas);
             exit;
         }
     }
@@ -135,7 +205,7 @@ class AcademicController {
             $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE course_id = :id");
             $stmt->execute([':id' => $courseId]);
             $result = $stmt->fetch();
-            
+
             if ($result['count'] > 0) {
                 header('Location: ?action=academic&error=course_has_assignments');
                 exit;
@@ -201,7 +271,7 @@ class AcademicController {
             $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE subject_id = :id");
             $stmt->execute([':id' => $subjectId]);
             $result = $stmt->fetch();
-            
+
             if ($result['count'] > 0) {
                 header('Location: ?action=academic&error=subject_has_assignments');
                 exit;
@@ -226,7 +296,7 @@ class AcademicController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = (int)$_POST['course_id'];
             $studentIds = $_POST['student_ids'] ?? [];
-            
+
             $enrolled = 0;
             $errors = 0;
 
@@ -255,15 +325,13 @@ class AcademicController {
                 exit;
             }
 
-            // Verificar que el estudiante existe y está matriculado
             $course = $this->userModel->getStudentCourse($studentId, $activeYear['id']);
-            
+
             if (!$course) {
                 header('Location: ?action=enroll_students&error=not_enrolled');
                 exit;
             }
 
-            // Retirar estudiante
             if ($this->courseModel->unenrollStudent($studentId, $activeYear['id'])) {
                 header('Location: ?action=enroll_students&unenrolled=1');
                 exit;
@@ -276,7 +344,7 @@ class AcademicController {
 
     public function viewCourseStudents() {
         $courseId = (int)($_GET['course_id'] ?? 0);
-        
+
         if (!$courseId) {
             header('Location: ?action=academic');
             exit;
@@ -304,7 +372,6 @@ class AcademicController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors = [];
 
-            // Validaciones
             if (empty($_POST['name'])) {
                 $errors[] = "El nombre es obligatorio";
             }
@@ -320,7 +387,6 @@ class AcademicController {
                     $errors[] = "La fecha de fin debe ser posterior a la fecha de inicio";
                 }
 
-                // Verificar solapamiento de fechas
                 if ($this->schoolYearModel->checkOverlap($_POST['start_date'], $_POST['end_date'])) {
                     $errors[] = "Ya existe un año lectivo con fechas que se solapan";
                 }
@@ -331,25 +397,21 @@ class AcademicController {
                 return;
             }
 
-            // Crear año lectivo
             $data = [
                 'institution_id' => $_SESSION['institution_id'],
-                'name' => Security::sanitize($_POST['name']),
-                'start_date' => $_POST['start_date'],
-                'end_date' => $_POST['end_date'],
-                'is_active' => isset($_POST['is_active']) ? 1 : 0
+                'name'           => Security::sanitize($_POST['name']),
+                'start_date'     => $_POST['start_date'],
+                'end_date'       => $_POST['end_date'],
+                'is_active'      => isset($_POST['is_active']) ? 1 : 0
             ];
 
-            // Si se marca como activo, desactivar los demás ANTES de insertar
             if ($data['is_active']) {
                 $this->schoolYearModel->activate(0);
             }
 
-            // create() ahora devuelve el ID insertado (o 0 si falla)
             $newId = $this->schoolYearModel->create($data);
 
             if ($newId > 0) {
-                // Activar el nuevo año lectivo con el ID real
                 if ($data['is_active']) {
                     $this->schoolYearModel->activate($newId);
                 }
@@ -371,7 +433,6 @@ class AcademicController {
             exit;
         }
 
-        // Verificar institución
         if ($year['institution_id'] != $_SESSION['institution_id']) {
             die('Acceso denegado');
         }
@@ -384,7 +445,6 @@ class AcademicController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors = [];
 
-            // Validaciones
             if (empty($_POST['name'])) {
                 $errors[] = "El nombre es obligatorio";
             }
@@ -400,7 +460,6 @@ class AcademicController {
                     $errors[] = "La fecha de fin debe ser posterior a la fecha de inicio";
                 }
 
-                // Verificar solapamiento (excluyendo el actual)
                 if ($this->schoolYearModel->checkOverlap($_POST['start_date'], $_POST['end_date'], $yearId)) {
                     $errors[] = "Ya existe otro año lectivo con fechas que se solapan";
                 }
@@ -411,12 +470,11 @@ class AcademicController {
                 return;
             }
 
-            // Actualizar año lectivo
             $data = [
-                'id' => $yearId,
-                'name' => Security::sanitize($_POST['name']),
+                'id'         => $yearId,
+                'name'       => Security::sanitize($_POST['name']),
                 'start_date' => $_POST['start_date'],
-                'end_date' => $_POST['end_date']
+                'end_date'   => $_POST['end_date']
             ];
 
             if ($this->schoolYearModel->update($data)) {
@@ -439,12 +497,10 @@ class AcademicController {
                 exit;
             }
 
-            // Verificar institución
             if ($year['institution_id'] != $_SESSION['institution_id']) {
                 die('Acceso denegado');
             }
 
-            // No permitir eliminar año activo
             if ($year['is_active'] == 1) {
                 header('Location: ?action=academic&error=cannot_delete_active');
                 exit;
@@ -470,7 +526,6 @@ class AcademicController {
                 exit;
             }
 
-            // Verificar institución
             if ($year['institution_id'] != $_SESSION['institution_id']) {
                 die('Acceso denegado');
             }
@@ -495,7 +550,6 @@ class AcademicController {
                 exit;
             }
 
-            // Verificar institución
             if ($year['institution_id'] != $_SESSION['institution_id']) {
                 die('Acceso denegado');
             }
