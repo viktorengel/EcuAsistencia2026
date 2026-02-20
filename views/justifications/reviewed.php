@@ -35,12 +35,19 @@
         <div class="alert alert-success">✓ Acción realizada correctamente</div>
     <?php endif; ?>
 
-    <div class="page-header" style="background:linear-gradient(135deg,#1b5e20,#388e3c);">
-        <div class="ph-icon">📋</div>
-        <div>
-            <h1>Justificaciones Revisadas</h1>
-            <p>Historial de justificaciones aprobadas y rechazadas</p>
+    <div class="page-header" style="background:linear-gradient(135deg,#1b5e20,#388e3c);display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div class="ph-icon">📋</div>
+            <div>
+                <h1>Justificaciones Revisadas</h1>
+                <p>Historial de justificaciones aprobadas y rechazadas</p>
+            </div>
         </div>
+        <a href="?action=pending_justifications"
+           style="padding:9px 18px;background:white;color:#1b5e20;text-decoration:none;
+                  border-radius:6px;font-weight:600;font-size:13px;white-space:nowrap;">
+            ⏳ Ver Pendientes
+        </a>
     </div>
 
     <!-- Filtros -->

@@ -29,12 +29,19 @@
         <div class="alert alert-success">✓ Justificación enviada correctamente. Está pendiente de revisión.</div>
     <?php endif; ?>
 
-    <div class="page-header" style="background:linear-gradient(135deg,#e65100,#ef6c00);">
-        <div class="ph-icon">📝</div>
-        <div>
-            <h1>Mis Justificaciones</h1>
-            <p>Historial de justificaciones enviadas</p>
+    <div class="page-header" style="background:linear-gradient(135deg,#e65100,#ef6c00);display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div class="ph-icon">📝</div>
+            <div>
+                <h1>Mis Justificaciones</h1>
+                <p>Historial de justificaciones enviadas</p>
+            </div>
         </div>
+        <a href="?action=submit_justification"
+           style="padding:9px 18px;background:white;color:#e65100;text-decoration:none;
+                  border-radius:6px;font-weight:600;font-size:13px;white-space:nowrap;">
+            ➕ Nueva Justificación
+        </a>
     </div>
 
     <?php if(empty($justifications)): ?>

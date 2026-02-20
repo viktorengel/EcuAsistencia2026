@@ -340,19 +340,19 @@ class AcademicController {
                 'is_active' => isset($_POST['is_active']) ? 1 : 0
             ];
 
-            // Si se marca como activo, desactivar los demás
+            // Si se marca como activo, desactivar los demás ANTES de insertar
             if ($data['is_active']) {
-                $this->schoolYearModel->activate(0); // Desactiva todos
+                $this->schoolYearModel->activate(0);
             }
 
-            if ($this->schoolYearModel->create($data)) {
-                // Si se creó como activo, activar el nuevo
+            // create() ahora devuelve el ID insertado (o 0 si falla)
+            $newId = $this->schoolYearModel->create($data);
+
+            if ($newId > 0) {
+                // Activar el nuevo año lectivo con el ID real
                 if ($data['is_active']) {
-                    $db = new Database();
-                    $newId = $db->connect()->lastInsertId();
                     $this->schoolYearModel->activate($newId);
                 }
-
                 header('Location: ?action=academic&sy_created=1');
                 exit;
             } else {

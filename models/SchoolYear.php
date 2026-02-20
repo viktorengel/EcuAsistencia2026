@@ -47,13 +47,15 @@ class SchoolYear {
                 (:institution_id, :name, :start_date, :end_date, :is_active)";
 
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $ok = $stmt->execute([
             ':institution_id' => $data['institution_id'],
-            ':name' => $data['name'],
-            ':start_date' => $data['start_date'],
-            ':end_date' => $data['end_date'],
-            ':is_active' => $data['is_active']
+            ':name'           => $data['name'],
+            ':start_date'     => $data['start_date'],
+            ':end_date'       => $data['end_date'],
+            ':is_active'      => $data['is_active']
         ]);
+        // Retorna el ID insertado para poder activarlo en la misma conexión
+        return $ok ? (int)$this->db->lastInsertId() : 0;
     }
 
     public function update($data) {
