@@ -146,11 +146,14 @@ if (isset($_SESSION['user_id'])) {
             <div class="navbar-section">
                 <a>⚙️ Administración ▾</a>
                 <div class="dropdown">
-                    <a href="?action=users" class="<?= $current_page == 'users' ? 'active' : '' ?>">
-                        👥 Gestión de Usuarios
+                    <a href="?action=institution" class="<?= $current_page == 'institution' ? 'active' : '' ?>">
+                        🏢 Configuración General
                     </a>
                     <a href="?action=academic" class="<?= $current_page == 'academic' ? 'active' : '' ?>">
                         🏫 Configuración Académica
+                    </a>
+                    <a href="?action=users" class="<?= $current_page == 'users' ? 'active' : '' ?>">
+                        👥 Gestión de Usuarios
                     </a>
                     <a href="?action=assignments" class="<?= $current_page == 'assignments' ? 'active' : '' ?>">
                         📚 Asignar Docente-Materia
@@ -164,9 +167,6 @@ if (isset($_SESSION['user_id'])) {
                     <div class="dropdown-divider"></div>
                     <a href="?action=schedules" class="<?= $current_page == 'schedules' ? 'active' : '' ?>">
                         📅 Horarios de Clases
-                    </a>
-                    <a href="?action=institution" class="<?= $current_page == 'institution' ? 'active' : '' ?>">
-                        🏢 Configuración de Institución
                     </a>
                     <div class="dropdown-divider"></div>
                     <a href="?action=backups" class="<?= $current_page == 'backups' ? 'active' : '' ?>">
