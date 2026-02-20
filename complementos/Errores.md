@@ -19,5 +19,3 @@ En el buscador de representantes busque López y si funciono pero Lopez no funci
 El buscador de Gestor de Representantes implementar en Gestíon de usuarios
 
 Popup de Notificaciones al dar clic en limpiar quiero el que estamos trabajando en los otros modulos Eliminar todas las notificaciones Leídas?
-
-En Gestion de usuarios No quiero el filto FIlrar por Rol, en su lugar quiero botones como en el módulo Justificaciones Revisadas que se selecciona y se va filtrando

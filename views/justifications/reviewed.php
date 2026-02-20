@@ -5,60 +5,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Justificaciones Revisadas - EcuAsist</title>
+    <style>
+        .badge-aprobado { background:#d4edda; color:#155724; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; }
+        .badge-rechazado{ background:#f8d7da; color:#721c24; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; }
+        .filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+        .filter-bar a { padding:6px 16px; border-radius:20px; text-decoration:none; font-size:13px;
+                        font-weight:600; border:2px solid; transition:all .15s; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+                 background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+        .modal.open { display:flex; }
+        .modal-content { background:white; padding:30px; border-radius:8px; max-width:560px;
+                         width:90%; box-shadow:0 4px 20px rgba(0,0,0,.3); position:relative; }
+        .modal-close { position:absolute; top:12px; right:16px; font-size:24px;
+                       cursor:pointer; color:#888; line-height:1; }
+        .modal-close:hover { color:#333; }
+    </style>
 </head>
 <body>
 
 <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
 <div class="breadcrumb">
-    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
-    <a href="?action=pending_justifications">Justificaciones</a> &rsaquo;
-    Revisadas
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Justificaciones Revisadas
 </div>
 
 <div class="container">
 
-    <!-- Header -->
-    <div class="page-header green">
-        <div class="ph-icon">✅</div>
+    <?php if(isset($_GET['success'])): ?>
+        <div class="alert alert-success">✓ Acción realizada correctamente</div>
+    <?php endif; ?>
+
+    <div class="page-header" style="background:linear-gradient(135deg,#1b5e20,#388e3c);">
+        <div class="ph-icon">📋</div>
         <div>
             <h1>Justificaciones Revisadas</h1>
             <p>Historial de justificaciones aprobadas y rechazadas</p>
         </div>
-        <div class="ph-actions">
-            <a href="?action=pending_justifications" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.5);">
-                ⏳ Ver Pendientes
-            </a>
-        </div>
     </div>
 
-    <!-- Filtros tab-like -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <!-- Filtros -->
+    <div class="filter-bar">
         <a href="?action=reviewed_justifications"
-           class="btn <?= ($filter === 'all') ? 'btn-primary' : 'btn-outline' ?>">
-            Todas (<?= count($justifications) ?>)
+           style="<?= ($filter==='all') ? 'background:#343a40;color:white;border-color:#343a40;' : 'background:white;color:#343a40;border-color:#343a40;' ?>">
+            📋 Todas (<?= count($justifications) ?>)
         </a>
         <a href="?action=reviewed_justifications&filter=aprobado"
-           class="btn <?= ($filter === 'aprobado') ? 'btn-success' : 'btn-outline' ?>">
+           style="<?= ($filter==='aprobado') ? 'background:#28a745;color:white;border-color:#28a745;' : 'background:white;color:#28a745;border-color:#28a745;' ?>">
             ✅ Aprobadas
         </a>
         <a href="?action=reviewed_justifications&filter=rechazado"
-           class="btn <?= ($filter === 'rechazado') ? 'btn-danger' : 'btn-outline' ?>">
+           style="<?= ($filter==='rechazado') ? 'background:#dc3545;color:white;border-color:#dc3545;' : 'background:white;color:#dc3545;border-color:#dc3545;' ?>">
             ❌ Rechazadas
         </a>
     </div>
 
-    <!-- Tabla -->
     <?php if(empty($justifications)): ?>
-    <div class="empty-state">
-        <div class="icon">📋</div>
-        <p>No hay justificaciones revisadas aún.</p>
-    </div>
-    <?php else: ?>
-    <div class="table-wrap">
-        <div class="table-info">
-            <span>📋 <strong><?= count($justifications) ?></strong> registros</span>
+        <div class="empty-state">
+            <div class="icon">📋</div>
+            <p>No hay justificaciones revisadas con este filtro.</p>
         </div>
+    <?php else: ?>
+    <div class="panel">
         <table>
             <thead>
                 <tr>
@@ -70,34 +77,38 @@
                     <th>Enviado por</th>
                     <th>Estado</th>
                     <th>Revisado por</th>
-                    <th>Detalle</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <?php $i = 1; foreach($justifications as $j):
-                    $badgeClass = $j['status'] === 'aprobado' ? 'badge-green' : 'badge-red';
-                    $badgeLabel = $j['status'] === 'aprobado' ? '✅ Aprobada' : '❌ Rechazada';
                     $jData = htmlspecialchars(json_encode([
                         'student' => $j['student_name'],
                         'reason'  => $j['reason'],
                         'notes'   => $j['review_notes'] ?? '',
                         'doc'     => $j['document_path'] ?? '',
-                        'status'  => $j['status']
+                        'status'  => $j['status'],
                     ]), ENT_QUOTES);
                 ?>
                 <tr>
-                    <td style="color:#999;"><?= $i++ ?></td>
-                    <td><strong><?= htmlspecialchars($j['student_name']) ?></strong></td>
-                    <td><?= htmlspecialchars($j['course_name'] ?? '—') ?></td>
+                    <td><?= $i++ ?></td>
+                    <td><?= htmlspecialchars($j['student_name']) ?></td>
+                    <td><?= htmlspecialchars($j['course_name'] ?? '-') ?></td>
                     <td><?= htmlspecialchars($j['subject_name']) ?></td>
                     <td><?= date('d/m/Y', strtotime($j['attendance_date'])) ?></td>
-                    <td style="color:#666;"><?= htmlspecialchars($j['submitted_by_name']) ?></td>
-                    <td><span class="badge <?= $badgeClass ?>"><?= $badgeLabel ?></span></td>
-                    <td style="font-size:0.82rem;color:#666;"><?= htmlspecialchars($j['reviewer_name'] ?? '—') ?></td>
+                    <td><?= htmlspecialchars($j['submitted_by_name']) ?></td>
                     <td>
-                        <button class="btn btn-info btn-sm" onclick="verDetalle('<?= $jData ?>')">
-                            👁 Ver
-                        </button>
+                        <?php if($j['status'] === 'aprobado'): ?>
+                            <span class="badge-aprobado">✅ Aprobada</span>
+                        <?php else: ?>
+                            <span class="badge-rechazado">❌ Rechazada</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= htmlspecialchars($j['reviewer_name'] ?? '-') ?></td>
+                    <td>
+                        <button class="btn btn-primary"
+                                style="padding:5px 12px;font-size:12px;"
+                                onclick="verDetalle('<?= $jData ?>')">🔍 Ver</button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -109,35 +120,45 @@
 </div>
 
 <!-- Modal detalle -->
-<div class="modal-overlay" id="modalDetalle">
-    <div class="modal-box" style="max-width:520px;">
-        <h3>📄 Detalle de Justificación</h3>
-        <div id="modal-body" style="margin:16px 0;padding:12px;background:#f8f9fa;border-radius:6px;font-size:0.88rem;"></div>
-        <div class="modal-actions">
-            <button class="btn btn-outline" onclick="closeModal('modalDetalle')">Cerrar</button>
-        </div>
+<div id="modal" class="modal" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal-content">
+        <span class="modal-close" onclick="cerrarModal()">&times;</span>
+        <h3 style="margin-bottom:16px;">📄 Detalle de Justificación</h3>
+        <div id="modal-body"></div>
     </div>
 </div>
 
 <script>
 function verDetalle(jsonStr) {
     const d = JSON.parse(jsonStr);
-    const bc = d.status === 'aprobado' ? '#d4edda' : '#f8d7da';
-    const tc = d.status === 'aprobado' ? '#155724' : '#721c24';
-    const lbl = d.status === 'aprobado' ? '✅ Aprobada' : '❌ Rechazada';
-    let html = '<p><strong>Estudiante:</strong> ' + d.student + '</p>';
-    html += '<p style="margin-top:10px;"><strong>Estado:</strong> <span style="background:' + bc + ';color:' + tc + ';padding:3px 10px;border-radius:12px;font-size:0.78rem;">' + lbl + '</span></p>';
-    html += '<p style="margin-top:10px;"><strong>Motivo:</strong></p><p style="margin-top:4px;color:#555;">' + d.reason + '</p>';
-    if (d.notes) html += '<p style="margin-top:10px;"><strong>Observación del revisor:</strong></p><p style="margin-top:4px;color:#555;">' + d.notes + '</p>';
-    if (d.doc) html += '<p style="margin-top:12px;"><strong>Documento:</strong> <a href="<?= BASE_URL ?>/' + d.doc + '" target="_blank" style="color:#007bff;">📎 Ver archivo</a></p>';
-    else html += '<p style="margin-top:12px;color:#999;"><em>Sin documento adjunto</em></p>';
+    const badge = d.status === 'aprobado'
+        ? '<span style="background:#d4edda;color:#155724;padding:3px 10px;border-radius:10px;">✅ Aprobada</span>'
+        : '<span style="background:#f8d7da;color:#721c24;padding:3px 10px;border-radius:10px;">❌ Rechazada</span>';
+
+    let html = `<p><strong>Estudiante:</strong> ${d.student}</p>`;
+    html += `<p style="margin-top:10px;"><strong>Estado:</strong> ${badge}</p>`;
+    html += `<p style="margin-top:10px;"><strong>Motivo:</strong></p><p style="margin-top:4px;color:#555;">${d.reason}</p>`;
+
+    if (d.notes) {
+        html += `<p style="margin-top:10px;"><strong>Observación del revisor:</strong></p><p style="margin-top:4px;color:#555;">${d.notes}</p>`;
+    }
+
+    if (d.doc) {
+        html += `<p style="margin-top:14px;"><strong>Documento:</strong>
+                 <a href="<?= BASE_URL ?>/${d.doc}" target="_blank"
+                    style="color:#007bff;">📎 Ver archivo adjunto</a></p>`;
+    } else {
+        html += `<p style="margin-top:14px;color:#999;"><em>Sin documento adjunto</em></p>`;
+    }
+
     document.getElementById('modal-body').innerHTML = html;
-    document.getElementById('modalDetalle').classList.add('on');
+    document.getElementById('modal').classList.add('open');
 }
-function closeModal(id) { document.getElementById(id).classList.remove('on'); }
-document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.addEventListener('click', e => { if(e.target === m) closeModal(m.id); });
-});
+
+function cerrarModal() {
+    document.getElementById('modal').classList.remove('open');
+}
 </script>
+
 </body>
 </html>
