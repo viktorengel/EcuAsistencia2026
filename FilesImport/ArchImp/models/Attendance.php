@@ -259,4 +259,25 @@ class Attendance {
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    // Ausencias sin justificación pendiente o aprobada (para el formulario de justificación)
+    public function getUnjustifiedAbsences($studentId) {
+        $sql = "SELECT a.id, a.date, a.hour_period, a.status,
+                       s.name as subject_name,
+                       c.name as course_name
+                FROM attendances a
+                INNER JOIN subjects s ON a.subject_id = s.id
+                INNER JOIN courses  c ON a.course_id  = c.id
+                WHERE a.student_id = :student_id
+                  AND a.status = 'ausente'
+                  AND a.id NOT IN (
+                      SELECT attendance_id FROM justifications
+                      WHERE attendance_id IS NOT NULL
+                        AND status IN ('pendiente','aprobado')
+                  )
+                ORDER BY a.date DESC, a.hour_period ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':student_id' => $studentId]);
+        return $stmt->fetchAll();
+    }
 }

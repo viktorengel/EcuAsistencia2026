@@ -376,6 +376,11 @@ switch ($action) {
         $controller = new InstitutionController();
         $controller->removeShift();
         break;
+
+    case 'toggle_institution_shift':
+        require_once BASE_PATH . '/controllers/InstitutionController.php';
+        (new InstitutionController())->toggleShift();
+        break;
     
     case 'create_user':
         require_once BASE_PATH . '/controllers/UserController.php';

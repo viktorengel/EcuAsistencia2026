@@ -3,72 +3,87 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estadísticas - EcuAsist</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .navbar { background: #007bff; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { font-size: 24px; }
-        .navbar a { color: white; text-decoration: none; margin-left: 20px; }
-        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 8px; text-align: center; }
-        .stat-number { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
-        .stat-label { font-size: 14px; opacity: 0.9; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; font-weight: bold; }
-        .progress-bar { background: #e9ecef; border-radius: 4px; height: 20px; overflow: hidden; }
-        .progress-fill { background: #28a745; height: 100%; transition: width 0.3s; }
-        .form-group { margin-bottom: 15px; display: inline-block; margin-right: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, button { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        h2 { margin-bottom: 20px; color: #333; }
-    </style>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-    <div class="container">
-        <div class="card">
-            <form method="GET">
-                <input type="hidden" name="action" value="stats">
-                <div class="form-group">
+<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
+
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Estadísticas
+</div>
+
+<div class="container-wide">
+
+    <!-- Header -->
+    <div class="page-header purple">
+        <div class="ph-icon">📈</div>
+        <div>
+            <h1>Estadísticas de Asistencia</h1>
+            <p>Análisis y métricas del período seleccionado</p>
+        </div>
+    </div>
+
+    <!-- Filtro de fechas -->
+    <div class="filters">
+        <h3>🔍 Período de análisis</h3>
+        <form method="GET">
+            <input type="hidden" name="action" value="stats">
+            <div class="filter-grid">
+                <div class="filter-group">
                     <label>Fecha Inicio</label>
                     <input type="date" name="start_date" value="<?= $_GET['start_date'] ?? date('Y-m-01') ?>">
                 </div>
-                <div class="form-group">
+                <div class="filter-group">
                     <label>Fecha Fin</label>
                     <input type="date" name="end_date" value="<?= $_GET['end_date'] ?? date('Y-m-d') ?>">
                 </div>
-                <button type="submit">Filtrar</button>
-            </form>
-        </div>
+                <div class="filter-group" style="display:flex;align-items:flex-end;">
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Filtrar</button>
+                </div>
+            </div>
+        </form>
+    </div>
 
-        <div class="stats-grid">
-            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="stat-number"><?= $stats['overall']['total_records'] ?></div>
-                <div class="stat-label">Registros Totales</div>
-            </div>
-            <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-                <div class="stat-number"><?= $stats['overall']['presente'] ?></div>
-                <div class="stat-label">Presentes</div>
-            </div>
-            <div class="stat-card" style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);">
-                <div class="stat-number"><?= $stats['overall']['ausente'] ?></div>
-                <div class="stat-label">Ausentes</div>
-            </div>
-            <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
-                <div class="stat-number"><?= $stats['overall']['tardanza'] ?></div>
-                <div class="stat-label">Tardanzas</div>
-            </div>
+    <!-- Stats globales -->
+    <?php
+    $total = $stats['overall']['total_records'] ?? 0;
+    $pres  = $stats['overall']['presente'] ?? 0;
+    $aus   = $stats['overall']['ausente'] ?? 0;
+    $tard  = $stats['overall']['tardanza'] ?? 0;
+    $just  = $stats['overall']['justificado'] ?? 0;
+    $pct   = $total > 0 ? round(($pres / $total) * 100, 1) : 0;
+    ?>
+    <div class="stats-row">
+        <div class="stat-card gray">
+            <div class="number"><?= $total ?></div>
+            <div class="label">Total Registros</div>
         </div>
+        <div class="stat-card green">
+            <div class="number"><?= $pres ?></div>
+            <div class="label">Presentes (<?= $pct ?>%)</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:<?= $pct ?>%;background:#28a745;"></div></div>
+        </div>
+        <div class="stat-card red">
+            <div class="number"><?= $aus ?></div>
+            <div class="label">Ausentes (<?= $total > 0 ? round(($aus/$total)*100,1) : 0 ?>%)</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:<?= $total>0?round(($aus/$total)*100):0 ?>%;background:#dc3545;"></div></div>
+        </div>
+        <div class="stat-card yellow">
+            <div class="number"><?= $tard ?></div>
+            <div class="label">Tardanzas</div>
+        </div>
+        <div class="stat-card teal">
+            <div class="number"><?= $just ?></div>
+            <div class="label">Justificados</div>
+        </div>
+    </div>
 
-        <div class="card">
-            <h2>Asistencia por Curso</h2>
+    <!-- Asistencia por curso -->
+    <div class="panel">
+        <h3 class="blue">🏫 Asistencia por Curso</h3>
+        <div class="table-wrap" style="margin-top:8px;">
             <table>
                 <thead>
                     <tr>
@@ -77,20 +92,22 @@
                         <th>Presentes</th>
                         <th>Ausentes</th>
                         <th>% Asistencia</th>
-                        <th>Indicador</th>
+                        <th style="min-width:120px;">Indicador</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($stats['by_course'] as $course): ?>
+                    <?php foreach($stats['by_course'] as $course):
+                        $color = $course['percentage'] >= 90 ? '#28a745' : ($course['percentage'] >= 75 ? '#ffc107' : '#dc3545');
+                    ?>
                     <tr>
-                        <td><?= $course['course_name'] ?></td>
+                        <td><strong><?= htmlspecialchars($course['course_name']) ?></strong></td>
                         <td><?= $course['total'] ?></td>
                         <td><?= $course['presente'] ?></td>
                         <td><?= $course['ausente'] ?></td>
-                        <td><?= $course['percentage'] ?>%</td>
+                        <td><span style="font-weight:700;color:<?= $color ?>;"><?= $course['percentage'] ?>%</span></td>
                         <td>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: <?= $course['percentage'] ?>%;"></div>
+                            <div class="progress-bar" style="height:10px;">
+                                <div class="progress-fill" style="width:<?= $course['percentage'] ?>%;background:<?= $color ?>;"></div>
                             </div>
                         </td>
                     </tr>
@@ -98,33 +115,38 @@
                 </tbody>
             </table>
         </div>
+    </div>
 
-        <div class="card">
-            <h2>Top 10 - Estudiantes con Más Ausencias</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Estudiante</th>
-                        <th>Curso</th>
-                        <th>Total Ausencias</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($stats['by_student'] as $index => $student): ?>
-                    <tr>
-                        <td><?= $index + 1 ?></td>
-                        <td><?= $student['student_name'] ?></td>
-                        <td><?= $student['course_name'] ?></td>
-                        <td><strong style="color: #dc3545;"><?= $student['total_absences'] ?></strong></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+    <!-- Top 10 ausencias -->
+    <div class="panel">
+        <h3 class="red">⚠️ Top 10 — Estudiantes con Más Ausencias</h3>
+        <?php if(!empty($stats['by_student'])): ?>
+        <?php $maxAbs = $stats['by_student'][0]['total_absences'] ?? 1; ?>
+        <div style="margin-top:8px;">
+            <?php foreach($stats['by_student'] as $i => $student): ?>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+                <span style="font-size:0.75rem;color:#999;min-width:20px;text-align:right;"><?= $i+1 ?>.</span>
+                <span style="flex:1;font-size:0.88rem;"><strong><?= htmlspecialchars($student['student_name']) ?></strong>
+                    <span style="color:#888;font-size:0.8rem;margin-left:6px;"><?= htmlspecialchars($student['course_name']) ?></span>
+                </span>
+                <div style="flex:2;">
+                    <div class="progress-bar" style="height:8px;">
+                        <div class="progress-fill" style="width:<?= round(($student['total_absences']/$maxAbs)*100) ?>%;background:#dc3545;"></div>
+                    </div>
+                </div>
+                <span style="font-weight:700;color:#dc3545;min-width:28px;text-align:right;"><?= $student['total_absences'] ?></span>
+            </div>
+            <?php endforeach; ?>
         </div>
+        <?php else: ?>
+            <p style="color:#999;font-size:0.88rem;padding:12px 0;">No hay datos de ausencias en este período.</p>
+        <?php endif; ?>
+    </div>
 
-        <div class="card">
-            <h2>Tendencia Diaria</h2>
+    <!-- Tendencia diaria -->
+    <div class="panel">
+        <h3 class="blue">📅 Tendencia Diaria</h3>
+        <div class="table-wrap" style="margin-top:8px;">
             <table>
                 <thead>
                     <tr>
@@ -132,20 +154,30 @@
                         <th>Registros</th>
                         <th>Presentes</th>
                         <th>% Asistencia</th>
+                        <th style="min-width:120px;">Indicador</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($stats['by_day'] as $day): ?>
+                    <?php foreach($stats['by_day'] as $day):
+                        $dc = $day['percentage'] >= 90 ? '#28a745' : ($day['percentage'] >= 75 ? '#ffc107' : '#dc3545');
+                    ?>
                     <tr>
                         <td><?= date('d/m/Y', strtotime($day['date'])) ?></td>
                         <td><?= $day['total'] ?></td>
                         <td><?= $day['presente'] ?></td>
-                        <td><?= $day['percentage'] ?>%</td>
+                        <td><span style="font-weight:600;color:<?= $dc ?>;"><?= $day['percentage'] ?>%</span></td>
+                        <td>
+                            <div class="progress-bar" style="height:8px;">
+                                <div class="progress-fill" style="width:<?= $day['percentage'] ?>%;background:<?= $dc ?>;"></div>
+                            </div>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
     </div>
+
+</div>
 </body>
 </html>

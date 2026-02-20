@@ -108,30 +108,37 @@
                 </a>
             </div>
             
-            <!-- Filtro por Rol -->
-            <form method="GET" action="" style="margin-bottom: 20px;">
-                <input type="hidden" name="action" value="users">
-                <div style="display: flex; gap: 15px; align-items: flex-end;">
-                    <div style="flex: 1;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Filtrar por Rol</label>
-                        <select name="filter_role" onchange="this.form.submit()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">Todos los roles</option>
-                            <?php foreach($roles as $role): ?>
-                                <option value="<?= $role['name'] ?>" <?= (isset($_GET['filter_role']) && $_GET['filter_role'] == $role['name']) ? 'selected' : '' ?>>
-                                    <?= ucfirst($role['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <?php if(isset($_GET['filter_role']) && $_GET['filter_role'] != ''): ?>
-                    <div>
-                        <a href="?action=users" style="padding: 10px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
-                            Limpiar
-                        </a>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </form>
+            <!-- Filtro por Rol - Botones -->
+            <?php
+            $roleIcons = ['docente'=>'👨‍🏫','estudiante'=>'👨‍🎓','inspector'=>'👁','autoridad'=>'⚙️','representante'=>'👨‍👩‍👧'];
+            $roleColors = [
+                'docente'      => ['active'=>'background:#007bff;color:white;border-color:#007bff;',      'outline'=>'color:#007bff;border-color:#007bff;'],
+                'estudiante'   => ['active'=>'background:#28a745;color:white;border-color:#28a745;',     'outline'=>'color:#28a745;border-color:#28a745;'],
+                'inspector'    => ['active'=>'background:#fd7e14;color:white;border-color:#fd7e14;',     'outline'=>'color:#fd7e14;border-color:#fd7e14;'],
+                'autoridad'    => ['active'=>'background:#6f42c1;color:white;border-color:#6f42c1;',     'outline'=>'color:#6f42c1;border-color:#6f42c1;'],
+                'representante'=> ['active'=>'background:#20c997;color:white;border-color:#20c997;',     'outline'=>'color:#20c997;border-color:#20c997;'],
+            ];
+            $currentFilter = $_GET['filter_role'] ?? '';
+            ?>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+                <a href="?action=users"
+                   style="padding:7px 16px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;border:2px solid;
+                          <?= $currentFilter==='' ? 'background:#343a40;color:white;border-color:#343a40;' : 'color:#343a40;border-color:#343a40;background:white;' ?>">
+                    👥 Todos
+                </a>
+                <?php foreach($roles as $role):
+                    $rn  = $role['name'];
+                    $ico = $roleIcons[$rn] ?? '👤';
+                    $col = $roleColors[$rn] ?? ['active'=>'background:#007bff;color:white;border-color:#007bff;','outline'=>'color:#007bff;border-color:#007bff;'];
+                    $isActive = ($currentFilter === $rn);
+                ?>
+                <a href="?action=users&filter_role=<?= $rn ?>"
+                   style="padding:7px 16px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;border:2px solid;
+                          <?= $isActive ? $col['active'] : $col['outline'].'background:white;' ?>">
+                    <?= $ico ?> <?= ucfirst($rn) ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
             
             <table>
                 <thead>

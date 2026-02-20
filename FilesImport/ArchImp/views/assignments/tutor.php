@@ -38,7 +38,12 @@
             <?php endif; ?>
 
             <div class="card">
-                <h2>Asignar Docente Tutor</h2>
+                <div class="header-actions" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h2 style="margin:0;">👨‍🏫 Asignar Docente Tutor</h2>
+                    <a href="?action=assignments" style="padding:8px 16px;background:#28a745;color:white;text-decoration:none;border-radius:4px;font-size:13px;">
+                        📚 Ir a Asignar Docente-Materia
+                    </a>
+                </div>
                 <form method="POST" action="?action=set_tutor" id="tutorForm">
                     <div class="form-group">
                         <label>Curso</label>

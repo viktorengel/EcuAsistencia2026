@@ -40,7 +40,12 @@
         <?php endif; ?>
 
         <div class="card">
-            <h2>Asignar Docente a Materia</h2>
+            <div class="header-actions" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 style="margin:0;">📚 Asignar Docente a Materia</h2>
+                <a href="?action=tutor_management" style="padding:8px 16px;background:#6f42c1;color:white;text-decoration:none;border-radius:4px;font-size:13px;">
+                    👨‍🏫 Ir a Asignar Tutor
+                </a>
+            </div>
             <form method="POST" action="?action=create_assignment">
                 <div class="form-group">
                     <label>Docente</label>

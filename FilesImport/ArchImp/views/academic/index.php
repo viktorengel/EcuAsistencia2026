@@ -146,18 +146,18 @@
                                 </button>
                                 
                                 <?php if($year['is_active']): ?>
-                                    <form method="POST" action="?action=deactivate_school_year" style="display: inline;" 
-                                          onsubmit="return confirm('¿Desactivar este año lectivo?')">
+                                    <form method="POST" action="?action=deactivate_school_year" style="display: inline;"
+                                          onsubmit="return confirmSY(event,'desactivar','<?= htmlspecialchars(addslashes($year['name'])) ?>')">
                                         <input type="hidden" name="year_id" value="<?= $year['id'] ?>">
-                                        <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #6c757d;">
+                                        <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #6c757d; color:white;">
                                             ⊘ Desactivar
                                         </button>
                                     </form>
                                 <?php else: ?>
-                                    <form method="POST" action="?action=activate_school_year" style="display: inline;" 
-                                          onsubmit="return confirm('¿Activar este año lectivo? Se desactivarán los demás.')">
+                                    <form method="POST" action="?action=activate_school_year" style="display: inline;"
+                                          onsubmit="return confirmSY(event,'activar','<?= htmlspecialchars(addslashes($year['name'])) ?>')">
                                         <input type="hidden" name="year_id" value="<?= $year['id'] ?>">
-                                        <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #28a745;">
+                                        <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #28a745; color:white;">
                                             ✓ Activar
                                         </button>
                                     </form>
@@ -594,6 +594,32 @@
         document.getElementById('cancelYearBtn').onclick = function() { document.body.removeChild(modal); };
         return false;
     }
-    </script>
+    
+    // Modal para activar/desactivar año lectivo
+    function confirmSY(event, accion, nombre) {
+        event.preventDefault();
+        var form = event.target;
+        var esActivar = accion === 'activar';
+        var modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        var color = esActivar ? '#28a745' : '#6c757d';
+        var icono = esActivar ? '✓' : '⊘';
+        var btnTxt = esActivar ? 'Sí, Activar' : 'Sí, Desactivar';
+        var desc = esActivar
+            ? 'Se desactivará el año lectivo actual y se activará <strong>' + nombre + '</strong>.'
+            : '¿Seguro que deseas desactivar <strong>' + nombre + '</strong>?';
+        modal.innerHTML = '<div style="background:white;padding:30px;border-radius:8px;max-width:460px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3);">'
+            + '<h3 style="margin:0 0 12px;color:' + color + ';">' + icono + ' ' + (esActivar ? 'Activar' : 'Desactivar') + ' Año Lectivo</h3>'
+            + '<p style="color:#555;margin-bottom:20px;">' + desc + '</p>'
+            + '<div style="display:flex;gap:10px;justify-content:flex-end;">'
+            + '<button id="btnCancelSY" style="padding:9px 18px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;">Cancelar</button>'
+            + '<button id="btnConfirmSY" style="padding:9px 18px;background:' + color + ';color:white;border:none;border-radius:4px;cursor:pointer;">' + btnTxt + '</button>'
+            + '</div></div>';
+        document.body.appendChild(modal);
+        document.getElementById('btnConfirmSY').onclick = function(){ document.body.removeChild(modal); form.submit(); };
+        document.getElementById('btnCancelSY').onclick  = function(){ document.body.removeChild(modal); };
+        return false;
+    }
+</script>
 </body>
 </html>

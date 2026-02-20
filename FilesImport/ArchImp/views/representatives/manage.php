@@ -5,197 +5,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Representantes - EcuAsist</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding-top: 70px; background: #f4f4f4; }
+        .rep-block { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:16px; margin-bottom:12px; }
+        .rep-block-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .rep-name { font-size:0.95rem; font-weight:700; }
+        .rep-email { font-size:0.8rem; color:#888; }
     </style>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-    <div class="container mt-4">
-        
-        <?php if(isset($_GET['success'])): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                ✓ Relación asignada correctamente
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-        <?php if(isset($_GET['removed'])): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                ✓ Relación eliminada correctamente
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
+    Gestión de Representantes
+</div>
 
-        <?php if(isset($_GET['error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                ✗ Error al procesar la solicitud
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+<div class="container-wide">
 
-        <!-- Formulario de asignación -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">👥 Asignar Estudiante a Representante</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Representante *</label>
-                            <select name="representative_id" class="form-select" required>
-                                <option value="">Seleccionar representante...</option>
-                                <?php foreach($representatives as $rep): ?>
-                                    <option value="<?= $rep['id'] ?>">
-                                        <?= $rep['last_name'] . ' ' . $rep['first_name'] ?> 
-                                        (<?= $rep['dni'] ?? 'Sin cédula' ?>)
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
+    <?php if(isset($_GET['success'])): ?><div class="alert alert-success">✓ Relación asignada correctamente</div><?php endif; ?>
+    <?php if(isset($_GET['removed'])): ?><div class="alert alert-success">✓ Relación eliminada correctamente</div><?php endif; ?>
+    <?php if(isset($_GET['error'])): ?><div class="alert alert-danger">✗ Error al procesar la solicitud</div><?php endif; ?>
 
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Estudiante *</label>
-                            <select name="student_id" class="form-select" required>
-                                <option value="">Seleccionar estudiante...</option>
-                                <?php foreach($students as $student): ?>
-                                    <option value="<?= $student['id'] ?>">
-                                        <?= $student['last_name'] . ' ' . $student['first_name'] ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
+    <!-- Header -->
+    <div class="page-header blue">
+        <div class="ph-icon">👥</div>
+        <div>
+            <h1>Gestión de Representantes</h1>
+            <p>Vincula representantes con sus estudiantes</p>
+        </div>
+    </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Parentesco *</label>
-                            <select name="relationship" class="form-select" required>
-                                <option value="">Seleccionar parentesco...</option>
-                                <option value="Padre">Padre</option>
-                                <option value="Madre">Madre</option>
-                                <option value="Tutor Legal">Tutor Legal</option>
-                                <option value="Abuelo/a">Abuelo/a</option>
-                                <option value="Tío/a">Tío/a</option>
-                                <option value="Hermano/a">Hermano/a</option>
-                                <option value="Otro">Otro</option>
-                            </select>
-                        </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
 
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="form-check" style="padding-top: 8px;">
-                                <input type="checkbox" name="is_primary" value="1" class="form-check-input" id="isPrimary">
-                                <label class="form-check-label" for="isPrimary">
-                                    <strong>Representante Principal</strong>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Formulario -->
+        <div class="panel">
+            <h3 style="margin-bottom:16px;font-size:1rem;">➕ Nueva Relación</h3>
+            <form method="POST">
+                <div class="form-group">
+                    <label>Representante *</label>
+                    <select name="representative_id" class="form-control" required>
+                        <option value="">Seleccionar representante...</option>
+                        <?php foreach($representatives as $rep): ?>
+                            <option value="<?= $rep['id'] ?>">
+                                <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>
+                                (<?= htmlspecialchars($rep['dni'] ?? 'Sin cédula') ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-                    <button type="submit" class="btn btn-success">
-                        ➕ Asignar Relación
-                    </button>
-                </form>
-            </div>
+                <div class="form-group">
+                    <label>Estudiante *</label>
+                    <select name="student_id" class="form-control" required>
+                        <option value="">Seleccionar estudiante...</option>
+                        <?php foreach($students as $s): ?>
+                            <option value="<?= $s['id'] ?>">
+                                <?= htmlspecialchars($s['last_name'] . ' ' . $s['first_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Parentesco *</label>
+                    <select name="relationship" class="form-control" required>
+                        <option value="">Seleccionar...</option>
+                        <option>Padre</option>
+                        <option>Madre</option>
+                        <option>Tutor Legal</option>
+                        <option>Abuelo/a</option>
+                        <option>Tío/a</option>
+                        <option>Hermano/a</option>
+                        <option>Otro</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" name="is_primary" value="1"> Representante Principal
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-success">➕ Asignar Relación</button>
+            </form>
         </div>
 
-        <!-- Filtros -->
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">🔍 Filtros de Búsqueda</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Buscar por Representante</label>
-                        <input type="text" id="filterRepresentative" class="form-control" placeholder="Nombre del representante...">
+        <!-- Listado -->
+        <div>
+            <!-- Filtros -->
+            <div class="filters" style="margin-bottom:12px;">
+                <h3 style="font-size:0.85rem;font-weight:600;color:#555;margin-bottom:8px;">🔍 Buscar</h3>
+                <div class="filter-grid">
+                    <div>
+                        <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Representante</label>
+                        <input type="text" id="filterRep" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Buscar por Estudiante</label>
-                        <input type="text" id="filterStudent" class="form-control" placeholder="Nombre del estudiante...">
+                    <div>
+                        <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Estudiante</label>
+                        <input type="text" id="filterStu" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Buscar por Curso</label>
-                        <input type="text" id="filterCourse" class="form-control" placeholder="Nombre del curso...">
+                    <div>
+                        <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Curso</label>
+                        <input type="text" id="filterCourse" class="form-control" placeholder="Curso..." oninput="applyFilters()">
                     </div>
                 </div>
-                <button onclick="clearFilters()" class="btn btn-secondary btn-sm">
-                    🗑️ Limpiar Filtros
-                </button>
+                <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="clearFilters()">🗑️ Limpiar</button>
             </div>
-        </div>
 
-        <!-- Lista de relaciones -->
-        <div class="card">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">📋 Representantes y sus Estudiantes</h5>
-                <span class="badge bg-primary" id="totalCount">
-                    <?php 
-                    $totalRelations = 0;
-                    foreach($representatives as $rep) {
-                        $totalRelations += count($this->representativeModel->getStudentsByRepresentative($rep['id']));
-                    }
-                    echo $totalRelations;
-                    ?> relaciones
-                </span>
-            </div>
-            <div class="card-body">
-                <?php 
+            <!-- Relaciones -->
+            <div id="rep-list">
+                <?php
                 $hasRelations = false;
-                foreach($representatives as $rep): 
+                foreach($representatives as $rep):
                     $children = $this->representativeModel->getStudentsByRepresentative($rep['id']);
-                    if(count($children) > 0):
-                        $hasRelations = true;
+                    if(!count($children)) continue;
+                    $hasRelations = true;
                 ?>
-                <div class="representative-block mb-4 p-3 border rounded" 
-                     data-representative="<?= strtolower($rep['last_name'] . ' ' . $rep['first_name']) ?>">
-                    
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0">
-                            👤 <?= $rep['last_name'] . ' ' . $rep['first_name'] ?>
-                        </h5>
-                        <small class="text-muted"><?= $rep['email'] ?></small>
+                <div class="rep-block"
+                     data-repname="<?= strtolower($rep['last_name'] . ' ' . $rep['first_name']) ?>">
+                    <div class="rep-block-header">
+                        <div>
+                            <div class="rep-name">👤 <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?></div>
+                            <div class="rep-email"><?= htmlspecialchars($rep['email']) ?></div>
+                        </div>
+                        <span class="badge badge-blue"><?= count($children) ?> representado(s)</span>
                     </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                            <thead class="table-light">
+                    <div class="table-wrap" style="margin-bottom:0;">
+                        <table>
+                            <thead>
                                 <tr>
                                     <th>Estudiante</th>
                                     <th>Parentesco</th>
                                     <th>Curso</th>
                                     <th>Tipo</th>
-                                    <th>Acciones</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach($children as $child): ?>
-                                <tr class="student-row" 
+                                <tr class="student-row"
                                     data-student="<?= strtolower($child['last_name'] . ' ' . $child['first_name']) ?>"
                                     data-course="<?= strtolower($child['course_name'] ?? '') ?>">
-                                    <td>
-                                        <strong><?= $child['last_name'] . ' ' . $child['first_name'] ?></strong>
-                                    </td>
-                                    <td><?= $child['relationship'] ?></td>
+                                    <td><strong><?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?></strong></td>
+                                    <td><?= htmlspecialchars($child['relationship']) ?></td>
                                     <td>
                                         <?php if($child['course_name']): ?>
-                                            <span class="badge bg-info"><?= $child['course_name'] ?></span>
+                                            <span class="badge badge-teal"><?= htmlspecialchars($child['course_name']) ?></span>
                                         <?php else: ?>
-                                            <span class="text-muted">Sin curso</span>
+                                            <span style="color:#ccc;">Sin curso</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php if($child['is_primary']): ?>
-                                            <span class="badge bg-warning text-dark">⭐ Principal</span>
+                                            <span class="badge badge-yellow">⭐ Principal</span>
                                         <?php else: ?>
-                                            <span class="badge bg-secondary">Secundario</span>
+                                            <span class="badge badge-gray">Secundario</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <button onclick="confirmRemove(<?= $rep['id'] ?>, <?= $child['id'] ?>, '<?= addslashes($rep['last_name'] . ' ' . $rep['first_name']) ?>', '<?= addslashes($child['last_name'] . ' ' . $child['first_name']) ?>')" 
-                                                class="btn btn-danger btn-sm">
+                                        <button class="btn btn-danger btn-sm"
+                                            onclick="confirmRemove(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                                '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                                '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>')">
                                             ✗ Eliminar
                                         </button>
                                     </td>
@@ -205,118 +177,70 @@
                         </table>
                     </div>
                 </div>
-                <?php 
-                    endif; 
-                endforeach; 
-                
-                if(!$hasRelations):
-                ?>
-                <div class="alert alert-secondary text-center">
-                    📂 No hay relaciones representante-estudiante registradas.
-                    <br>Use el formulario superior para crear una.
+                <?php endforeach; ?>
+
+                <?php if(!$hasRelations): ?>
+                <div class="empty-state">
+                    <div class="icon">📂</div>
+                    <p>No hay relaciones representante-estudiante registradas.</p>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Filtros en tiempo real
-        const filterRepresentative = document.getElementById('filterRepresentative');
-        const filterStudent = document.getElementById('filterStudent');
-        const filterCourse = document.getElementById('filterCourse');
+</div>
 
-        function applyFilters() {
-            const repValue = filterRepresentative.value.toLowerCase();
-            const stuValue = filterStudent.value.toLowerCase();
-            const courValue = filterCourse.value.toLowerCase();
+<!-- Modal confirmar eliminar -->
+<div class="modal-overlay" id="modalRemove">
+    <div class="modal-box" style="max-width:460px;">
+        <h3>⚠️ Eliminar Relación</h3>
+        <div id="modalRemoveBody" style="margin:12px 0;color:#555;font-size:0.88rem;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modalRemove')">Cancelar</button>
+            <a id="confirmRemoveLink" href="#" class="btn btn-danger">✗ Sí, Eliminar</a>
+        </div>
+    </div>
+</div>
 
-            const blocks = document.querySelectorAll('.representative-block');
-            let visibleCount = 0;
-
-            blocks.forEach(block => {
-                const repName = block.dataset.representative;
-                const rows = block.querySelectorAll('.student-row');
-                let hasVisibleRows = false;
-
-                rows.forEach(row => {
-                    const stuName = row.dataset.student;
-                    const course = row.dataset.course;
-
-                    const matchRep = !repValue || repName.includes(repValue);
-                    const matchStu = !stuValue || stuName.includes(stuValue);
-                    const matchCou = !courValue || course.includes(courValue);
-
-                    if (matchRep && matchStu && matchCou) {
-                        row.style.display = '';
-                        hasVisibleRows = true;
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                block.style.display = hasVisibleRows ? '' : 'none';
-            });
-
-            // Actualizar contador
-            document.getElementById('totalCount').textContent = visibleCount + ' relaciones';
-        }
-
-        function clearFilters() {
-            filterRepresentative.value = '';
-            filterStudent.value = '';
-            filterCourse.value = '';
-            applyFilters();
-        }
-
-        filterRepresentative.addEventListener('input', applyFilters);
-        filterStudent.addEventListener('input', applyFilters);
-        filterCourse.addEventListener('input', applyFilters);
-
-        // Modal de confirmación
-        function confirmRemove(repId, studentId, repName, studentName) {
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-            
-            const modalContent = document.createElement('div');
-            modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
-            
-            modalContent.innerHTML = `
-                <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Relación</h3>
-                <p style="margin: 0 0 20px 0; color: #666;">
-                    ¿Está seguro de eliminar la relación entre:
-                </p>
-                <p style="margin: 0 0 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                    <strong>Representante:</strong> ${repName}<br>
-                    <strong>Estudiante:</strong> ${studentName}
-                </p>
-                <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; background: #f8d7da; padding: 10px; border-radius: 4px;">
-                    <strong>⚠️ Advertencia:</strong> El representante ya no podrá ver la información del estudiante.
-                </p>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" id="cancelRemoveBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Cancelar
-                    </button>
-                    <button type="button" id="confirmRemoveBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Sí, Eliminar
-                    </button>
-                </div>
-            `;
-            
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-            
-            document.getElementById('confirmRemoveBtn').onclick = function() {
-                document.body.removeChild(modal);
-                window.location.href = '?action=remove_representative&rep_id=' + repId + '&student_id=' + studentId;
-            };
-            
-            document.getElementById('cancelRemoveBtn').onclick = function() {
-                document.body.removeChild(modal);
-            };
-        }
-    </script>
+<script>
+function applyFilters() {
+    const rep    = document.getElementById('filterRep').value.toLowerCase();
+    const stu    = document.getElementById('filterStu').value.toLowerCase();
+    const course = document.getElementById('filterCourse').value.toLowerCase();
+    document.querySelectorAll('.rep-block').forEach(block => {
+        const repName = block.dataset.repname;
+        const rows = block.querySelectorAll('.student-row');
+        let vis = false;
+        rows.forEach(row => {
+            const ok = (!rep || repName.includes(rep)) &&
+                       (!stu || row.dataset.student.includes(stu)) &&
+                       (!course || row.dataset.course.includes(course));
+            row.style.display = ok ? '' : 'none';
+            if(ok) vis = true;
+        });
+        block.style.display = vis ? '' : 'none';
+    });
+}
+function clearFilters() {
+    ['filterRep','filterStu','filterCourse'].forEach(id => document.getElementById(id).value = '');
+    applyFilters();
+}
+function confirmRemove(repId, stuId, repName, stuName) {
+    document.getElementById('modalRemoveBody').innerHTML =
+        '<p>¿Eliminar la relación entre:</p>' +
+        '<p style="margin:10px 0;padding:10px;background:#f8f9fa;border-radius:6px;">' +
+        '<strong>Representante:</strong> ' + repName + '<br>' +
+        '<strong>Estudiante:</strong> ' + stuName + '</p>' +
+        '<p style="color:#dc3545;font-size:0.82rem;">El representante ya no podrá ver la información del estudiante.</p>';
+    document.getElementById('confirmRemoveLink').href =
+        '?action=remove_representative&rep_id=' + repId + '&student_id=' + stuId;
+    document.getElementById('modalRemove').classList.add('on');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if(e.target === m) closeModal(m.id); });
+});
+</script>
 </body>
 </html>
