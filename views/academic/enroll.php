@@ -7,10 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .navbar { background: #007bff; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { font-size: 24px; }
-        .navbar a { color: white; text-decoration: none; margin-left: 20px; }
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
@@ -30,15 +27,24 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Matricular Estudiantes</h1>
+
+<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
+
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
+    <a href="?action=academic">Configuración Académica</a> &rsaquo;
+    Matricular Estudiantes
+</div>
+
+<div class="container">
+
+    <div class="page-header" style="background:linear-gradient(135deg,#2e7d32,#388e3c);">
+        <div class="ph-icon">🎓</div>
         <div>
-            <a href="?action=academic">← Configuración Académica</a>
-            <a href="?action=logout">Cerrar sesión</a>
+            <h1>Matricular Estudiantes</h1>
+            <p>Asigna estudiantes a sus cursos del año lectivo activo</p>
         </div>
     </div>
-
-    <div class="container">
         <?php if(isset($_GET['enrolled'])): ?>
             <div class="success">✓ <?= $_GET['enrolled'] ?> estudiante(s) matriculado(s) correctamente</div>
         <?php endif; ?>
