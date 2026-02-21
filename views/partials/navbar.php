@@ -280,7 +280,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
     .ec-hamburger { display: none !important; }
 }
 </style>
-<link rel="stylesheet" href="<?= BASE_URL ?>/public/css/global.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/global.css">
 
 <nav class="ec-nav">
     <div class="ec-nav__inner">

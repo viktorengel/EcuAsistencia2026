@@ -3,8 +3,7 @@
 date_default_timezone_set('America/Guayaquil');
 
 // Definir constantes ANTES de todo
-define('BASE_PATH', __DIR__ . '/..');
-define('BASE_URL', 'http://localhost/ecuasistencia2026');
+require_once __DIR__ . '/env.php';
 define('EDIT_ATTENDANCE_HOURS', 48);
 
 // Configuración de sesión ANTES de session_start()
