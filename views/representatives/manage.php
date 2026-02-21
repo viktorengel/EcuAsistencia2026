@@ -10,6 +10,42 @@
         .rep-block-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
         .rep-name { font-size:0.95rem; font-weight:700; }
         .rep-email { font-size:0.8rem; color:#888; }
+        #toast-container {
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 99999 !important;
+            display: flex !important;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            min-width: 300px;
+            max-width: 420px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: all;
+            opacity: 0;
+            transform: translateX(40px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast.hide { opacity: 0; transform: translateX(40px); }
+        .toast-success { background: #d4edda; border-left: 5px solid #28a745; color: #155724; }
+        .toast-danger  { background: #f8d7da; border-left: 5px solid #dc3545; color: #721c24; }
+        .toast-close {
+            margin-left: auto; background: none; border: none;
+            cursor: pointer; font-size: 1rem; color: inherit;
+            opacity: 0.6; padding: 0; line-height: 1;
+        }
+        .toast-close:hover { opacity: 1; }
         .btn-toggle-primary {
             font-size:0.75rem; padding:3px 10px; border-radius:20px; cursor:pointer; border:none;
             transition: background 0.2s;
@@ -32,11 +68,15 @@
 
 <div class="container">
 
-    <?php if(isset($_GET['success'])): ?><div class="alert alert-success">✓ Relación asignada correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['removed'])): ?><div class="alert alert-success">✓ Relación eliminada correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['toggled'])): ?><div class="alert alert-success">✓ Tipo de representante actualizado</div><?php endif; ?>
-    <?php if(isset($_GET['error'])): ?><div class="alert alert-danger">✗ Error al procesar la solicitud</div><?php endif; ?>
-    <?php if(!empty($errorMsg)): ?><div class="alert alert-danger">✗ <?= $errorMsg ?></div><?php endif; ?>
+    <?php
+    $toastMsg  = '';
+    $toastType = 'success';
+    if (!empty($errorMsg))            { $toastMsg = '✗ ' . $errorMsg; $toastType = 'danger'; }
+    elseif (isset($_GET['success']))  { $toastMsg = '✓ Relación asignada correctamente'; }
+    elseif (isset($_GET['removed']))  { $toastMsg = '✓ Relación eliminada correctamente'; }
+    elseif (isset($_GET['toggled']))  { $toastMsg = '✓ Tipo de representante actualizado'; }
+    elseif (isset($_GET['error']))    { $toastMsg = '✗ Error al procesar la solicitud'; $toastType = 'danger'; }
+    ?>
 
     <!-- Header -->
     <div class="page-header blue">
@@ -58,21 +98,9 @@
                     <select name="representative_id" class="form-control" required>
                         <option value="">Seleccionar representante...</option>
                         <?php foreach($representatives as $rep): ?>
-                            <option value="<?= $rep['id'] ?>">
+                            <option value="<?= $rep['id'] ?>" <?= (isset($_POST['representative_id']) && $_POST['representative_id'] == $rep['id']) ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>
                                 (<?= htmlspecialchars($rep['dni'] ?? 'Sin cédula') ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Estudiante *</label>
-                    <select name="student_id" class="form-control" required>
-                        <option value="">Seleccionar estudiante...</option>
-                        <?php foreach($students as $s): ?>
-                            <option value="<?= $s['id'] ?>">
-                                <?= htmlspecialchars($s['last_name'] . ' ' . $s['first_name']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -82,13 +110,9 @@
                     <label>Parentesco *</label>
                     <select name="relationship" class="form-control" required>
                         <option value="">Seleccionar...</option>
-                        <option>Padre</option>
-                        <option>Madre</option>
-                        <option>Tutor Legal</option>
-                        <option>Abuelo/a</option>
-                        <option>Tío/a</option>
-                        <option>Hermano/a</option>
-                        <option>Otro</option>
+                        <?php foreach(['Padre','Madre','Tutor Legal','Abuelo/a','Tío/a','Hermano/a','Otro'] as $rel): ?>
+                            <option <?= (isset($_POST['relationship']) && $_POST['relationship'] === $rel) ? 'selected' : '' ?>><?= $rel ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <small style="color:#888;font-size:0.77rem;">
                         ⚠️ Solo puede haber un Padre y una Madre por estudiante.
@@ -96,8 +120,20 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Estudiante *</label>
+                    <select name="student_id" class="form-control" required>
+                        <option value="">Seleccionar estudiante...</option>
+                        <?php foreach($students as $s): ?>
+                            <option value="<?= $s['id'] ?>" <?= (isset($_POST['student_id']) && $_POST['student_id'] == $s['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($s['last_name'] . ' ' . $s['first_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="is_primary" value="1"> Representante Principal
+                        <input type="checkbox" name="is_primary" id="isPrimary" value="1" <?= !empty($_POST['is_primary']) ? 'checked' : '' ?>> Representante Principal
                     </label>
                     <small style="color:#888;font-size:0.77rem;">
                         El representante principal recibe las notificaciones prioritarias.
@@ -287,7 +323,34 @@
     </div>
 </div>
 
+<!-- Toast container -->
+<div id="toast-container"></div>
+
 <script>
+function showToast(msg, type, isHtml = false) {
+    if (!msg) return;
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.innerHTML = (isHtml ? msg : msg.replace(/</g,'&lt;')) + '<button class="toast-close" onclick="removeToast(this.parentElement)">✕</button>';
+    c.appendChild(t);
+    requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
+    setTimeout(() => removeToast(t), 4000);
+}
+function removeToast(t) {
+    t.classList.add('hide');
+    setTimeout(() => t.remove(), 350);
+}
+<?php if($toastMsg): ?>
+document.addEventListener('DOMContentLoaded', () => {
+    showToast(<?= json_encode($toastMsg) ?>, <?= json_encode($toastType) ?>, true);
+    // Limpiar parámetros GET de la URL sin recargar
+    if (window.location.search) {
+        const url = window.location.pathname + '?action=manage_representatives';
+        history.replaceState(null, '', url);
+    }
+});
+<?php endif; ?>
 function openEdit(repId, stuId, repName, stuName, relationship, isPrimary) {
     document.getElementById('editRepId').value       = repId;
     document.getElementById('editStuId').value       = stuId;

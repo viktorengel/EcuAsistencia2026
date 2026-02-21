@@ -32,27 +32,40 @@ class Representative {
 
     public function assignStudent($representativeId, $studentId, $relationship, $isPrimary = 0) {
         // Verificar duplicado de parentesco exclusivo
+        // Se excluye al propio representante para permitir actualizar su propio parentesco
         if ($this->hasExclusiveRelationship($studentId, $relationship, $representativeId)) {
-            return ['error' => "Este estudiante ya tiene un representante con parentesco <strong>{$relationship}</strong>. Solo puede haber uno."];
+            return ['error' => "Este estudiante ya tiene un representante con parentesco \"{$relationship}\". Solo puede haber uno."];
         }
 
-        $sql = "INSERT INTO representatives 
-                (representative_id, student_id, relationship, is_primary) 
-                VALUES 
-                (:rep_id, :stu_id, :rel_ins, :prim_ins)
-                ON DUPLICATE KEY UPDATE 
-                relationship = :rel_upd,
-                is_primary = :prim_upd";
+        // Verificar si ya existe la relación (para decidir INSERT o UPDATE)
+        $stmtCheck = $this->db->prepare(
+            "SELECT COUNT(*) FROM representatives
+             WHERE representative_id = :rep_id AND student_id = :stu_id"
+        );
+        $stmtCheck->execute([':rep_id' => $representativeId, ':stu_id' => $studentId]);
+        $exists = $stmtCheck->fetchColumn() > 0;
 
-        $stmt = $this->db->prepare($sql);
-        $ok = $stmt->execute([
-            ':rep_id'   => $representativeId,
-            ':stu_id'   => $studentId,
-            ':rel_ins'  => $relationship,
-            ':prim_ins' => $isPrimary,
-            ':rel_upd'  => $relationship,
-            ':prim_upd' => $isPrimary
-        ]);
+        if ($exists) {
+            $sql = "UPDATE representatives SET relationship = :relationship, is_primary = :is_primary
+                    WHERE representative_id = :rep_id AND student_id = :stu_id";
+            $stmt = $this->db->prepare($sql);
+            $ok = $stmt->execute([
+                ':relationship' => $relationship,
+                ':is_primary'   => $isPrimary,
+                ':rep_id'       => $representativeId,
+                ':stu_id'       => $studentId
+            ]);
+        } else {
+            $sql = "INSERT INTO representatives (representative_id, student_id, relationship, is_primary)
+                    VALUES (:rep_id, :stu_id, :relationship, :is_primary)";
+            $stmt = $this->db->prepare($sql);
+            $ok = $stmt->execute([
+                ':rep_id'       => $representativeId,
+                ':stu_id'       => $studentId,
+                ':relationship' => $relationship,
+                ':is_primary'   => $isPrimary
+            ]);
+        }
 
         return $ok ? true : ['error' => 'Error al guardar la relación.'];
     }
