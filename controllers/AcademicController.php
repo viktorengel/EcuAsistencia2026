@@ -29,7 +29,7 @@ class AcademicController {
     }
 
     public function index() {
-        $courses = $this->courseModel->getAll();
+        $courses = $this->courseModel->getAllWithTutor();
         $subjects = $this->subjectModel->getAll();
         $schoolYears = $this->schoolYearModel->getAll();
         $shifts = $this->shiftModel->getAll();
@@ -172,33 +172,7 @@ class AcademicController {
                 exit;
             }
 
-            // Verificar si tiene estudiantes matriculados
-            $students = $this->courseModel->getEnrolledStudents($courseId);
-            if (count($students) > 0) {
-                header('Location: ?action=academic&error=course_has_students');
-                exit;
-            }
-
-            // Verificar si tiene asignaciones docentes
-            $db = new Database();
-            $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE course_id = :id");
-            $stmt->execute([':id' => $courseId]);
-            $result = $stmt->fetch();
-            
-            if ($result['count'] > 0) {
-                header('Location: ?action=academic&error=course_has_assignments');
-                exit;
-            }
-
             if ($this->courseModel->delete($courseId)) {
-                // Eliminar asignaturas sin docentes asignados
-                $pdo2 = new Database();
-                $pdo2->connect()->prepare("
-                    DELETE s FROM subjects s
-                    INNER JOIN course_subjects cs ON s.id = cs.subject_id
-                    LEFT JOIN teacher_assignments ta ON s.id = ta.subject_id
-                    WHERE cs.course_id = :cid AND ta.id IS NULL
-                ")->execute([':cid' => $courseId]);
                 header('Location: ?action=academic&course_deleted=1');
                 exit;
             } else {
@@ -436,18 +410,17 @@ class AcademicController {
     }
 
     public function enrollStudents() {
+        $courseId = (int)($_GET['course_id'] ?? $_POST['course_id'] ?? 0);
         $activeYear = $this->schoolYearModel->getActive();
-        $courses = $this->courseModel->getAll();
-        $availableStudents = $this->userModel->getStudentsNotEnrolled($activeYear['id']);
-        $allStudents = $this->userModel->getByRole('estudiante');
+
+        if (!$courseId) {
+            header('Location: ?action=academic');
+            exit;
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $courseId = (int)$_POST['course_id'];
             $studentIds = $_POST['student_ids'] ?? [];
-            
-            $enrolled = 0;
-            $errors = 0;
-
+            $enrolled = 0; $errors = 0;
             foreach ($studentIds as $studentId) {
                 if ($this->courseModel->enrollStudent($courseId, (int)$studentId, $activeYear['id'])) {
                     $enrolled++;
@@ -455,12 +428,15 @@ class AcademicController {
                     $errors++;
                 }
             }
-
-            header('Location: ?action=enroll_students&enrolled=' . $enrolled . '&errors=' . $errors);
+            header('Location: ?action=enroll_students&course_id=' . $courseId . '&enrolled=' . $enrolled . '&errors=' . $errors);
             exit;
         }
 
-        include BASE_PATH . '/views/academic/enroll.php';
+        $course   = $this->courseModel->findById($courseId);
+        $enrolled = $this->courseModel->getEnrolledStudents($courseId);
+        $available = $this->userModel->getStudentsNotEnrolled($activeYear['id']);
+
+        include BASE_PATH . '/views/academic/course_enroll.php';
     }
 
     public function unenrollStudent() {
@@ -483,10 +459,10 @@ class AcademicController {
 
             // Retirar estudiante
             if ($this->courseModel->unenrollStudent($studentId, $activeYear['id'])) {
-                header('Location: ?action=enroll_students&unenrolled=1');
+                header('Location: ?action=enroll_students&course_id=' . $course['id'] . '&unenrolled=1');
                 exit;
             } else {
-                header('Location: ?action=enroll_students&error=unenroll_failed');
+                header('Location: ?action=enroll_students&course_id=' . $courseId . '&error=unenroll_failed');
                 exit;
             }
         }

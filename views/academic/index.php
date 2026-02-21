@@ -517,28 +517,34 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>#</th>
                         <th>Nombre</th>
-                        <th>Nivel</th>
-                        <th>Paralelo</th>
                         <th>Jornada</th>
+                        <th>Tutor</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($courses as $course): ?>
+                    <?php $n=1; foreach($courses as $course): ?>
                     <tr>
-                        <td><?= $course['id'] ?></td>
-                        <td><?= htmlspecialchars($course['name']) ?></td>
-                        <td><?= htmlspecialchars($course['grade_level']) ?></td>
-                        <td><?= htmlspecialchars($course['parallel']) ?></td>
+                        <td><?= $n++ ?></td>
+                        <td><strong><?= htmlspecialchars($course['name']) ?></strong></td>
                         <td><?= ucfirst($course['shift_name']) ?></td>
+                        <td>
+                            <?php if(!empty($course['tutor_last'])): ?>
+                                <span style="color:#1565c0;font-size:13px;">
+                                    👤 <?= htmlspecialchars($course['tutor_last'].' '.$course['tutor_first']) ?>
+                                </span>
+                            <?php else: ?>
+                                <span style="color:#aaa;font-size:12px;">Sin tutor</span>
+                            <?php endif; ?>
+                        </td>
                         <td style="white-space: nowrap;">
                             <button onclick="location.href='?action=course_subjects&course_id=<?= $course['id'] ?>'" 
                                     style="padding: 5px 10px; font-size: 12px; background: #6f42c1; color:white;">
                                 📚 Asignaturas
                             </button>
-                            <button onclick="location.href='?action=view_course_students&course_id=<?= $course['id'] ?>'" 
+                            <button onclick="location.href='?action=enroll_students&course_id=<?= $course['id'] ?>'" 
                                     style="padding: 5px 10px; font-size: 12px; background: #007bff;">
                                 👥 Estudiantes
                             </button>
@@ -558,9 +564,6 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <button onclick="location.href='?action=enroll_students'" class="btn-primary" style="margin-top: 15px;">
-                Matricular Estudiantes
-            </button>
         </div>
 
     </div>
@@ -574,7 +577,10 @@
         modalContent.style.cssText = 'background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
         modalContent.innerHTML = `
             <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Curso</h3>
-            <p style="margin: 0 0 20px 0; color: #666;">¿Está seguro de eliminar el curso <strong>${courseName}</strong>?</p>
+            <p style="margin: 0 0 20px 0; color: #666;">¿Está seguro que desea eliminar el curso <strong>${courseName}</strong>?<br><br>
+            <span style="color:#856404;background:#fff3cd;padding:6px 10px;border-radius:4px;display:block;font-size:13px;">
+            ⚠️ Se desvinculará automáticamente a todos los estudiantes matriculados y docentes asignados.
+            </span>
             <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;"><strong>Nota:</strong> No se puede eliminar si tiene estudiantes o asignaciones docentes.</p>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" id="cancelCourseBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
