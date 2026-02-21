@@ -10,6 +10,15 @@
         .rep-block-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
         .rep-name { font-size:0.95rem; font-weight:700; }
         .rep-email { font-size:0.8rem; color:#888; }
+        .btn-toggle-primary {
+            font-size:0.75rem; padding:3px 10px; border-radius:20px; cursor:pointer; border:none;
+            transition: background 0.2s;
+        }
+        .btn-toggle-on  { background:#ffc107; color:#333; }
+        .btn-toggle-off { background:#e9ecef; color:#555; }
+        .btn-toggle-on:hover  { background:#e0a800; }
+        .btn-toggle-off:hover { background:#dee2e6; }
+        .actions-cell { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
     </style>
 </head>
 <body>
@@ -25,7 +34,9 @@
 
     <?php if(isset($_GET['success'])): ?><div class="alert alert-success">✓ Relación asignada correctamente</div><?php endif; ?>
     <?php if(isset($_GET['removed'])): ?><div class="alert alert-success">✓ Relación eliminada correctamente</div><?php endif; ?>
+    <?php if(isset($_GET['toggled'])): ?><div class="alert alert-success">✓ Tipo de representante actualizado</div><?php endif; ?>
     <?php if(isset($_GET['error'])): ?><div class="alert alert-danger">✗ Error al procesar la solicitud</div><?php endif; ?>
+    <?php if(!empty($errorMsg)): ?><div class="alert alert-danger">✗ <?= $errorMsg ?></div><?php endif; ?>
 
     <!-- Header -->
     <div class="page-header blue">
@@ -79,12 +90,18 @@
                         <option>Hermano/a</option>
                         <option>Otro</option>
                     </select>
+                    <small style="color:#888;font-size:0.77rem;">
+                        ⚠️ Solo puede haber un Padre y una Madre por estudiante.
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                         <input type="checkbox" name="is_primary" value="1"> Representante Principal
                     </label>
+                    <small style="color:#888;font-size:0.77rem;">
+                        El representante principal recibe las notificaciones prioritarias.
+                    </small>
                 </div>
 
                 <button type="submit" class="btn btn-success">➕ Asignar Relación</button>
@@ -139,7 +156,7 @@
                                     <th>Parentesco</th>
                                     <th>Curso</th>
                                     <th>Tipo</th>
-                                    <th></th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -164,12 +181,31 @@
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <button class="btn btn-danger btn-sm"
-                                            onclick="confirmRemove(<?= $rep['id'] ?>, <?= $child['id'] ?>,
-                                                '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
-                                                '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>')">
-                                            ✗ Eliminar
-                                        </button>
+                                        <div class="actions-cell">
+                                            <!-- Toggle Principal / Secundario -->
+                                            <button class="btn-toggle-primary <?= $child['is_primary'] ? 'btn-toggle-on' : 'btn-toggle-off' ?>"
+                                                onclick="confirmToggle(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                                    '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                                    '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>',
+                                                    <?= $child['is_primary'] ? 1 : 0 ?>)"
+                                                title="<?= $child['is_primary'] ? 'Cambiar a Secundario' : 'Cambiar a Principal' ?>">
+                                                <?= $child['is_primary'] ? '☆ Secundario' : '⭐ Principal' ?>
+                                            </button>
+                                            <!-- Editar -->
+                                            <button class="btn btn-warning btn-sm"
+                                                onclick="openEdit(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                                    '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                                    '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>',
+                                                    '<?= addslashes(htmlspecialchars($child['relationship'])) ?>',
+                                                    <?= $child['is_primary'] ? 1 : 0 ?>)"
+                                                title="Editar relación">✏️</button>
+                                            <!-- Eliminar -->
+                                            <button class="btn btn-danger btn-sm"
+                                                onclick="confirmRemove(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                                    '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                                    '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>')"
+                                                title="Eliminar relación">✕</button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -203,7 +239,65 @@
     </div>
 </div>
 
+<!-- Modal editar relación -->
+<div class="modal-overlay" id="modalEdit">
+    <div class="modal-box" style="max-width:460px;">
+        <h3>✏️ Editar Relación</h3>
+        <form method="POST" id="formEdit">
+            <input type="hidden" name="representative_id" id="editRepId">
+            <input type="hidden" name="student_id" id="editStuId">
+            <div style="margin:12px 0;padding:10px;background:#f8f9fa;border-radius:6px;font-size:0.88rem;">
+                <strong>Representante:</strong> <span id="editRepName"></span><br>
+                <strong>Estudiante:</strong> <span id="editStuName"></span>
+            </div>
+            <div class="form-group">
+                <label>Parentesco *</label>
+                <select name="relationship" id="editRelationship" class="form-control" required>
+                    <option>Padre</option>
+                    <option>Madre</option>
+                    <option>Tutor Legal</option>
+                    <option>Abuelo/a</option>
+                    <option>Tío/a</option>
+                    <option>Hermano/a</option>
+                    <option>Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" name="is_primary" id="editIsPrimary" value="1"> Representante Principal
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalEdit')">Cancelar</button>
+                <button type="submit" class="btn btn-success">✓ Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal confirmar toggle -->
+<div class="modal-overlay" id="modalToggle">
+    <div class="modal-box" style="max-width:460px;">
+        <h3 id="modalToggleTitle">🔄 Cambiar Tipo de Representante</h3>
+        <div id="modalToggleBody" style="margin:12px 0;color:#555;font-size:0.88rem;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modalToggle')">Cancelar</button>
+            <a id="confirmToggleLink" href="#" class="btn btn-primary">✓ Confirmar</a>
+        </div>
+    </div>
+</div>
+
 <script>
+function openEdit(repId, stuId, repName, stuName, relationship, isPrimary) {
+    document.getElementById('editRepId').value       = repId;
+    document.getElementById('editStuId').value       = stuId;
+    document.getElementById('editRepName').textContent = repName;
+    document.getElementById('editStuName').textContent = stuName;
+    const sel = document.getElementById('editRelationship');
+    for (let o of sel.options) o.selected = (o.value === relationship);
+    document.getElementById('editIsPrimary').checked = isPrimary == 1;
+    document.getElementById('modalEdit').classList.add('on');
+}
 function applyFilters() {
     const rep    = document.getElementById('filterRep').value.toLowerCase();
     const stu    = document.getElementById('filterStu').value.toLowerCase();
@@ -236,6 +330,20 @@ function confirmRemove(repId, stuId, repName, stuName) {
     document.getElementById('confirmRemoveLink').href =
         '?action=remove_representative&rep_id=' + repId + '&student_id=' + stuId;
     document.getElementById('modalRemove').classList.add('on');
+}
+function confirmToggle(repId, stuId, repName, stuName, isPrimary) {
+    const accion = isPrimary
+        ? 'pasar a <strong>Secundario</strong>'
+        : 'marcar como <strong>Principal</strong> (los demás pasarán a Secundario)';
+    document.getElementById('modalToggleTitle').textContent =
+        isPrimary ? '🔄 Cambiar a Secundario' : '⭐ Marcar como Principal';
+    document.getElementById('modalToggleBody').innerHTML =
+        '<p>' + repName + ' → ' + stuName + '</p>' +
+        '<p style="margin:10px 0;padding:10px;background:#fff3cd;border-radius:6px;">' +
+        'Se va a ' + accion + '.</p>';
+    document.getElementById('confirmToggleLink').href =
+        '?action=toggle_primary_representative&rep_id=' + repId + '&student_id=' + stuId;
+    document.getElementById('modalToggle').classList.add('on');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {

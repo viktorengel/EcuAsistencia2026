@@ -4,7 +4,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once '../config/config.php';
+require_once (isset($_SERVER['SERVER_NAME']) && ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_NAME'] === '127.0.0.1'))
+    ? __DIR__ . '/../config/config.php'
+    : '/home/ecuasysc/ecuasistencia/config/config.php';
 
 $action = $_GET['action'] ?? 'login';
 
@@ -504,6 +506,12 @@ switch ($action) {
         require_once BASE_PATH . '/controllers/RepresentativeController.php';
         $controller = new RepresentativeController();
         $controller->removeRelation();
+        break;
+
+    case 'toggle_primary_representative':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $controller = new RepresentativeController();
+        $controller->togglePrimary();
         break;
 
     case 'notifications':

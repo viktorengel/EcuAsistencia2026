@@ -25,19 +25,42 @@ class RepresentativeController {
 
         $representatives = $this->userModel->getByRole('representante');
         $students = $this->userModel->getByRole('estudiante');
+        $errorMsg = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $repId = (int)$_POST['representative_id'];
-            $studentId = (int)$_POST['student_id'];
+            $repId        = (int)$_POST['representative_id'];
+            $studentId    = (int)$_POST['student_id'];
             $relationship = Security::sanitize($_POST['relationship']);
-            $isPrimary = isset($_POST['is_primary']) ? 1 : 0;
+            $isPrimary    = isset($_POST['is_primary']) ? 1 : 0;
 
-            $this->representativeModel->assignStudent($repId, $studentId, $relationship, $isPrimary);
-            header('Location: ?action=manage_representatives&success=1');
-            exit;
+            $result = $this->representativeModel->assignStudent($repId, $studentId, $relationship, $isPrimary);
+
+            if ($result === true) {
+                header('Location: ?action=manage_representatives&success=1');
+                exit;
+            } else {
+                // Devolver error sin redirigir para mostrar mensaje
+                $errorMsg = $result['error'];
+            }
         }
 
         include BASE_PATH . '/views/representatives/manage.php';
+    }
+
+    public function togglePrimary() {
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
+        $repId     = (int)($_GET['rep_id'] ?? 0);
+        $studentId = (int)($_GET['student_id'] ?? 0);
+
+        if ($repId && $studentId) {
+            $this->representativeModel->togglePrimary($repId, $studentId);
+        }
+
+        header('Location: ?action=manage_representatives&toggled=1');
+        exit;
     }
 
     public function myChildren() {
@@ -57,7 +80,6 @@ class RepresentativeController {
 
         $studentId = (int)($_GET['student_id'] ?? 0);
         
-        // Verificar que el estudiante sea hijo del representante
         $children = $this->representativeModel->getStudentsByRepresentative($_SESSION['user_id']);
         $authorized = false;
         $student = null;
@@ -84,7 +106,7 @@ class RepresentativeController {
             die('Acceso denegado');
         }
 
-        $repId = (int)($_GET['rep_id'] ?? 0);
+        $repId     = (int)($_GET['rep_id'] ?? 0);
         $studentId = (int)($_GET['student_id'] ?? 0);
 
         if ($repId && $studentId) {
