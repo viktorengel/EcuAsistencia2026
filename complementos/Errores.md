@@ -31,3 +31,4 @@ Asignaciones Docente — Materia y eliminar este modulo por que está de mas
 
 en Cursos Registrados mustrar el nombre del tutor o si no tiene, en el boton estudiantes de las acciones quiero que sea el que permita matricular estudiantes y eliminamos la página estudiantes matriculados y ahi se debe mostrar los estudiantes matriculados en ese curso.
 
+Un estudiante no puede tener 2 representantes como padre o madre, necesito cambiar entre representante principal y secundario de manera facil, adicional 2 representantes diferentes no puede ser madre o padre de un mismo estudiante. Ejemplo: Representante 👤 Cedeño Patricia Estudiante Vera Santiago Parentesco Madre y 👤 Chávez Sandra Estudiante Vera Santiago Parentesco Madre eso no puede ser.
