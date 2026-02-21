@@ -29,4 +29,4 @@ http://localhost/ecuasistencia2026/public/index.php?action=create_user falta el 
 en Configiración academica en la sección Cursos registrados mostrar el filtro que hay en 📚
 Asignaciones Docente — Materia y eliminar este modulo por que está de mas
 
-en Cursos Registrados mustrar el nombre del tutor o si no tiene, en el boton estudiantes de las acciones quiero que sea el que permita matricular estudiantes y eliminamos la página estudiantes matriculados y ahi se debe mostrar los estudiantes matriculados en ese curso.
+en Cursos Registrados muestrar el nombre del tutor o si no tiene, en el boton estudiantes de las acciones quiero que sea el que permita matricular estudiantes y eliminamos la página estudiantes matriculados y ahi se debe mostrar los estudiantes matriculados en ese curso.
