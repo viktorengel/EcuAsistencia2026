@@ -21,7 +21,7 @@
     Gestión de Representantes
 </div>
 
-<div class="container-wide">
+<div class="container">
 
     <?php if(isset($_GET['success'])): ?><div class="alert alert-success">✓ Relación asignada correctamente</div><?php endif; ?>
     <?php if(isset($_GET['removed'])): ?><div class="alert alert-success">✓ Relación eliminada correctamente</div><?php endif; ?>

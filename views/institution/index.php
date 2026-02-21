@@ -6,6 +6,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración de Institución - EcuAsist</title>
     <style>
+        /* ── Grid principal: 2 columnas desktop → 1 móvil ── */
+        .inst-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .inst-grid { grid-template-columns: 1fr; }
+            .two-col   { grid-template-columns: 1fr !important; }
+            .shifts-grid { flex-direction: column; }
+            .shift-card  { min-width: unset; width: 100%; }
+        }
+
+        /* ── Grids internos de campos ── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 16px;
+        }
+        .three-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0 16px;
+        }
+        @media (max-width: 768px) {
+            .three-col { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ── form-group más compacto ── */
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
         /* ── Jornadas toggle ── */
         .shifts-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
         .shift-card {
@@ -36,9 +79,9 @@
         .shift-saving { opacity: .5; pointer-events: none; }
 
         /* ── Logo preview ── */
-        .logo-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .logo-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
         .logo-preview {
-            width: 100px; height: 100px; border-radius: 8px; border: 2px dashed #ddd;
+            width: 90px; height: 90px; border-radius: 8px; border: 2px dashed #ddd;
             display: flex; align-items: center; justify-content: center;
             background: #fafafa; overflow: hidden; flex-shrink: 0;
         }
@@ -51,6 +94,25 @@
         }
         .logo-upload-btn:hover { background: #e3f2fd; }
         #logo-input { display: none; }
+
+        /* ── Panel más compacto ── */
+        .panel { margin-bottom: 16px; }
+        .panel-title {
+            font-size: .875rem;
+            color: #444;
+            font-weight: 700;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        /* ── Input con ícono derecho ── */
+        .input-icon-wrap { position: relative; }
+        .input-icon-wrap .form-control { padding-right: 36px; }
+        .input-icon-wrap .icon-right {
+            position: absolute; right: 10px; top: 50%;
+            transform: translateY(-50%); font-size: 16px; pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -76,19 +138,25 @@
     </div>
 
     <form method="POST" action="?action=update_institution" enctype="multipart/form-data" id="instForm">
+        <input type="hidden" name="current_logo_path" value="<?= htmlspecialchars($institution['logo_path'] ?? '') ?>">
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <div class="inst-grid">
 
-            <!-- ── Panel izquierdo: datos ── -->
+            <!-- ══ COLUMNA IZQUIERDA ══ -->
             <div>
-                <div class="panel" style="margin-bottom:16px;">
-                    <h3 style="font-size:.95rem;color:#555;margin-bottom:14px;">📋 Datos de la Institución</h3>
+
+                <!-- Panel: Datos generales -->
+                <div class="panel">
+                    <div class="panel-title">📋 Datos de la Institución</div>
+
                     <div class="form-group">
                         <label>Nombre de la institución *</label>
                         <input type="text" name="name" class="form-control" required
                                value="<?= htmlspecialchars($institution['name'] ?? '') ?>">
                     </div>
-                    <div class="form-row">
+
+                    <!-- Fila: AMIE + Teléfono -->
+                    <div class="two-col">
                         <div class="form-group">
                             <label>Código AMIE</label>
                             <input type="text" name="amie_code" class="form-control"
@@ -102,19 +170,27 @@
                                    placeholder="02-2345678">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Email institucional</label>
-                        <input type="email" name="email" class="form-control"
-                               value="<?= htmlspecialchars($institution['email'] ?? '') ?>"
-                               placeholder="info@institucion.edu.ec">
+
+                    <!-- Fila: Email + Sitio web -->
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label>Email institucional</label>
+                            <div class="input-icon-wrap">
+                                <input type="email" name="email" class="form-control"
+                                       value="<?= htmlspecialchars($institution['email'] ?? '') ?>"
+                                       placeholder="info@inst.edu.ec">
+                                <span class="icon-right">✉️</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Sitio web</label>
+                            <input type="text" name="website" class="form-control" id="website"
+                                   value="<?= htmlspecialchars($institution['website'] ?? '') ?>"
+                                   placeholder="www.inst.edu.ec"
+                                   onblur="autoHttps(this)">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Sitio web</label>
-                        <input type="text" name="website" class="form-control" id="website"
-                               value="<?= htmlspecialchars($institution['website'] ?? '') ?>"
-                               placeholder="www.institucion.edu.ec"
-                               onblur="autoHttps(this)">
-                    </div>
+
                     <div class="form-group">
                         <label>Nombre del Director/Rector</label>
                         <input type="text" name="director_name" class="form-control"
@@ -123,9 +199,12 @@
                     </div>
                 </div>
 
-                <div class="panel" style="margin-bottom:16px;">
-                    <h3 style="font-size:.95rem;color:#555;margin-bottom:14px;">📍 Ubicación</h3>
-                    <div class="form-row">
+                <!-- Panel: Ubicación -->
+                <div class="panel">
+                    <div class="panel-title">📍 Ubicación</div>
+
+                    <!-- Fila: Provincia + Ciudad -->
+                    <div class="two-col">
                         <div class="form-group">
                             <label>Provincia</label>
                             <select name="province" id="province" class="form-control" onchange="loadCities()">
@@ -141,11 +220,12 @@
                             <label>Ciudad</label>
                             <select name="city" id="city" class="form-control">
                                 <option value="<?= htmlspecialchars($institution['city'] ?? '') ?>">
-                                    <?= htmlspecialchars($institution['city'] ?? 'Seleccionar provincia...') ?>
+                                    <?= htmlspecialchars($institution['city'] ?? 'Seleccionar...') ?>
                                 </option>
                             </select>
                         </div>
                     </div>
+
                     <div class="form-group">
                         <label>Dirección</label>
                         <input type="text" name="address" class="form-control"
@@ -153,23 +233,26 @@
                                placeholder="Av. Principal 123">
                     </div>
                 </div>
-            </div>
 
-            <!-- ── Panel derecho: logo + jornadas ── -->
+            </div><!-- /col izquierda -->
+
+            <!-- ══ COLUMNA DERECHA ══ -->
             <div>
-                <!-- Logo -->
-                <div class="panel" style="margin-bottom:16px;">
-                    <h3 style="font-size:.95rem;color:#555;margin-bottom:14px;">🖼️ Logo Institucional</h3>
+
+                <!-- Panel: Logo -->
+                <div class="panel">
+                    <div class="panel-title">🖼️ Logo Institucional</div>
                     <div class="logo-wrap">
                         <div class="logo-preview" id="logoPreview">
                             <?php
                             $logoUrl = '';
                             if (!empty($institution['logo_path'])) {
-                                $logoUrl = BASE_URL . '/' . ltrim($institution['logo_path'], '/');
+                                $imgFile = ltrim(str_replace('uploads/', '', $institution['logo_path']), '/');
+                                $logoUrl = BASE_URL . '/img.php?f=' . urlencode($imgFile) . '&v=' . time();
                             }
                             ?>
                             <?php if($logoUrl): ?>
-                                <img src="<?= $logoUrl ?>?v=<?= time() ?>" id="logoImg" alt="Logo">
+                                <img src="<?= $logoUrl ?>" id="logoImg" alt="Logo">
                             <?php else: ?>
                                 <span class="no-logo" id="noLogoIcon">🏫</span>
                             <?php endif; ?>
@@ -186,23 +269,23 @@
                     </div>
                 </div>
 
-                <!-- Jornadas toggle -->
+                <!-- Panel: Jornadas -->
                 <div class="panel">
-                    <h3 style="font-size:.95rem;color:#555;margin-bottom:6px;">⏰ Jornadas de la Institución</h3>
+                    <div class="panel-title">⏰ Jornadas de la Institución</div>
                     <p style="font-size:12px;color:#999;margin-bottom:14px;">Clic para activar o desactivar cada jornada</p>
 
                     <?php
                     $shiftIcons = [
-                        'matutina'   => ['🌅', 'Mañana'],
-                        'vespertina' => ['🌞', 'Tarde'],
-                        'nocturna'   => ['🌙', 'Noche'],
+                        'matutina'   => ['🌅', 'Matutina'],
+                        'vespertina' => ['🌞', 'Vespertina'],
+                        'nocturna'   => ['🌙', 'Nocturna'],
                     ];
                     ?>
                     <div class="shifts-grid" id="shiftsGrid">
                         <?php foreach($allShifts as $shift):
                             $isActive = in_array($shift['id'], $assignedShiftIds);
                             $icon     = $shiftIcons[strtolower($shift['name'])][0] ?? '⏰';
-                            $timeLabel= $shiftIcons[strtolower($shift['name'])][1] ?? ucfirst($shift['name']);
+                            $label    = $shiftIcons[strtolower($shift['name'])][1] ?? ucfirst($shift['name']);
                         ?>
                         <div class="shift-card <?= $isActive ? 'active' : '' ?>"
                              id="shift-<?= $shift['id'] ?>"
@@ -210,7 +293,7 @@
                              title="Clic para <?= $isActive ? 'desactivar' : 'activar' ?>">
                             <span class="shift-icon"><?= $icon ?></span>
                             <div class="shift-info">
-                                <div class="shift-name"><?= ucfirst($shift['name']) ?></div>
+                                <div class="shift-name"><?= $label ?></div>
                                 <div class="shift-status"><?= $isActive ? '✓ Activa' : 'Inactiva' ?></div>
                             </div>
                             <div class="shift-toggle"></div>
@@ -220,8 +303,10 @@
 
                     <div id="shift-msg" style="font-size:12px;margin-top:10px;min-height:18px;"></div>
                 </div>
-            </div>
-        </div>
+
+            </div><!-- /col derecha -->
+
+        </div><!-- /inst-grid -->
 
         <div style="display:flex;gap:10px;">
             <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
@@ -277,8 +362,7 @@ function previewLogo(input) {
         var img     = document.getElementById('logoImg');
         if (!img) {
             img = document.createElement('img');
-            img.id = 'logoImg';
-            img.alt = 'Logo';
+            img.id = 'logoImg'; img.alt = 'Logo';
             preview.innerHTML = '';
             preview.appendChild(img);
         }
@@ -326,9 +410,9 @@ var cities = {
 };
 
 function loadCities() {
-    var prov  = document.getElementById('province').value;
-    var sel   = document.getElementById('city');
-    var list  = cities[prov] || [];
+    var prov = document.getElementById('province').value;
+    var sel  = document.getElementById('city');
+    var list = cities[prov] || [];
     sel.innerHTML = '<option value="">Seleccionar ciudad...</option>';
     list.forEach(function(c) {
         var opt = document.createElement('option');

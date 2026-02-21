@@ -100,6 +100,31 @@ class UserController {
                 $errors[] = "El email ya está registrado";
             }
 
+            // Validar cédula ecuatoriana (si no es extranjero y hay valor)
+            $esExtranjero = !empty($_POST['es_extranjero']);
+            $dniValue     = null;
+            if (!$esExtranjero && !empty($_POST['dni'])) {
+                $ced = preg_replace('/\D/', '', $_POST['dni']);
+                if (!self::validarCedulaEcuador($ced)) {
+                    $errors[] = "Cédula ecuatoriana inválida";
+                } else {
+                    $dniValue = $ced;
+                }
+            } elseif ($esExtranjero && !empty($_POST['passport'])) {
+                $dniValue = Security::sanitize($_POST['passport']);
+            }
+
+            // Validar teléfono Ecuador
+            $phoneValue = null;
+            if (!empty($_POST['phone'])) {
+                $tel = preg_replace('/[\s\-]/', '', $_POST['phone']);
+                if (!preg_match('/^09\d{8}$/', $tel) && !preg_match('/^0[2-7]\d{7}$/', $tel)) {
+                    $errors[] = "Teléfono inválido. Celular: 09XXXXXXXX · Fijo: 0XXXXXXXX";
+                } else {
+                    $phoneValue = $tel;
+                }
+            }
+
             if (!empty($errors)) {
                 $roles = $this->roleModel->getAll();
                 include BASE_PATH . '/views/users/create.php';
@@ -109,13 +134,13 @@ class UserController {
             // Crear usuario
             $userData = [
                 'institution_id' => $_SESSION['institution_id'],
-                'username' => Security::sanitize($_POST['username']),
-                'email' => Security::sanitize($_POST['email']),
-                'password' => $_POST['password'],
+                'username'   => Security::sanitize($_POST['username']),
+                'email'      => Security::sanitize($_POST['email']),
+                'password'   => $_POST['password'],
                 'first_name' => Security::sanitize($_POST['first_name']),
-                'last_name' => Security::sanitize($_POST['last_name']),
-                'dni' => !empty($_POST['dni']) ? Security::sanitize($_POST['dni']) : null,
-                'phone' => !empty($_POST['phone']) ? Security::sanitize($_POST['phone']) : null
+                'last_name'  => Security::sanitize($_POST['last_name']),
+                'dni'        => $dniValue,
+                'phone'      => $phoneValue,
             ];
 
             if ($this->userModel->create($userData)) {
@@ -278,5 +303,21 @@ class UserController {
             header('Location: ?action=users&error=delete_failed');
             exit;
         }
+    }
+
+    // ── Validación cédula Ecuador (algoritmo oficial) ─────────────────────
+    public static function validarCedulaEcuador(string $cedula): bool {
+        if (!preg_match('/^\d{10}$/', $cedula)) return false;
+        $prov = (int)substr($cedula, 0, 2);
+        if ($prov < 1 || $prov > 24) return false;
+        $coef = [2,1,2,1,2,1,2,1,2];
+        $suma = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $r = (int)$cedula[$i] * $coef[$i];
+            $suma += $r >= 10 ? $r - 9 : $r;
+        }
+        $residuo = $suma % 10;
+        $digVer  = $residuo === 0 ? 0 : 10 - $residuo;
+        return $digVer === (int)$cedula[9];
     }
 }

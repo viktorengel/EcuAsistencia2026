@@ -106,6 +106,36 @@ switch ($action) {
         $acadCtrl = new AcademicController();
         $acadCtrl->viewCourseStudents();
         break;
+
+    case 'course_subjects':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->courseSubjects();
+        break;
+
+    case 'edit_course_subject':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->editCourseSubject();
+        break;
+
+    case 'remove_course_subject':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->removeCourseSubject();
+        break;
+
+    case 'assign_subject_teacher':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->assignSubjectTeacher();
+        break;
+
+    case 'unassign_subject_teacher':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->unassignSubjectTeacher();
+        break;
     
     case 'reports':
         require_once BASE_PATH . '/controllers/ReportController.php';

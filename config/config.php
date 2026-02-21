@@ -1,43 +1,42 @@
 <?php
-// Zona horaria Ecuador
+// config/config.php
+// BASE_PATH y BASE_URL vienen de env.php
+require_once __DIR__ . '/env.php';
+
 date_default_timezone_set('America/Guayaquil');
 
-// Definir constantes ANTES de todo
-require_once __DIR__ . '/env.php';
 define('EDIT_ATTENDANCE_HOURS', 48);
 
-// Configuración de sesión ANTES de session_start()
-ini_set('session.gc_maxlifetime', 86400); // 24 horas
+// Sesión
+ini_set('session.gc_maxlifetime', 86400);
 session_set_cookie_params([
-    'lifetime' => 86400,  // 24 horas
-    'path' => '/',
-    'domain' => '',
-    'secure' => false,    // true si usas HTTPS
-    'httponly' => true,   // Protección XSS
-    'samesite' => 'Lax'   // Protección CSRF
+    'lifetime' => 86400,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+    'httponly' => true,
+    'samesite' => 'Lax',
 ]);
-
-// Iniciar sesión DESPUÉS de configurar
 session_start();
 
-// Timeout de inactividad: 30 minutos
-$inactive_timeout = 1800; // 30 minutos en segundos
-if (isset($_SESSION['last_activity']) && 
+// Timeout 30 minutos
+$inactive_timeout = 1800;
+if (isset($_SESSION['last_activity']) &&
     (time() - $_SESSION['last_activity'] > $inactive_timeout)) {
     session_unset();
     session_destroy();
-    header('Location: ' . BASE_URL . '/public/?action=login&timeout=1');
+    header('Location: ' . BASE_URL . '/?action=login&timeout=1');
     exit;
 }
 $_SESSION['last_activity'] = time();
 
-// SMTP Config
+// SMTP
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
-define('SMTP_USER', 'viktorengel@gmail.com');
-define('SMTP_PASS', 'Orktvi.5/*83gM');
+define('SMTP_USER', 'tu-email@gmail.com');
+define('SMTP_PASS', 'tu-password-app');
 define('SMTP_FROM', 'noreply@ecuasist.edu.ec');
-define('SMTP_NAME', 'EcuAsist2026');
+define('SMTP_NAME', 'EcuAsistencia2026');
 
 require_once BASE_PATH . '/config/database.php';
 require_once BASE_PATH . '/helpers/Security.php';

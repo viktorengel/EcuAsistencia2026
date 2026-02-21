@@ -76,6 +76,8 @@
     </div>
 
     <form method="POST" action="?action=update_institution" enctype="multipart/form-data" id="instForm">
+        <!-- Respaldo: logo actual en caso de que no se suba archivo nuevo -->
+        <input type="hidden" name="current_logo_path" value="<?= htmlspecialchars($institution['logo_path'] ?? '') ?>">
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
 
@@ -163,13 +165,15 @@
                     <div class="logo-wrap">
                         <div class="logo-preview" id="logoPreview">
                             <?php
+                            // BASE_URL viene de env.php (local o producción)
                             $logoUrl = '';
                             if (!empty($institution['logo_path'])) {
-                                $logoUrl = BASE_URL . '/' . ltrim($institution['logo_path'], '/');
+                                $imgFile = ltrim(str_replace('uploads/', '', $institution['logo_path']), '/');
+                                $logoUrl = BASE_URL . '/img.php?f=' . urlencode($imgFile) . '&v=' . time();
                             }
                             ?>
                             <?php if($logoUrl): ?>
-                                <img src="<?= $logoUrl ?>?v=<?= time() ?>" id="logoImg" alt="Logo">
+                                <img src="<?= $logoUrl ?>" id="logoImg" alt="Logo">
                             <?php else: ?>
                                 <span class="no-logo" id="noLogoIcon">🏫</span>
                             <?php endif; ?>

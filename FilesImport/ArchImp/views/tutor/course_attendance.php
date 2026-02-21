@@ -26,10 +26,12 @@ $hasFilters = !empty($filters['subject_id']) || !empty($filters['student_id'])
         .breadcrumb { padding: 10px 24px; background: #fff; border-bottom: 1px solid #e0e0e0; font-size: 0.83rem; color: #888; }
         .breadcrumb a { color: #007bff; text-decoration: none; }
         .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
-        .course-header { background: linear-gradient(135deg,#007bff,#0056b3); color:#fff; border-radius:10px; padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; gap:16px; }
-        .course-header .icon { font-size:2.2rem; }
-        .course-header h1 { font-size:1.3rem; font-weight:700; }
-        .course-header p  { font-size:0.85rem; opacity:0.85; margin-top:4px; }
+
+        /* Page header estándar */
+        .page-header { background:linear-gradient(135deg,#007bff,#0056b3); color:#fff; border-radius:10px; padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; gap:16px; }
+        .page-header .ph-icon { font-size:2.2rem; }
+        .page-header h1 { font-size:1.3rem; font-weight:700; }
+        .page-header p  { font-size:0.85rem; opacity:0.85; margin-top:4px; }
 
         /* Stats */
         #stats-section { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
@@ -99,15 +101,14 @@ $hasFilters = !empty($filters['subject_id']) || !empty($filters['student_id'])
 
 <div class="container">
 
-    <div class="course-header">
-        <div class="icon">🎓</div>
+    <div class="page-header" style="background:linear-gradient(135deg,#1565c0,#1976d2);">
+        <div class="ph-icon">🎓</div>
         <div>
-            <h1>📋 Asistencia — <?= htmlspecialchars($course['name']) ?></h1>
+            <h1>Asistencia de Mi Curso — <?= htmlspecialchars($course['name']) ?></h1>
             <p>
                 Jornada: <?= htmlspecialchars($course['shift_name']) ?> &nbsp;·&nbsp;
                 Nivel: <?= htmlspecialchars($course['grade_level']) ?> &nbsp;·&nbsp;
-                Paralelo: <?= htmlspecialchars($course['parallel']) ?> &nbsp;·&nbsp;
-                Todas las asignaturas
+                Paralelo: <?= htmlspecialchars($course['parallel']) ?>
             </p>
         </div>
     </div>

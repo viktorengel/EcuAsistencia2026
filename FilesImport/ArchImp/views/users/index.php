@@ -67,8 +67,20 @@
 </head>
 <body>
     <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Gestión de Usuarios
+</div>
 
-    <div class="container">
+<div class="container">
+
+    <div class="page-header" style="background:linear-gradient(135deg,#2e7d32,#388e3c);">
+        <div class="ph-icon">👥</div>
+        <div>
+            <h1>Gestión de Usuarios</h1>
+            <p>Administración de docentes, estudiantes y representantes</p>
+        </div>
+    </div>
+    
         <div class="card">
             <?php if(isset($_GET['created'])): ?>
                 <div class="success">✓ Usuario creado correctamente</div>

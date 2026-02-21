@@ -33,29 +33,44 @@ class InstitutionController {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
 
         $current  = $this->institutionModel->getById(1);
-        $logoPath = $current['logo_path']; // Mantener logo actual por defecto
+        // Mantener logo actual — triple respaldo: BD → hidden → null
+        $logoPath = !empty($current['logo_path'])
+                    ? $current['logo_path']
+                    : (!empty($_POST['current_logo_path']) ? $_POST['current_logo_path'] : null);
 
-        if (isset($_FILES['logo']) && $_FILES['logo']['error'] == 0) {
+        // Solo procesar si realmente viene un archivo
+        $hasFile = isset($_FILES['logo'])
+                   && is_array($_FILES['logo'])
+                   && $_FILES['logo']['error'] === UPLOAD_ERR_OK
+                   && $_FILES['logo']['size'] > 0;
+
+        if ($hasFile) {
             $uploadDir = BASE_PATH . '/uploads/institution/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
+
+            // Crear carpeta si no existe (permisos 0775 para hosting compartido)
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0775, true);
             }
 
-            $ext      = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-            $allowed  = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            $maxSize  = 2 * 1024 * 1024; // 2MB
+            $ext     = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            $maxSize = 2 * 1024 * 1024;
 
             if (in_array($ext, $allowed) && $_FILES['logo']['size'] <= $maxSize) {
-                $filename   = 'logo_' . time() . '.' . $ext;
+                $filename   = 'logo_' . $_SESSION['institution_id'] . '_' . time() . '.' . $ext;
                 $uploadPath = $uploadDir . $filename;
 
                 if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadPath)) {
-                    // Eliminar logo anterior
-                    if ($current['logo_path'] && file_exists(BASE_PATH . '/' . $current['logo_path'])) {
-                        unlink(BASE_PATH . '/' . $current['logo_path']);
+                    // Eliminar logo anterior solo si existe físicamente
+                    if (!empty($current['logo_path'])) {
+                        $oldFile = BASE_PATH . '/' . ltrim($current['logo_path'], '/');
+                        if (file_exists($oldFile)) {
+                            @unlink($oldFile);
+                        }
                     }
                     $logoPath = 'uploads/institution/' . $filename;
                 }
+                // Si move_uploaded_file falla: $logoPath mantiene el valor anterior
             }
         }
 
