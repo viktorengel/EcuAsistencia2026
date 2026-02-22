@@ -17,3 +17,25 @@ Asignaciones Docente — Materia y eliminar este modulo por que está de mas
 
 ALTER TABLE course_subjects
 ADD COLUMN hours_per_week INT NOT NULL DEFAULT 1;
+
+Estoy en gestion académica -> Cursos registrados -> Acciones estudiantes -> en Matricular Estudiantes Disponibles ya no deberia pedirme que seleccione el curso ya que debe venir de la tabla anterior
+
+Ahora en las acciones de Cursos Registrados sale estudiantes y Matricular, me parece que esta de mas uno de los 2, por que primero deberia salir el listado de los estudiantes y un boton para matricular usando un modal , que opinas de mi idea?
+
+quiero eliminar esta vista http://localhost/ecuasistencia2026/public/?action=enroll_students&course_id=6 y el boton Matricular de acciones en Cursos Registrados
+
+En el public/index.php estoy trabajando con esto para identificar si estoy en local o producción
+
+if ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_NAME'] === '127.0.0.1') {
+    require_once __DIR__ . '/../config/config.php';  // local
+} else {
+    require_once '/home/ecuasysc/ecuasistencia/config/config.php';  // producción
+}
+
+4. Matrícula (views/academic/course_students.php + AcademicController.php)
+
+Vista unificada: lista matriculados + modal para matricular nuevos
+Modal con buscador, "seleccionar todos", contador
+Botón "✕ Retirar" por estudiante con modal de confirmación
+Eliminada vista separada enroll_students
+Eliminado botón "Matricular" de acciones de cursos
