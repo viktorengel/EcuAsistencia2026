@@ -1,450 +1,755 @@
-<?php Security::requireLogin(); ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración de Institución - EcuAsist</title>
-    <style>
-        /* ── Grid principal: 2 columnas desktop → 1 móvil ── */
-        .inst-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        @media (max-width: 768px) {
-            .inst-grid { grid-template-columns: 1fr; }
-            .two-col   { grid-template-columns: 1fr !important; }
-            .shifts-grid { flex-direction: column; }
-            .shift-card  { min-width: unset; width: 100%; }
-        }
-
-        /* ── Grids internos de campos ── */
-        .two-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0 16px;
-        }
-        .three-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 0 16px;
-        }
-        @media (max-width: 768px) {
-            .three-col { grid-template-columns: 1fr 1fr; }
-        }
-
-        /* ── form-group más compacto ── */
-        .form-group {
-            margin-bottom: 12px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
-
-        /* ── Jornadas toggle ── */
-        .shifts-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
-        .shift-card {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px 20px; border-radius: 10px; cursor: pointer;
-            border: 2px solid #e0e0e0; background: #f9f9f9;
-            transition: all .2s; user-select: none; min-width: 150px;
-        }
-        .shift-card:hover { border-color: #90caf9; background: #e3f2fd; }
-        .shift-card.active { border-color: #1976d2; background: #e3f2fd; }
-        .shift-card .shift-icon { font-size: 22px; }
-        .shift-card .shift-info { flex: 1; }
-        .shift-card .shift-name { font-weight: 600; font-size: 14px; color: #333; }
-        .shift-card .shift-status { font-size: 11px; margin-top: 2px; }
-        .shift-card.active .shift-status { color: #1565c0; }
-        .shift-card:not(.active) .shift-status { color: #999; }
-        .shift-card .shift-toggle {
-            width: 36px; height: 20px; border-radius: 10px; position: relative;
-            background: #ccc; transition: background .2s; flex-shrink: 0;
-        }
-        .shift-card.active .shift-toggle { background: #1976d2; }
-        .shift-card .shift-toggle::after {
-            content: ''; position: absolute; top: 2px; left: 2px;
-            width: 16px; height: 16px; border-radius: 50%; background: #fff;
-            transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
-        }
-        .shift-card.active .shift-toggle::after { left: 18px; }
-        .shift-saving { opacity: .5; pointer-events: none; }
-
-        /* ── Logo preview ── */
-        .logo-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-        .logo-preview {
-            width: 90px; height: 90px; border-radius: 8px; border: 2px dashed #ddd;
-            display: flex; align-items: center; justify-content: center;
-            background: #fafafa; overflow: hidden; flex-shrink: 0;
-        }
-        .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .logo-preview .no-logo { font-size: 32px; color: #ccc; }
-        .logo-upload-btn {
-            display: inline-block; padding: 8px 16px; background: #f0f7ff;
-            border: 1.5px solid #90caf9; border-radius: 6px; cursor: pointer;
-            font-size: 13px; color: #1565c0; transition: all .2s;
-        }
-        .logo-upload-btn:hover { background: #e3f2fd; }
-        #logo-input { display: none; }
-
-        /* ── Panel más compacto ── */
-        .panel { margin-bottom: 16px; }
-        .panel-title {
-            font-size: .875rem;
-            color: #444;
-            font-weight: 700;
-            margin-bottom: 14px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        /* ── Input con ícono derecho ── */
-        .input-icon-wrap { position: relative; }
-        .input-icon-wrap .form-control { padding-right: 36px; }
-        .input-icon-wrap .icon-right {
-            position: absolute; right: 10px; top: 50%;
-            transform: translateY(-50%); font-size: 16px; pointer-events: none;
-        }
-    </style>
-</head>
-<body>
-
-<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
-
-<div class="breadcrumb">
-    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo; Configuración de Institución
-</div>
-
-<div class="container">
-
-    <?php if(isset($_GET['success'])): ?>
-        <div class="alert alert-success">✓ Información actualizada correctamente</div>
-    <?php endif; ?>
-
-    <div class="page-header" style="background:linear-gradient(135deg,#1a237e,#283593);">
-        <div class="ph-icon">🏫</div>
-        <div>
-            <h1>Configuración de Institución</h1>
-            <p>Datos generales, jornadas y logotipo</p>
-        </div>
-    </div>
-
-    <form method="POST" action="?action=update_institution" enctype="multipart/form-data" id="instForm">
-        <input type="hidden" name="current_logo_path" value="<?= htmlspecialchars($institution['logo_path'] ?? '') ?>">
-
-        <div class="inst-grid">
-
-            <!-- ══ COLUMNA IZQUIERDA ══ -->
-            <div>
-
-                <!-- Panel: Datos generales -->
-                <div class="panel">
-                    <div class="panel-title">📋 Datos de la Institución</div>
-
-                    <div class="form-group">
-                        <label>Nombre de la institución *</label>
-                        <input type="text" name="name" class="form-control" required
-                               value="<?= htmlspecialchars($institution['name'] ?? '') ?>">
-                    </div>
-
-                    <!-- Fila: AMIE + Teléfono -->
-                    <div class="two-col">
-                        <div class="form-group">
-                            <label>Código AMIE</label>
-                            <input type="text" name="amie_code" class="form-control"
-                                   value="<?= htmlspecialchars($institution['amie_code'] ?? '') ?>"
-                                   placeholder="17H01988">
-                        </div>
-                        <div class="form-group">
-                            <label>Teléfono</label>
-                            <input type="text" name="phone" class="form-control"
-                                   value="<?= htmlspecialchars($institution['phone'] ?? '') ?>"
-                                   placeholder="02-2345678">
-                        </div>
-                    </div>
-
-                    <!-- Fila: Email + Sitio web -->
-                    <div class="two-col">
-                        <div class="form-group">
-                            <label>Email institucional</label>
-                            <div class="input-icon-wrap">
-                                <input type="email" name="email" class="form-control"
-                                       value="<?= htmlspecialchars($institution['email'] ?? '') ?>"
-                                       placeholder="info@inst.edu.ec">
-                                <span class="icon-right">✉️</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Sitio web</label>
-                            <input type="text" name="website" class="form-control" id="website"
-                                   value="<?= htmlspecialchars($institution['website'] ?? '') ?>"
-                                   placeholder="www.inst.edu.ec"
-                                   onblur="autoHttps(this)">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nombre del Director/Rector</label>
-                        <input type="text" name="director_name" class="form-control"
-                               value="<?= htmlspecialchars($institution['director_name'] ?? '') ?>"
-                               placeholder="MSc. Nombre Apellido">
-                    </div>
-                </div>
-
-                <!-- Panel: Ubicación -->
-                <div class="panel">
-                    <div class="panel-title">📍 Ubicación</div>
-
-                    <!-- Fila: Provincia + Ciudad -->
-                    <div class="two-col">
-                        <div class="form-group">
-                            <label>Provincia</label>
-                            <select name="province" id="province" class="form-control" onchange="loadCities()">
-                                <option value="">Seleccionar...</option>
-                                <?php foreach(getProvinces() as $prov): ?>
-                                <option value="<?= $prov ?>" <?= ($institution['province'] ?? '') === $prov ? 'selected' : '' ?>>
-                                    <?= $prov ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Ciudad</label>
-                            <select name="city" id="city" class="form-control">
-                                <option value="<?= htmlspecialchars($institution['city'] ?? '') ?>">
-                                    <?= htmlspecialchars($institution['city'] ?? 'Seleccionar...') ?>
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Dirección</label>
-                        <input type="text" name="address" class="form-control"
-                               value="<?= htmlspecialchars($institution['address'] ?? '') ?>"
-                               placeholder="Av. Principal 123">
-                    </div>
-                </div>
-
-            </div><!-- /col izquierda -->
-
-            <!-- ══ COLUMNA DERECHA ══ -->
-            <div>
-
-                <!-- Panel: Logo -->
-                <div class="panel">
-                    <div class="panel-title">🖼️ Logo Institucional</div>
-                    <div class="logo-wrap">
-                        <div class="logo-preview" id="logoPreview">
-                            <?php
-                            $logoUrl = '';
-                            if (!empty($institution['logo_path'])) {
-                                $imgFile = ltrim(str_replace('uploads/', '', $institution['logo_path']), '/');
-                                $logoUrl = BASE_URL . '/img.php?f=' . urlencode($imgFile) . '&v=' . time();
-                            }
-                            ?>
-                            <?php if($logoUrl): ?>
-                                <img src="<?= $logoUrl ?>" id="logoImg" alt="Logo">
-                            <?php else: ?>
-                                <span class="no-logo" id="noLogoIcon">🏫</span>
-                            <?php endif; ?>
-                        </div>
-                        <div>
-                            <label for="logo-input" class="logo-upload-btn">📁 Seleccionar imagen</label>
-                            <input type="file" name="logo" id="logo-input" accept=".jpg,.jpeg,.png,.gif,.webp"
-                                   onchange="previewLogo(this)">
-                            <p style="font-size:12px;color:#999;margin-top:6px;">JPG, PNG o WebP — máx. 2MB</p>
-                            <?php if($logoUrl): ?>
-                            <p style="font-size:12px;color:#2e7d32;margin-top:4px;">✓ Logo actual cargado</p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Panel: Jornadas -->
-                <div class="panel">
-                    <div class="panel-title">⏰ Jornadas de la Institución</div>
-                    <p style="font-size:12px;color:#999;margin-bottom:14px;">Clic para activar o desactivar cada jornada</p>
-
-                    <?php
-                    $shiftIcons = [
-                        'matutina'   => ['🌅', 'Matutina'],
-                        'vespertina' => ['🌞', 'Vespertina'],
-                        'nocturna'   => ['🌙', 'Nocturna'],
-                    ];
-                    ?>
-                    <div class="shifts-grid" id="shiftsGrid">
-                        <?php foreach($allShifts as $shift):
-                            $isActive = in_array($shift['id'], $assignedShiftIds);
-                            $icon     = $shiftIcons[strtolower($shift['name'])][0] ?? '⏰';
-                            $label    = $shiftIcons[strtolower($shift['name'])][1] ?? ucfirst($shift['name']);
-                        ?>
-                        <div class="shift-card <?= $isActive ? 'active' : '' ?>"
-                             id="shift-<?= $shift['id'] ?>"
-                             onclick="toggleShift(<?= $shift['id'] ?>, this)"
-                             title="Clic para <?= $isActive ? 'desactivar' : 'activar' ?>">
-                            <span class="shift-icon"><?= $icon ?></span>
-                            <div class="shift-info">
-                                <div class="shift-name"><?= $label ?></div>
-                                <div class="shift-status"><?= $isActive ? '✓ Activa' : 'Inactiva' ?></div>
-                            </div>
-                            <div class="shift-toggle"></div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div id="shift-msg" style="font-size:12px;margin-top:10px;min-height:18px;"></div>
-                </div>
-
-            </div><!-- /col derecha -->
-
-        </div><!-- /inst-grid -->
-
-        <div style="display:flex;gap:10px;">
-            <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
-            <a href="?action=dashboard" class="btn btn-outline">Cancelar</a>
-        </div>
-
-    </form>
-</div>
-
-<script>
-// ── Toggle jornada vía AJAX ──────────────────────────────────
-function toggleShift(shiftId, card) {
-    card.classList.add('shift-saving');
-    var msg = document.getElementById('shift-msg');
-    msg.textContent = 'Guardando...';
-    msg.style.color = '#999';
-
-    var fd = new FormData();
-    fd.append('shift_id', shiftId);
-
-    fetch('?action=toggle_institution_shift', { method: 'POST', body: fd })
-        .then(function(r){ return r.json(); })
-        .then(function(data) {
-            card.classList.remove('shift-saving');
-            var statusEl = card.querySelector('.shift-status');
-            if (data.action === 'assigned') {
-                card.classList.add('active');
-                statusEl.textContent = '✓ Activa';
-                msg.textContent = '✓ Jornada activada';
-                msg.style.color = '#2e7d32';
-            } else {
-                card.classList.remove('active');
-                statusEl.textContent = 'Inactiva';
-                msg.textContent = '✓ Jornada desactivada';
-                msg.style.color = '#f57f17';
-            }
-            setTimeout(function(){ msg.textContent = ''; }, 2500);
-        })
-        .catch(function() {
-            card.classList.remove('shift-saving');
-            msg.textContent = '✗ Error al guardar';
-            msg.style.color = '#c62828';
-        });
-}
-
-// ── Preview logo antes de guardar ───────────────────────────
-function previewLogo(input) {
-    if (!input.files || !input.files[0]) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        var preview = document.getElementById('logoPreview');
-        var noIcon  = document.getElementById('noLogoIcon');
-        var img     = document.getElementById('logoImg');
-        if (!img) {
-            img = document.createElement('img');
-            img.id = 'logoImg'; img.alt = 'Logo';
-            preview.innerHTML = '';
-            preview.appendChild(img);
-        }
-        if (noIcon) noIcon.style.display = 'none';
-        img.src = e.target.result;
-        img.style.display = 'block';
-    };
-    reader.readAsDataURL(input.files[0]);
-}
-
-// ── Auto https en website ────────────────────────────────────
-function autoHttps(input) {
-    var v = input.value.trim();
-    if (v && !v.startsWith('http')) {
-        input.value = 'https://' + v;
-    }
-}
-
-// ── Ciudades por provincia ───────────────────────────────────
-var cities = {
-    'Pichincha':       ['Quito','Cayambe','Mejía','Pedro Moncayo','Rumiñahui','San Miguel de los Bancos'],
-    'Guayas':          ['Guayaquil','Daule','Durán','El Triunfo','Milagro','Naranjal','Playas','Samborondón'],
-    'Azuay':           ['Cuenca','Gualaceo','Paute','Santa Isabel','Sigsig'],
-    'Manabí':          ['Portoviejo','Manta','Bahía de Caráquez','Chone','El Carmen','Jipijapa','Montecristi'],
-    'Los Ríos':        ['Babahoyo','Quevedo','Ventanas','Vinces'],
-    'El Oro':          ['Machala','Pasaje','Santa Rosa','Zaruma'],
-    'Loja':            ['Loja','Catamayo','Macará','Saraguro'],
-    'Tungurahua':      ['Ambato','Baños','Pelileo','Píllaro'],
-    'Chimborazo':      ['Riobamba','Alausí','Colta','Guano'],
-    'Imbabura':        ['Ibarra','Antonio Ante','Cotacachi','Otavalo','Pimampiro'],
-    'Cotopaxi':        ['Latacunga','La Maná','Pujilí','Salcedo','Saquisilí'],
-    'Bolívar':         ['Guaranda','Chillanes','San Miguel'],
-    'Cañar':           ['Azogues','Biblián','Cañar','La Troncal'],
-    'Carchi':          ['Tulcán','Bolívar','Espejo','Mira'],
-    'Esmeraldas':      ['Esmeraldas','Atacames','La Concordia','Muisne','Quinindé'],
-    'Napo':            ['Tena','Archidona','El Chaco'],
-    'Pastaza':         ['Puyo','Mera','Santa Clara'],
-    'Morona Santiago': ['Macas','Gualaquiza','Limón Indanza','Palora'],
-    'Zamora Chinchipe':['Zamora','Chinchipe','Nangaritza','Yantzaza'],
-    'Sucumbíos':       ['Nueva Loja','Cascales','Cuyabeno','Lago Agrio'],
-    'Orellana':        ['Puerto Francisco de Orellana','Aguarico','La Joya de los Sachas'],
-    'Galápagos':       ['Puerto Baquerizo Moreno','Puerto Ayora','Puerto Villamil'],
-    'Santo Domingo':   ['Santo Domingo'],
-    'Santa Elena':     ['Santa Elena','La Libertad','Salinas'],
-};
-
-function loadCities() {
-    var prov = document.getElementById('province').value;
-    var sel  = document.getElementById('city');
-    var list = cities[prov] || [];
-    sel.innerHTML = '<option value="">Seleccionar ciudad...</option>';
-    list.forEach(function(c) {
-        var opt = document.createElement('option');
-        opt.value = c; opt.textContent = c;
-        sel.appendChild(opt);
-    });
-}
-
-// Cargar ciudades al inicio si hay provincia seleccionada
-(function(){
-    var prov = document.getElementById('province').value;
-    var currentCity = '<?= addslashes($institution['city'] ?? '') ?>';
-    if (prov) {
-        loadCities();
-        var sel = document.getElementById('city');
-        for (var i = 0; i < sel.options.length; i++) {
-            if (sel.options[i].value === currentCity) {
-                sel.selectedIndex = i; break;
-            }
-        }
-    }
-})();
-</script>
-
 <?php
-function getProvinces() {
-    return ['Azuay','Bolívar','Cañar','Carchi','Chimborazo','Cotopaxi','El Oro',
-            'Esmeraldas','Galápagos','Guayas','Imbabura','Loja','Los Ríos','Manabí',
-            'Morona Santiago','Napo','Orellana','Pastaza','Pichincha','Santa Elena',
-            'Santo Domingo','Sucumbíos','Tungurahua','Zamora Chinchipe'];
-}
-?>
+require_once BASE_PATH . '/config/config.php';
+require_once BASE_PATH . '/models/Course.php';
+require_once BASE_PATH . '/models/Subject.php';
+require_once BASE_PATH . '/models/SchoolYear.php';
+require_once BASE_PATH . '/models/Shift.php';
+require_once BASE_PATH . '/models/User.php';
 
-</body>
-</html>
+class AcademicController {
+    private $courseModel;
+    private $subjectModel;
+    private $schoolYearModel;
+    private $shiftModel;
+    private $userModel;
+    private $db;
+
+    public function __construct() {
+        Security::requireLogin();
+        if (!Security::hasRole('autoridad')) {
+            die('Acceso denegado');
+        }
+
+        $this->db = new Database();
+        $this->courseModel     = new Course($this->db);
+        $this->subjectModel    = new Subject($this->db);
+        $this->schoolYearModel = new SchoolYear($this->db);
+        $this->shiftModel      = new Shift($this->db);
+        $this->userModel       = new User($this->db);
+    }
+
+    public function index() {
+        $courses     = $this->courseModel->getAllWithTutor();
+        $subjects    = $this->subjectModel->getAll();
+        $schoolYears = $this->schoolYearModel->getAll();
+        $shifts      = $this->shiftModel->getAll();
+        $teachers    = $this->userModel->getByRole('docente');
+
+        // Asignaciones docente-materia
+        require_once BASE_PATH . '/models/TeacherAssignment.php';
+        $assignmentModel = new TeacherAssignment($this->db);
+        $assignments     = $assignmentModel->getAll();
+        // Solo asignaciones de docente-materia (no tutores)
+        $assignments = array_filter($assignments, fn($a) => !$a['is_tutor']);
+
+        include BASE_PATH . '/views/academic/index.php';
+    }
+
+    public function createCourse() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+
+        // Guardar datos del form en sesión para repoblar si hay error
+        $_SESSION['course_form'] = [
+            'education_type' => $_POST['education_type'] ?? '',
+            'grade_level'    => $_POST['grade_level']    ?? '',
+            'specialty'      => $_POST['specialty']      ?? '',
+            'carrera'        => $_POST['carrera']        ?? '',
+            'parallel'       => $_POST['parallel']       ?? '',
+            'shift_id'       => $_POST['shift_id']       ?? '',
+            'name'           => $_POST['name']           ?? '',
+        ];
+
+        $activeYear = $this->schoolYearModel->getActive();
+        if (!$activeYear) {
+            header('Location: ?action=academic&error=no_active_year'); exit;
+        }
+
+        $gradeLevel = html_entity_decode(Security::sanitize($_POST['grade_level']), ENT_QUOTES, 'UTF-8');
+        $parallel   = Security::sanitize($_POST['parallel']);
+        $shiftId    = (int)$_POST['shift_id'];
+
+        // Validar curso duplicado
+        $pdo = $this->db->connect();
+        $stmtCheck = $pdo->prepare(
+            "SELECT COUNT(*) as cnt FROM courses
+             WHERE institution_id=:iid AND school_year_id=:syid
+               AND grade_level=:gl AND parallel=:par AND shift_id=:sid"
+        );
+        $stmtCheck->execute([':iid'=>$_SESSION['institution_id'],':syid'=>$activeYear['id'],
+                             ':gl'=>$gradeLevel,':par'=>$parallel,':sid'=>$shiftId]);
+        if ($stmtCheck->fetch()['cnt'] > 0) {
+            header('Location: ?action=academic&error=course_duplicate'); exit;
+        }
+
+        $data = [
+            ':institution_id' => $_SESSION['institution_id'],
+            ':school_year_id' => $activeYear['id'],
+            ':name'        => html_entity_decode(Security::sanitize($_POST['name']), ENT_QUOTES, 'UTF-8'),
+            ':grade_level' => $gradeLevel,
+            ':parallel'    => $parallel,
+            ':shift_id'    => $shiftId,
+        ];
+        $this->courseModel->create($data);
+        $courseId = (int)$this->db->connect()->lastInsertId();
+
+        // Auto-carga malla curricular
+        $malla = $this->getMallaCurricular();
+        $nuevas = 0;
+        if (isset($malla[$gradeLevel]) && $courseId > 0) {
+            foreach ($malla[$gradeLevel] as $nombre) {
+                $stmtB = $pdo->prepare("SELECT id FROM subjects WHERE institution_id=:iid AND LOWER(TRIM(name))=LOWER(TRIM(:name)) LIMIT 1");
+                $stmtB->execute([':iid'=>$_SESSION['institution_id'],':name'=>$nombre]);
+                $existe = $stmtB->fetch();
+                if ($existe) {
+                    $sid = (int)$existe['id'];
+                } else {
+                    $codigo = strtoupper(substr(preg_replace('/[^a-zA-Z]/','',iconv('UTF-8','ASCII//TRANSLIT',$nombre)),0,4));
+                    $this->subjectModel->create([':institution_id'=>$_SESSION['institution_id'],':name'=>$nombre,':code'=>$codigo]);
+                    $sid = (int)$pdo->lastInsertId();
+                    $nuevas++;
+                }
+                $this->linkSubjectToCourse($courseId, $sid);
+            }
+        }
+
+        // Éxito: limpiar datos guardados
+        unset($_SESSION['course_form']);
+        header('Location: ?action=academic&course_success=1&subjects_loaded='.$nuevas); exit;
+    }
+
+    public function createSubject() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                ':institution_id' => $_SESSION['institution_id'],
+                ':name' => Security::sanitize($_POST['name']),
+                ':code' => Security::sanitize($_POST['code'])
+            ];
+
+            $this->subjectModel->create($data);
+            header('Location: ?action=academic&subject_success=1');
+            exit;
+        }
+    }
+
+    // ============================================
+    // CRUD CURSOS
+    // ============================================
+
+    public function editCourse() {
+        $courseId = (int)$_GET['id'];
+        $course = $this->courseModel->findById($courseId);
+
+        if (!$course || $course['institution_id'] != $_SESSION['institution_id']) {
+            header('Location: ?action=academic&error=course_not_found');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $shifts = $this->shiftModel->getAll();
+            include BASE_PATH . '/views/academic/course_edit.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'id' => $courseId,
+                'name' => html_entity_decode(Security::sanitize($_POST['name']), ENT_QUOTES, 'UTF-8'),
+                'grade_level' => html_entity_decode(Security::sanitize($_POST['grade_level']), ENT_QUOTES, 'UTF-8'),
+                'parallel' => Security::sanitize($_POST['parallel']),
+                'shift_id' => (int)$_POST['shift_id']
+            ];
+
+            if ($this->courseModel->update($data)) {
+                header('Location: ?action=academic&course_updated=1');
+                exit;
+            } else {
+                $errors[] = "Error al actualizar el curso";
+                $shifts = $this->shiftModel->getAll();
+                include BASE_PATH . '/views/academic/course_edit.php';
+            }
+        }
+    }
+
+    public function deleteCourse() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $courseId = (int)$_POST['course_id'];
+            $course = $this->courseModel->findById($courseId);
+
+            if (!$course || $course['institution_id'] != $_SESSION['institution_id']) {
+                header('Location: ?action=academic&error=course_not_found');
+                exit;
+            }
+
+            // Verificar si tiene estudiantes matriculados
+            $students = $this->courseModel->getEnrolledStudents($courseId);
+            if (count($students) > 0) {
+                header('Location: ?action=academic&error=course_has_students');
+                exit;
+            }
+
+            // Verificar si tiene asignaciones docentes
+            $db = new Database();
+            $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE course_id = :id");
+            $stmt->execute([':id' => $courseId]);
+            $result = $stmt->fetch();
+            
+            if ($result['count'] > 0) {
+                header('Location: ?action=academic&error=course_has_assignments');
+                exit;
+            }
+
+            if ($this->courseModel->delete($courseId)) {
+                // Eliminar asignaturas sin docentes asignados
+                $pdo2 = new Database();
+                $pdo2->connect()->prepare("
+                    DELETE s FROM subjects s
+                    INNER JOIN course_subjects cs ON s.id = cs.subject_id
+                    LEFT JOIN teacher_assignments ta ON s.id = ta.subject_id
+                    WHERE cs.course_id = :cid AND ta.id IS NULL
+                ")->execute([':cid' => $courseId]);
+                header('Location: ?action=academic&course_deleted=1');
+                exit;
+            } else {
+                header('Location: ?action=academic&error=delete_failed');
+                exit;
+            }
+        }
+    }
+
+    // ── Malla curricular ─────────────────────────────────────────────────────
+    private function getMallaCurricular(): array {
+        return [
+            'Inicial 1 (0-3 años)' => ['Desarrollo Personal y Social','Expresión y Comunicación','Relación con el Entorno Natural y Cultural'],
+            'Inicial 2 (3-5 años)' => ['Desarrollo Personal y Social','Expresión y Comunicación','Relación con el Entorno Natural y Cultural'],
+            '1.º EGB - Preparatoria' => ['Currículo Integrador','Educación Física','Educación Cultural y Artística'],
+            '2.º EGB'  => ['Lengua y Literatura','Matemática','Entorno Natural y Social','Inglés','Educación Física','Educación Cultural y Artística'],
+            '3.º EGB'  => ['Lengua y Literatura','Matemática','Entorno Natural y Social','Inglés','Educación Física','Educación Cultural y Artística'],
+            '4.º EGB'  => ['Lengua y Literatura','Matemática','Entorno Natural y Social','Inglés','Educación Física','Educación Cultural y Artística'],
+            '5.º EGB'  => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+            '6.º EGB'  => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+            '7.º EGB'  => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+            '8.º EGB'  => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+            '9.º EGB'  => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+            '10.º EGB' => ['Lengua y Literatura','Matemática','Ciencias Naturales','Estudios Sociales','Inglés','Educación Física','Educación Cultural y Artística','Educación Financiera','Socioemocional','Cívica','Sostenibilidad','Seguridad Vial'],
+            '1.º BGU'  => ['Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Lengua y Literatura','Inglés','Educación Cultural y Artística','Educación Física','Emprendimiento y Gestión'],
+            '2.º BGU'  => ['Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Lengua y Literatura','Inglés','Educación Cultural y Artística','Educación Física','Emprendimiento y Gestión'],
+            '3.º BGU'  => ['Matemática','Física','Química','Biología','Historia','Lengua y Literatura','Inglés','Educación Física','Emprendimiento y Gestión'],
+            '1.º BT'   => ['Lengua y Literatura','Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Inglés','Educación Física','Educación Cultural y Artística','Emprendimiento y Gestión','Módulos Técnicos'],
+            '2.º BT'   => ['Lengua y Literatura','Matemática','Física','Química','Biología','Historia','Educación para la Ciudadanía','Filosofía','Inglés','Educación Física','Educación Cultural y Artística','Emprendimiento y Gestión','Módulos Técnicos'],
+            '3.º BT'   => ['Lengua y Literatura','Matemática','Física','Química','Biología','Historia','Inglés','Educación Física','Emprendimiento y Gestión','Módulos Técnicos'],
+        ];
+    }
+
+    // ── Asignaturas del curso CON docente ─────────────────────────────────
+    private function getSubjectsByCourse(int $courseId): array {
+        $activeYear = $this->schoolYearModel->getActive();
+        $yearId = $activeYear ? $activeYear['id'] : 0;
+        $stmt = $this->db->connect()->prepare(
+            "SELECT s.id, s.name, s.code,
+                    ta.id   AS assignment_id,
+                    ta.teacher_id,
+                    CONCAT(u.last_name,' ',u.first_name) AS teacher_name,
+                    COALESCE(cs.hours_per_week, 1) AS hours_per_week
+             FROM subjects s
+             INNER JOIN course_subjects cs ON s.id = cs.subject_id AND cs.course_id = :cid
+             LEFT JOIN teacher_assignments ta ON ta.subject_id = s.id
+                    AND ta.course_id = :cid2 AND ta.school_year_id = :yid AND ta.is_tutor = 0
+             LEFT JOIN users u ON u.id = ta.teacher_id
+             ORDER BY s.name"
+        );
+        $stmt->execute([':cid'=>$courseId,':cid2'=>$courseId,':yid'=>$yearId]);
+        return $stmt->fetchAll();
+    }
+
+    private function linkSubjectToCourse(int $courseId, int $subjectId): void {
+        $stmt = $this->db->connect()->prepare(
+            "INSERT IGNORE INTO course_subjects (course_id, subject_id) VALUES (:cid, :sid)"
+        );
+        $stmt->execute([':cid'=>$courseId,':sid'=>$subjectId]);
+    }
+
+    // ── Ver/gestionar asignaturas de un curso ─────────────────────────────
+    public function courseSubjects() {
+        $courseId = (int)($_GET['course_id'] ?? 0);
+        if (!$courseId) { header('Location: ?action=academic'); exit; }
+
+        $allCourses = $this->courseModel->getAll();
+        $course = null;
+        foreach ($allCourses as $c) { if ($c['id'] == $courseId) { $course = $c; break; } }
+        if (!$course || $course['institution_id'] != $_SESSION['institution_id']) {
+            header('Location: ?action=academic&error=course_not_found'); exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_subject_name'])) {
+            $nombre = trim(Security::sanitize($_POST['new_subject_name']));
+            $codigo = trim(Security::sanitize($_POST['new_subject_code'] ?? ''));
+            if ($nombre !== '') {
+                $pdo = $this->db->connect();
+                $stmtB = $pdo->prepare("SELECT id FROM subjects WHERE institution_id=:iid AND LOWER(TRIM(name))=LOWER(TRIM(:name)) LIMIT 1");
+                $stmtB->execute([':iid'=>$_SESSION['institution_id'],':name'=>$nombre]);
+                $existe = $stmtB->fetch();
+                if ($existe) { $sid = (int)$existe['id']; }
+                else {
+                    $this->subjectModel->create([':institution_id'=>$_SESSION['institution_id'],':name'=>$nombre,':code'=>$codigo]);
+                    $sid = (int)$pdo->lastInsertId();
+                }
+                $this->linkSubjectToCourse($courseId, $sid);
+            }
+            header('Location: ?action=course_subjects&course_id='.$courseId.'&added=1'); exit;
+        }
+
+        $subjects  = $this->getSubjectsByCourse($courseId);
+        $teachers  = $this->userModel->getByRole('docente');
+        include BASE_PATH . '/views/academic/course_subjects.php';
+    }
+
+    // ── Asignar docente a asignatura desde el curso ───────────────────────
+    public function assignSubjectTeacher() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=academic'); exit; }
+
+        $courseId   = (int)$_POST['course_id'];
+        $subjectId  = (int)$_POST['subject_id'];
+        $teacherId  = (int)$_POST['teacher_id'];
+        $assignId   = (int)($_POST['assignment_id'] ?? 0);
+
+        $activeYear = $this->schoolYearModel->getActive();
+        if (!$activeYear) { header('Location: ?action=course_subjects&course_id='.$courseId.'&assign_error='.urlencode('No hay año lectivo activo')); exit; }
+
+        $pdo = $this->db->connect();
+
+        // Si ya existe asignación para esta asignatura en este curso, actualizarla
+        if ($assignId > 0) {
+            $pdo->prepare("UPDATE teacher_assignments SET teacher_id=:tid WHERE id=:id")
+                ->execute([':tid'=>$teacherId,':id'=>$assignId]);
+        } else {
+            // Verificar que no exista ya
+            $stmtCheck = $pdo->prepare("SELECT id FROM teacher_assignments WHERE course_id=:cid AND subject_id=:sid AND school_year_id=:yid AND is_tutor=0");
+            $stmtCheck->execute([':cid'=>$courseId,':sid'=>$subjectId,':yid'=>$activeYear['id']]);
+            $existe = $stmtCheck->fetch();
+            if ($existe) {
+                $pdo->prepare("UPDATE teacher_assignments SET teacher_id=:tid WHERE id=:id")
+                    ->execute([':tid'=>$teacherId,':id'=>$existe['id']]);
+            } else {
+                $pdo->prepare("INSERT INTO teacher_assignments (teacher_id,course_id,subject_id,school_year_id,is_tutor) VALUES (:tid,:cid,:sid,:yid,0)")
+                    ->execute([':tid'=>$teacherId,':cid'=>$courseId,':sid'=>$subjectId,':yid'=>$activeYear['id']]);
+            }
+        }
+        header('Location: ?action=course_subjects&course_id='.$courseId.'&assigned=1'); exit;
+    }
+
+    // ── Quitar docente de una asignatura ──────────────────────────────────
+    public function unassignSubjectTeacher() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=academic'); exit; }
+        $assignId = (int)$_POST['assignment_id'];
+        $courseId = (int)$_POST['course_id'];
+        $pdo = $this->db->connect();
+        $pdo->prepare("DELETE FROM teacher_assignments WHERE id=:id AND is_tutor=0")->execute([':id'=>$assignId]);
+        header('Location: ?action=course_subjects&course_id='.$courseId.'&unassigned=1'); exit;
+    }
+
+    // ── Editar asignatura desde el curso ──────────────────────────────────
+    public function editCourseSubject() {
+        $subjectId = (int)($_GET['subject_id'] ?? 0);
+        $courseId  = (int)($_GET['course_id']  ?? 0);
+        if (!$subjectId || !$courseId) { header('Location: ?action=academic'); exit; }
+        $subject = $this->subjectModel->findById($subjectId);
+        if (!$subject || $subject['institution_id'] != $_SESSION['institution_id']) {
+            header('Location: ?action=course_subjects&course_id='.$courseId.'&error=not_found'); exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->subjectModel->update(['id'=>$subjectId,'name'=>Security::sanitize($_POST['name']),'code'=>Security::sanitize($_POST['code'])]);
+            header('Location: ?action=course_subjects&course_id='.$courseId.'&updated=1'); exit;
+        }
+        include BASE_PATH . '/views/academic/course_subject_edit.php';
+    }
+
+    // ── Quitar asignatura de un curso ─────────────────────────────────────
+    public function removeCourseSubject() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=academic'); exit; }
+        $courseId  = (int)$_POST['course_id'];
+        $subjectId = (int)$_POST['subject_id'];
+        $pdo  = $this->db->connect();
+        $stmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM teacher_assignments WHERE course_id=:cid AND subject_id=:sid");
+        $stmt->execute([':cid'=>$courseId,':sid'=>$subjectId]);
+        if ($stmt->fetch()['cnt'] > 0) {
+            header('Location: ?action=course_subjects&course_id='.$courseId.'&error=has_teacher'); exit;
+        }
+        $pdo->prepare("DELETE FROM course_subjects WHERE course_id=:cid AND subject_id=:sid")->execute([':cid'=>$courseId,':sid'=>$subjectId]);
+        header('Location: ?action=course_subjects&course_id='.$courseId.'&removed=1'); exit;
+    }
+
+    // ============================================
+    // CRUD ASIGNATURAS
+    // ============================================
+
+    public function editSubject() {
+        $subjectId = (int)$_GET['id'];
+        $subject = $this->subjectModel->findById($subjectId);
+
+        if (!$subject || $subject['institution_id'] != $_SESSION['institution_id']) {
+            header('Location: ?action=academic&error=subject_not_found');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            include BASE_PATH . '/views/academic/subject_edit.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'id' => $subjectId,
+                'name' => Security::sanitize($_POST['name']),
+                'code' => Security::sanitize($_POST['code'])
+            ];
+
+            if ($this->subjectModel->update($data)) {
+                header('Location: ?action=academic&subject_updated=1');
+                exit;
+            } else {
+                $errors[] = "Error al actualizar la asignatura";
+                include BASE_PATH . '/views/academic/subject_edit.php';
+            }
+        }
+    }
+
+    public function deleteSubject() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $subjectId = (int)$_POST['subject_id'];
+            $subject = $this->subjectModel->findById($subjectId);
+
+            if (!$subject || $subject['institution_id'] != $_SESSION['institution_id']) {
+                header('Location: ?action=academic&error=subject_not_found');
+                exit;
+            }
+
+            // Verificar si tiene asignaciones docentes
+            $db = new Database();
+            $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE subject_id = :id");
+            $stmt->execute([':id' => $subjectId]);
+            $result = $stmt->fetch();
+            
+            if ($result['count'] > 0) {
+                header('Location: ?action=academic&error=subject_has_assignments');
+                exit;
+            }
+
+            if ($this->subjectModel->delete($subjectId)) {
+                header('Location: ?action=academic&subject_deleted=1');
+                exit;
+            } else {
+                header('Location: ?action=academic&error=delete_failed');
+                exit;
+            }
+        }
+    }
+
+    public function enrollStudents() {
+        $activeYear = $this->schoolYearModel->getActive();
+        $courses = $this->courseModel->getAll();
+        $availableStudents = $this->userModel->getStudentsNotEnrolled($activeYear['id']);
+        $allStudents = $this->userModel->getByRole('estudiante');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $courseId = (int)$_POST['course_id'];
+            $studentIds = $_POST['student_ids'] ?? [];
+            
+            $enrolled = 0;
+            $errors = 0;
+
+            foreach ($studentIds as $studentId) {
+                if ($this->courseModel->enrollStudent($courseId, (int)$studentId, $activeYear['id'])) {
+                    $enrolled++;
+                } else {
+                    $errors++;
+                }
+            }
+
+            header('Location: ?action=enroll_students&enrolled=' . $enrolled . '&errors=' . $errors);
+            exit;
+        }
+
+        include BASE_PATH . '/views/academic/enroll.php';
+    }
+
+    public function unenrollStudent() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $studentId = (int)$_POST['student_id'];
+            $activeYear = $this->schoolYearModel->getActive();
+
+            if (!$activeYear) {
+                header('Location: ?action=enroll_students&error=no_active_year');
+                exit;
+            }
+
+            // Verificar que el estudiante existe y está matriculado
+            $course = $this->userModel->getStudentCourse($studentId, $activeYear['id']);
+            
+            if (!$course) {
+                header('Location: ?action=enroll_students&error=not_enrolled');
+                exit;
+            }
+
+            // Retirar estudiante
+            if ($this->courseModel->unenrollStudent($studentId, $activeYear['id'])) {
+                header('Location: ?action=enroll_students&unenrolled=1');
+                exit;
+            } else {
+                header('Location: ?action=enroll_students&error=unenroll_failed');
+                exit;
+            }
+        }
+    }
+
+    public function viewCourseStudents() {
+        $courseId = (int)($_GET['course_id'] ?? 0);
+        
+        if (!$courseId) {
+            header('Location: ?action=academic');
+            exit;
+        }
+
+        $course = $this->courseModel->getAll();
+        $course = array_filter($course, fn($c) => $c['id'] == $courseId);
+        $course = reset($course);
+
+        $students = $this->courseModel->getEnrolledStudents($courseId);
+
+        include BASE_PATH . '/views/academic/course_students.php';
+    }
+
+    // ============================================
+    // CRUD AÑOS LECTIVOS
+    // ============================================
+
+    public function createSchoolYear() {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            include BASE_PATH . '/views/academic/school_year_create.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $errors = [];
+
+            // Validaciones
+            if (empty($_POST['name'])) {
+                $errors[] = "El nombre es obligatorio";
+            }
+            if (empty($_POST['start_date'])) {
+                $errors[] = "La fecha de inicio es obligatoria";
+            }
+            if (empty($_POST['end_date'])) {
+                $errors[] = "La fecha de fin es obligatoria";
+            }
+
+            if (!empty($_POST['start_date']) && !empty($_POST['end_date'])) {
+                if (strtotime($_POST['end_date']) <= strtotime($_POST['start_date'])) {
+                    $errors[] = "La fecha de fin debe ser posterior a la fecha de inicio";
+                }
+
+                // Verificar solapamiento de fechas
+                if ($this->schoolYearModel->checkOverlap($_POST['start_date'], $_POST['end_date'])) {
+                    $errors[] = "Ya existe un año lectivo con fechas que se solapan";
+                }
+            }
+
+            if (!empty($errors)) {
+                include BASE_PATH . '/views/academic/school_year_create.php';
+                return;
+            }
+
+            // Crear año lectivo
+            $data = [
+                'institution_id' => $_SESSION['institution_id'],
+                'name' => Security::sanitize($_POST['name']),
+                'start_date' => $_POST['start_date'],
+                'end_date' => $_POST['end_date'],
+                'is_active' => isset($_POST['is_active']) ? 1 : 0
+            ];
+
+            // Si se marca como activo, desactivar los demás ANTES de insertar
+            if ($data['is_active']) {
+                $this->schoolYearModel->activate(0);
+            }
+
+            // create() ahora devuelve el ID insertado (o 0 si falla)
+            $newId = $this->schoolYearModel->create($data);
+
+            if ($newId > 0) {
+                // Activar el nuevo año lectivo con el ID real
+                if ($data['is_active']) {
+                    $this->schoolYearModel->activate($newId);
+                }
+                header('Location: ?action=academic&sy_created=1');
+                exit;
+            } else {
+                $errors[] = "Error al crear el año lectivo";
+                include BASE_PATH . '/views/academic/school_year_create.php';
+            }
+        }
+    }
+
+    public function editSchoolYear() {
+        $yearId = (int)$_GET['id'];
+        $year = $this->schoolYearModel->findById($yearId);
+
+        if (!$year) {
+            header('Location: ?action=academic&error=year_not_found');
+            exit;
+        }
+
+        // Verificar institución
+        if ($year['institution_id'] != $_SESSION['institution_id']) {
+            die('Acceso denegado');
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            include BASE_PATH . '/views/academic/school_year_edit.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $errors = [];
+
+            // Validaciones
+            if (empty($_POST['name'])) {
+                $errors[] = "El nombre es obligatorio";
+            }
+            if (empty($_POST['start_date'])) {
+                $errors[] = "La fecha de inicio es obligatoria";
+            }
+            if (empty($_POST['end_date'])) {
+                $errors[] = "La fecha de fin es obligatoria";
+            }
+
+            if (!empty($_POST['start_date']) && !empty($_POST['end_date'])) {
+                if (strtotime($_POST['end_date']) <= strtotime($_POST['start_date'])) {
+                    $errors[] = "La fecha de fin debe ser posterior a la fecha de inicio";
+                }
+
+                // Verificar solapamiento (excluyendo el actual)
+                if ($this->schoolYearModel->checkOverlap($_POST['start_date'], $_POST['end_date'], $yearId)) {
+                    $errors[] = "Ya existe otro año lectivo con fechas que se solapan";
+                }
+            }
+
+            if (!empty($errors)) {
+                include BASE_PATH . '/views/academic/school_year_edit.php';
+                return;
+            }
+
+            // Actualizar año lectivo
+            $data = [
+                'id' => $yearId,
+                'name' => Security::sanitize($_POST['name']),
+                'start_date' => $_POST['start_date'],
+                'end_date' => $_POST['end_date']
+            ];
+
+            if ($this->schoolYearModel->update($data)) {
+                header('Location: ?action=academic&sy_updated=1');
+                exit;
+            } else {
+                $errors[] = "Error al actualizar el año lectivo";
+                include BASE_PATH . '/views/academic/school_year_edit.php';
+            }
+        }
+    }
+
+    public function deleteSchoolYear() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $yearId = (int)$_POST['year_id'];
+            $year = $this->schoolYearModel->findById($yearId);
+
+            if (!$year) {
+                header('Location: ?action=academic&error=year_not_found');
+                exit;
+            }
+
+            // Verificar institución
+            if ($year['institution_id'] != $_SESSION['institution_id']) {
+                die('Acceso denegado');
+            }
+
+            // No permitir eliminar año activo
+            if ($year['is_active'] == 1) {
+                header('Location: ?action=academic&error=cannot_delete_active');
+                exit;
+            }
+
+            if ($this->schoolYearModel->delete($yearId)) {
+                header('Location: ?action=academic&sy_deleted=1');
+                exit;
+            } else {
+                header('Location: ?action=academic&error=has_courses');
+                exit;
+            }
+        }
+    }
+
+    public function activateSchoolYear() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $yearId = (int)$_POST['year_id'];
+            $year = $this->schoolYearModel->findById($yearId);
+
+            if (!$year) {
+                header('Location: ?action=academic&error=year_not_found');
+                exit;
+            }
+
+            // Verificar institución
+            if ($year['institution_id'] != $_SESSION['institution_id']) {
+                die('Acceso denegado');
+            }
+
+            if ($this->schoolYearModel->activate($yearId)) {
+                header('Location: ?action=academic&sy_activated=1');
+                exit;
+            } else {
+                header('Location: ?action=academic&error=activate_failed');
+                exit;
+            }
+        }
+    }
+
+    public function deactivateSchoolYear() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $yearId = (int)$_POST['year_id'];
+            $year = $this->schoolYearModel->findById($yearId);
+
+            if (!$year) {
+                header('Location: ?action=academic&error=year_not_found');
+                exit;
+            }
+
+            // Verificar institución
+            if ($year['institution_id'] != $_SESSION['institution_id']) {
+                die('Acceso denegado');
+            }
+
+            if ($this->schoolYearModel->deactivate($yearId)) {
+                header('Location: ?action=academic&sy_deactivated=1');
+                exit;
+            } else {
+                header('Location: ?action=academic&error=deactivate_failed');
+                exit;
+            }
+        }
+    }
+
+    public function setSubjectHours() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ?action=academic'); exit;
+        }
+        $courseId  = (int)($_GET['course_id'] ?? $_POST['course_id'] ?? 0);
+        $subjectId = (int)$_POST['subject_id'];
+        $hours     = max(1, min(20, (int)$_POST['hours_per_week']));
+
+        $pdo = $this->db->connect();
+        $pdo->prepare("UPDATE course_subjects SET hours_per_week = :h WHERE course_id = :cid AND subject_id = :sid")
+            ->execute([':h' => $hours, ':cid' => $courseId, ':sid' => $subjectId]);
+
+        header('Location: ?action=course_subjects&course_id=' . $courseId . '&updated=1');
+        exit;
+    }
+}

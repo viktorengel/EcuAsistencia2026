@@ -84,7 +84,8 @@ class InstitutionController {
             'director_name'=> Security::sanitize($_POST['director_name']),
             'amie_code'    => Security::sanitize($_POST['amie_code']),
             'website'      => Security::sanitize($_POST['website']),
-            'logo_path'    => $logoPath,
+            'logo_path'         => $logoPath,
+            'working_days_list' => json_encode(array_values($_POST['working_days'] ?? ['lunes','martes','miercoles','jueves','viernes'])),
         ];
 
         $this->institutionModel->update(1, $data);

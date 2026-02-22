@@ -1,241 +1,601 @@
 <?php Security::requireLogin(); ?>
+<?php
+// ── Working days from institution ──────────────────────────────────
+$workingDays = ['lunes','martes','miercoles','jueves','viernes']; // default
+if(!empty($_SESSION['institution_id'])) {
+    $db2 = new Database();
+    $instRow = $db2->connect()->prepare("SELECT working_days_list FROM institutions WHERE id = :id");
+    $instRow->execute([':id' => $_SESSION['institution_id']]);
+    $inst = $instRow->fetch();
+    if(!empty($inst['working_days_list'])) {
+        $parsed = json_decode($inst['working_days_list'], true);
+        if(is_array($parsed) && count($parsed)) $workingDays = $parsed;
+    }
+}
+
+$dayLabels = ['lunes'=>'Lunes','martes'=>'Martes','miercoles'=>'Miércoles',
+              'jueves'=>'Jueves','viernes'=>'Viernes','sabado'=>'Sábado'];
+
+$isTecnico = strpos($course['grade_level'],'BT') !== false
+          || strpos($course['grade_level'],'Técnico') !== false
+          || ($course['education_type'] ?? '') === 'bt';
+$maxHours  = $isTecnico ? 8 : 7;
+$recreoAfter = 4;
+
+// Index schedule grid
+$grid = [];
+foreach($schedule as $cls) {
+    $grid[$cls['day_of_week']][$cls['period_number']] = $cls;
+}
+
+// Count assigned hours per subject
+$assignedCount = []; // subject_id -> count
+foreach($schedule as $cls) {
+    $assignedCount[$cls['subject_id']] = ($assignedCount[$cls['subject_id']] ?? 0) + 1;
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horario de <?= htmlspecialchars($course['name']) ?> - EcuAsist</title>
+    <title>Horario — <?= htmlspecialchars($course['name']) ?></title>
     <style>
-        .schedule-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
-        @media(max-width:900px) { .schedule-grid { grid-template-columns: 1fr; } }
+    :root {
+        --ink:      #1a2035;
+        --muted:    #6b7a99;
+        --bg:       #eef0f7;
+        --surface:  #ffffff;
+        --border:   #dde1ee;
+        --accent:   #4361ee;
+        --success:  #06d6a0;
+        --danger:   #ef476f;
+        --warn:     #ffd166;
+        --recreo-bg:#f8f9fc;
+        --cell-h:   70px;
+        --label-w:  110px;
+        --radius:   12px;
+        --shadow:   0 2px 16px rgba(67,97,238,.09);
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);}
+
+    .wrap{max-width:1440px;margin:0 auto;padding:20px 16px 60px;}
+
+    .crumb{font-size:12px;color:var(--muted);margin-bottom:14px;}
+    .crumb a{color:var(--accent);text-decoration:none;}
+
+    /* Page header */
+    .ph{background:linear-gradient(135deg,#1a237e 0%,#4361ee 100%);
+        border-radius:var(--radius);padding:18px 24px;margin-bottom:18px;
+        display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+        box-shadow:0 4px 24px rgba(67,97,238,.25);}
+    .ph-ico{font-size:30px;flex-shrink:0;}
+    .ph h1{font-size:1.2rem;font-weight:800;color:#fff;line-height:1.2;}
+    .ph p{font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;}
+    .ph .back{margin-left:auto;padding:7px 16px;background:rgba(255,255,255,.18);
+               color:#fff;text-decoration:none;border-radius:7px;font-size:12px;
+               border:1px solid rgba(255,255,255,.3);transition:background .15s;white-space:nowrap;}
+    .ph .back:hover{background:rgba(255,255,255,.3);}
+
+    /* Toast */
+    #toast{position:fixed;top:16px;right:16px;z-index:9999;padding:11px 20px;
+           border-radius:9px;font-size:13px;font-weight:600;
+           box-shadow:0 4px 20px rgba(0,0,0,.2);
+           opacity:0;transform:translateY(-6px);transition:all .22s;pointer-events:none;max-width:300px;}
+    #toast.show{opacity:1;transform:translateY(0);}
+    #toast.ok {background:#0d3b2e;color:#06d6a0;}
+    #toast.err{background:#3b0d18;color:#ef476f;}
+    #toast.inf{background:#1a2035;color:#fff;}
+
+    /* Layout */
+    .layout{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:start;}
+    @media(max-width:860px){.layout{grid-template-columns:1fr;}}
+
+    /* Subjects panel */
+    .sp{background:var(--surface);border-radius:var(--radius);
+        box-shadow:var(--shadow);padding:14px;position:sticky;top:14px;}
+    .sp-title{font-size:11px;font-weight:800;color:var(--muted);
+               text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+    .chip{display:flex;align-items:center;gap:8px;border-radius:8px;
+          padding:8px 10px;margin-bottom:6px;cursor:grab;
+          border:1.5px solid transparent;
+          transition:transform .12s,box-shadow .12s;user-select:none;font-size:12px;}
+    .chip:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12);}
+    .chip.dragging{opacity:.35;cursor:grabbing;}
+    .chip.full{opacity:.45;cursor:not-allowed;}
+    .chip.full:hover{transform:none;box-shadow:none;}
+    .chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+    .chip-name{font-weight:700;line-height:1.2;}
+    .chip-tch{font-size:10px;color:var(--muted);font-weight:400;}
+    /* Hours bar */
+    .chip-hrs{display:flex;align-items:center;gap:5px;margin-top:4px;}
+    .hrs-bar{height:4px;border-radius:2px;background:var(--border);flex:1;overflow:hidden;}
+    .hrs-fill{height:100%;border-radius:2px;transition:width .3s;}
+    .hrs-txt{font-size:9px;color:var(--muted);white-space:nowrap;}
+    .hrs-done .hrs-fill{background:#06d6a0;}
+    .hrs-over .hrs-fill{background:#ef476f;}
+    .hrs-partial .hrs-fill{background:#ffd166;}
+
+    .no-sub{text-align:center;color:var(--muted);font-size:12px;padding:16px 0;}
+
+    @media(max-width:860px){
+        .sp{position:static;}
+        .chips-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+        .chip{margin:0;min-width:130px;}
+    }
+
+    /* Grid card */
+    .gc{background:var(--surface);border-radius:var(--radius);
+        box-shadow:var(--shadow);overflow:hidden;}
+    .gs{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+    /* Schedule table */
+    .st{border-collapse:collapse;width:100%;min-width:560px;}
+    .st thead th{background:#1a237e;color:#fff;font-size:11px;font-weight:800;
+                  text-transform:uppercase;letter-spacing:.07em;
+                  height:40px;text-align:center;padding:0 8px;white-space:nowrap;}
+    .st thead th:first-child{background:#0d1545;text-align:left;
+                              padding-left:12px;width:var(--label-w);min-width:var(--label-w);}
+    /* Period label */
+    .pl{background:#f3f5fb;border-right:2px solid var(--border);
+        padding:0 10px;height:var(--cell-h);vertical-align:middle;white-space:nowrap;}
+    .pl .n{font-size:20px;font-weight:900;color:#d0d5ea;display:block;line-height:1;}
+    .pl .l{font-size:10px;color:var(--muted);margin-top:1px;}
+    /* Recreo */
+    .rl{background:#f8f9fc;border-right:2px solid var(--border);
+        height:30px;vertical-align:middle;padding:0 10px;}
+    .rl span{font-size:10px;font-weight:800;color:#c0c8e0;text-transform:uppercase;letter-spacing:.1em;}
+    .rc{background:#f8f9fc;border-bottom:1px solid var(--border);}
+    /* Cell */
+    .sc{border:1px solid var(--border);height:var(--cell-h);
+        vertical-align:top;padding:5px;position:relative;
+        transition:background .12s;min-width:120px;cursor:pointer;}
+    .sc:hover{background:#f0f3fd;}
+    .sc.over{background:#e8effe;outline:2px dashed var(--accent);}
+    .sc.occ{cursor:default;}
+    .sc.occ:hover{background:transparent;}
+    /* Class card */
+    .cc{height:100%;border-radius:7px;padding:5px 8px;
+        display:flex;flex-direction:column;justify-content:center;
+        border-left:3px solid transparent;position:relative;overflow:hidden;}
+    .cc .s{font-size:12px;font-weight:800;line-height:1.2;
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .cc .t{font-size:10px;margin-top:2px;opacity:.7;
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .cc .x{position:absolute;top:3px;right:3px;width:17px;height:17px;
+           border-radius:50%;border:none;cursor:pointer;font-size:10px;
+           display:flex;align-items:center;justify-content:center;
+           background:rgba(0,0,0,.12);color:#fff;opacity:0;transition:opacity .12s;}
+    .cc:hover .x{opacity:1;}
+    .cc .x:hover{background:var(--danger);}
+    /* Empty */
+    .eh{height:100%;display:flex;align-items:center;justify-content:center;
+        color:#d0d5ea;font-size:16px;border-radius:7px;
+        border:1.5px dashed transparent;transition:all .12s;}
+    .sc:hover .eh{border-color:#b8c0e0;color:#8898cc;}
+
+    /* Legend */
+    .leg{display:flex;gap:12px;flex-wrap:wrap;padding:10px 14px;
+         border-top:1px solid var(--border);font-size:11px;color:var(--muted);}
+    .leg-i{display:flex;align-items:center;gap:5px;}
+    .leg-d{width:9px;height:9px;border-radius:50%;}
+
+    /* Modals */
+    .mo{display:none;position:fixed;inset:0;background:rgba(10,15,40,.55);
+        z-index:8000;align-items:center;justify-content:center;}
+    .mo.on{display:flex;}
+    .mb{background:#fff;border-radius:14px;padding:26px;
+        max-width:380px;width:92%;box-shadow:0 10px 50px rgba(0,0,0,.2);}
+    .mb h3{font-size:1rem;font-weight:800;margin-bottom:8px;}
+    .mb p{color:var(--muted);font-size:13px;margin-bottom:18px;line-height:1.55;}
+    .ma{display:flex;gap:8px;justify-content:flex-end;}
+    .btn{padding:8px 18px;border:none;border-radius:7px;font-size:13px;
+         font-weight:700;cursor:pointer;transition:opacity .12s;}
+    .btn:hover{opacity:.85;}
+    .btn-g{background:#f0f2f9;color:var(--ink);}
+    .btn-d{background:var(--danger);color:#fff;}
+    .btn-p{background:var(--accent);color:#fff;}
+    .mb select{width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:8px;font-size:13px;margin-bottom:10px;outline:none;}
+    .mb select:focus{border-color:var(--accent);}
     </style>
 </head>
 <body>
-
 <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
-<div class="breadcrumb">
-    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
-    <a href="?action=schedules">Horarios</a> &rsaquo;
-    <?= htmlspecialchars($course['name']) ?>
-</div>
-
-<div class="container-wide">
-
-    <?php if(isset($_GET['success'])): ?>
-        <div class="alert alert-success">✓ Clase agregada al horario</div>
-    <?php endif; ?>
-    <?php if(isset($_GET['deleted'])): ?>
-        <div class="alert alert-success">✓ Clase eliminada del horario</div>
-    <?php endif; ?>
-    <?php if(isset($_GET['error'])): ?>
-        <div class="alert alert-danger">✗ <?= htmlspecialchars($_GET['error']) ?></div>
-    <?php endif; ?>
-
-    <!-- Header -->
-    <div class="page-header purple">
-        <div class="ph-icon">📅</div>
-        <div>
-            <h1>Horario — <?= htmlspecialchars($course['name']) ?></h1>
-            <p>Nivel: <?= htmlspecialchars($course['grade_level']) ?> &nbsp;·&nbsp;
-               Paralelo: <?= htmlspecialchars($course['parallel']) ?> &nbsp;·&nbsp;
-               Jornada: <?= ucfirst($course['shift_name']) ?>
-            </p>
-        </div>
-        <div class="ph-actions">
-            <a href="?action=schedules" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.5);">← Volver</a>
-        </div>
+<div class="wrap">
+    <div class="crumb">
+        <a href="?action=dashboard">🏠 Inicio</a> ›
+        <a href="?action=schedules">Horarios</a> ›
+        <?= htmlspecialchars($course['name']) ?>
     </div>
 
-    <div class="schedule-grid">
+    <div class="ph">
+        <span class="ph-ico">📅</span>
+        <div>
+            <h1>Horario — <?= htmlspecialchars($course['name']) ?></h1>
+            <p><?= htmlspecialchars($course['grade_level']) ?> · Paralelo <?= htmlspecialchars($course['parallel']) ?> · <?= ucfirst($course['shift_name']) ?> · <?= $maxHours ?> horas/día</p>
+        </div>
+        <a href="?action=schedules" class="back">← Volver</a>
+    </div>
 
-        <!-- Formulario agregar clase -->
-        <div class="panel">
-            <h3 style="margin-bottom:16px;font-size:1rem;">➕ Agregar Clase al Horario</h3>
-            <form method="POST" id="scheduleForm">
-                <div class="form-group">
-                    <label>Día de la Semana</label>
-                    <select name="day_of_week" id="day_of_week" class="form-control" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="lunes">Lunes</option>
-                        <option value="martes">Martes</option>
-                        <option value="miercoles">Miércoles</option>
-                        <option value="jueves">Jueves</option>
-                        <option value="viernes">Viernes</option>
-                        <option value="sabado">Sábado</option>
-                    </select>
-                </div>
+    <div class="layout">
 
-                <div class="form-group">
-                    <label>Número de Hora</label>
-                    <select name="period_number" id="period_number" class="form-control" required>
-                        <option value="">Seleccionar...</option>
-                        <?php
-                        $maxHours = strpos($course['grade_level'], 'Técnico') !== false ? 8 : 7;
-                        for($i = 1; $i <= $maxHours; $i++): ?>
-                            <option value="<?= $i ?>"><?= $i ?>ra hora</option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Asignatura</label>
-                    <select name="subject_id" id="subject_id" class="form-control" required>
-                        <option value="">Cargando asignaturas...</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Docente Asignado</label>
-                    <input type="text" id="teacher_name" class="form-control" readonly
-                           placeholder="Se asigna automáticamente" style="background:#f8f9fa;">
-                    <input type="hidden" name="teacher_id" id="teacher_id">
-                </div>
-
-                <div id="schedule-warning" style="display:none;" class="alert alert-warning"></div>
-
-                <button type="submit" id="submitBtn" class="btn btn-success" disabled
-                        style="opacity:0.6;cursor:not-allowed;">
-                    ➕ Agregar Clase
-                </button>
-            </form>
+        <!-- ── Subjects panel ────────────────────── -->
+        <div class="sp">
+            <div class="sp-title">📚 Materias del curso</div>
+            <div id="chipsList" class="chips-wrap"></div>
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);
+                        font-size:10px;color:var(--muted);line-height:1.7;">
+                <strong style="display:block;margin-bottom:3px;font-size:11px;">Cómo asignar</strong>
+                🖥 Arrastra la materia a una celda<br>
+                📱 Toca materia → toca la hora
+            </div>
         </div>
 
-        <!-- Tabla horario actual -->
-        <div>
-            <div class="table-wrap">
-                <div class="table-info">
-                    <span>📅 Horario Actual — <strong><?= count($schedule) ?></strong> clases</span>
-                </div>
-                <?php if(empty($schedule)): ?>
-                <div class="empty-state" style="padding:30px 20px;">
-                    <div class="icon">📅</div>
-                    <p>No hay clases en el horario aún.</p>
-                </div>
-                <?php else: ?>
-                <table>
+        <!-- ── Grid ──────────────────────────────── -->
+        <div class="gc">
+            <div class="gs">
+                <table class="st">
                     <thead>
                         <tr>
-                            <th>Día</th>
                             <th>Hora</th>
-                            <th>Asignatura</th>
-                            <th>Docente</th>
-                            <th></th>
+                            <?php foreach($workingDays as $day): ?>
+                            <th><?= $dayLabels[$day] ?? ucfirst($day) ?></th>
+                            <?php endforeach; ?>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach($schedule as $class): ?>
+                    <?php for($p = 1; $p <= $maxHours; $p++): ?>
+
+                        <?php if($p === $recreoAfter + 1): ?>
                         <tr>
-                            <td><?= ucfirst($class['day_of_week']) ?></td>
-                            <td><?= $class['period_number'] ?>ª hora</td>
-                            <td><?= htmlspecialchars($class['subject_name']) ?></td>
-                            <td style="color:#666;"><?= htmlspecialchars($class['teacher_name']) ?></td>
-                            <td>
-                                <button class="btn btn-danger btn-sm"
-                                    onclick="openModal('modalDel<?= $class['id'] ?>')">× Eliminar</button>
-                            </td>
+                            <td class="rl"><span>☕ Recreo</span></td>
+                            <?php foreach($workingDays as $day): ?>
+                            <td class="rc"></td>
+                            <?php endforeach; ?>
                         </tr>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
+
+                        <tr>
+                            <td class="pl">
+                                <span class="n"><?= $p ?></span>
+                                <span class="l"><?= $p ?>ª hora</span>
+                            </td>
+                            <?php foreach($workingDays as $day):
+                                $cls = $grid[$day][$p] ?? null; ?>
+                            <td class="sc <?= $cls ? 'occ' : '' ?>"
+                                data-day="<?= $day ?>"
+                                data-period="<?= $p ?>"
+                                <?= $cls ? 'data-sid="'.$cls['id'].'"' : '' ?>
+                                ondragover="dov(event)"
+                                ondragleave="dlv(event)"
+                                ondrop="drp(event)"
+                                onclick="cellClick(this)">
+                                <?php if($cls): ?>
+                                <div class="cc" data-subject-id="<?= $cls['subject_id'] ?>">
+                                    <button class="x" onclick="openDel(event,<?= $cls['id'] ?>,'<?= htmlspecialchars(addslashes($cls['subject_name'])) ?>','<?= $dayLabels[$day]?? ucfirst($day) ?>',<?= $p ?>)">×</button>
+                                    <span class="s"><?= htmlspecialchars($cls['subject_name']) ?></span>
+                                    <span class="t">👤 <?= htmlspecialchars($cls['teacher_name'] ?? 'Sin docente') ?></span>
+                                </div>
+                                <?php else: ?>
+                                <div class="eh">＋</div>
+                                <?php endif; ?>
+                            </td>
+                            <?php endforeach; ?>
+                        </tr>
+
+                    <?php endfor; ?>
                     </tbody>
                 </table>
-                <?php endif; ?>
             </div>
+            <div class="leg" id="leg"></div>
         </div>
-    </div>
 
+    </div>
 </div>
 
-<!-- Modales eliminar clase -->
-<?php foreach($schedule as $class): ?>
-<div class="modal-overlay" id="modalDel<?= $class['id'] ?>">
-    <div class="modal-box" style="max-width:400px;">
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Delete modal -->
+<div class="mo" id="moDel">
+    <div class="mb">
         <h3>🗑️ Eliminar Clase</h3>
-        <p style="margin:12px 0 20px;color:#555;">
-            ¿Eliminar <strong><?= htmlspecialchars($class['subject_name']) ?></strong>
-            (<?= ucfirst($class['day_of_week']) ?>, <?= $class['period_number'] ?>ª hora) del horario?
-        </p>
-        <div class="modal-actions">
-            <button class="btn btn-outline" onclick="closeModal('modalDel<?= $class['id'] ?>')">Cancelar</button>
-            <form method="POST" action="?action=delete_schedule_class" style="display:inline;">
-                <input type="hidden" name="schedule_id" value="<?= $class['id'] ?>">
+        <p id="delTxt"></p>
+        <div class="ma">
+            <button class="btn btn-g" onclick="closeMo('moDel')">Cancelar</button>
+            <form method="POST" action="?action=delete_schedule_class" style="display:inline;" id="delFrm">
+                <input type="hidden" name="schedule_id" id="delSid">
                 <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
-                <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
+                <button type="submit" class="btn btn-d">Eliminar</button>
             </form>
         </div>
     </div>
 </div>
-<?php endforeach; ?>
+
+<!-- Assign modal -->
+<div class="mo" id="moAsgn">
+    <div class="mb">
+        <h3>📚 Asignar Materia</h3>
+        <p id="asgnLbl" style="margin-bottom:10px;"></p>
+        <select id="asgnSel">
+            <option value="">Seleccionar materia...</option>
+        </select>
+        <div id="asgnTch" style="font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px;"></div>
+        <div class="ma">
+            <button class="btn btn-g" onclick="closeAsgn()">Cancelar</button>
+            <button class="btn btn-p" id="asgnOk" onclick="confirmAsgn()" disabled>Asignar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden save form -->
+<form method="POST" action="?action=manage_schedule&course_id=<?= $course['id'] ?>" id="saveFrm" style="display:none;">
+    <input type="hidden" name="subject_id"    id="sf_sub">
+    <input type="hidden" name="teacher_id"    id="sf_tch">
+    <input type="hidden" name="day_of_week"   id="sf_day">
+    <input type="hidden" name="period_number" id="sf_per">
+</form>
 
 <script>
-const courseId = <?= (int)$course['id'] ?>;
+const CID      = <?= (int)$course['id'] ?>;
+const DLABELS  = <?= json_encode(array_combine($workingDays, array_map(fn($d)=>$dayLabels[$d]??ucfirst($d), $workingDays))) ?>;
+const ASSIGNED = <?= json_encode($assignedCount) ?>;   // {subjectId: count}
 
-// Cargar asignaturas
-fetch('?action=get_course_subjects_schedule&course_id=' + courseId)
+// Rich subject color palette
+const PAL = [
+    {bg:'#e8f4fd',bd:'#5b9bd5',tx:'#0d4f8b'},
+    {bg:'#fef9e7',bd:'#f4c430',tx:'#7d5a00'},
+    {bg:'#eafaf1',bd:'#52be80',tx:'#1a5c36'},
+    {bg:'#fdedec',bd:'#e74c3c',tx:'#7b241c'},
+    {bg:'#f5eef8',bd:'#a569bd',tx:'#5b2c6f'},
+    {bg:'#eaf4fb',bd:'#48c9b0',tx:'#0e6655'},
+    {bg:'#fef5e7',bd:'#e59866',tx:'#7e5109'},
+    {bg:'#f4ecf7',bd:'#c39bd3',tx:'#6c3483'},
+    {bg:'#e8f6f3',bd:'#76d7c4',tx:'#148f77'},
+    {bg:'#fdfefe',bd:'#85929e',tx:'#2e4057'},
+    {bg:'#f9f3e3',bd:'#d4ac0d',tx:'#7d6608'},
+    {bg:'#ebf5fb',bd:'#3498db',tx:'#1a5276'},
+];
+const cmap = {};
+let subjects    = [];
+let dragSub     = null;
+let selSub      = null;   // mobile selected
+let asgnTarget  = null;
+
+fetch('?action=get_course_subjects_schedule&course_id=' + CID)
     .then(r => r.json())
     .then(data => {
-        const sel = document.getElementById('subject_id');
-        if (!data.length) {
-            sel.innerHTML = '<option value="">Sin asignaturas asignadas</option>';
-        } else {
-            sel.innerHTML = '<option value="">Seleccionar...</option>';
-            data.forEach(item => {
-                const o = document.createElement('option');
-                o.value = item.subject_id;
-                o.textContent = item.subject_name;
-                o.dataset.teacherId   = item.teacher_id;
-                o.dataset.teacherName = item.teacher_name;
-                sel.appendChild(o);
-            });
+        subjects = data;
+        subjects.forEach((s,i) => cmap[s.subject_id] = i % PAL.length);
+
+        const list = document.getElementById('chipsList');
+        list.innerHTML = '';
+        if (!subjects.length) {
+            list.innerHTML = '<div class="no-sub">Sin materias.<br>Ve a 📚 Asignaturas.</div>';
+            return;
         }
+
+        subjects.forEach(s => {
+            const sid  = String(s.subject_id);
+            const p    = PAL[cmap[sid]];
+            const hrs  = parseInt(s.hours_per_week) || 1;
+            const done = parseInt(ASSIGNED[sid]) || 0;
+            const pct  = Math.min(100, Math.round(done / hrs * 100));
+            const full = done >= hrs;
+            const barCls = full ? 'hrs-done' : (done > 0 ? 'hrs-partial' : '');
+
+            const chip = document.createElement('div');
+            chip.className = 'chip' + (full ? ' full' : '');
+            chip.draggable = !full;
+            chip.dataset.subjectId   = sid;
+            chip.dataset.teacherId   = s.teacher_id   || '';
+            chip.dataset.teacherName = s.teacher_name || 'Sin docente';
+            chip.dataset.hrsPerWeek  = hrs;
+            chip.style.background  = p.bg;
+            chip.style.borderColor = p.bd;
+            chip.style.color       = p.tx;
+            chip.innerHTML = `
+                <span class="dot" style="background:${p.bd}"></span>
+                <div style="flex:1;min-width:0;">
+                    <div class="chip-name">${s.subject_name}</div>
+                    <div class="chip-tch">${s.teacher_name || 'Sin docente'}</div>
+                    <div class="chip-hrs ${barCls}">
+                        <div class="hrs-bar"><div class="hrs-fill" style="width:${pct}%;background:${p.bd};"></div></div>
+                        <span class="hrs-txt">${done}/${hrs}h</span>
+                    </div>
+                </div>`;
+
+            chip.addEventListener('dragstart', e => {
+                if (chip.classList.contains('full')) { e.preventDefault(); return; }
+                dragSub = s;
+                chip.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+            chip.addEventListener('dragend', () => { chip.classList.remove('dragging'); dragSub = null; });
+
+            chip.addEventListener('click', () => {
+                if (chip.classList.contains('full')) {
+                    toast('⚠️ ' + s.subject_name + ' ya tiene todas sus horas asignadas.', 'err');
+                    return;
+                }
+                // Toggle selection
+                const already = selSub && selSub.subject_id == s.subject_id;
+                document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected-mobile'));
+                if (already) { selSub = null; return; }
+                selSub = s;
+                chip.classList.add('selected-mobile');
+                toast('Toca la hora para asignar: ' + s.subject_name, 'inf');
+            });
+
+            list.appendChild(chip);
+        });
+
+        colorCells();
+        buildLegend();
     });
 
-document.getElementById('subject_id').addEventListener('change', function() {
-    const opt = this.options[this.selectedIndex];
-    const tid  = opt.dataset.teacherId;
-    const tname = opt.dataset.teacherName;
-    document.getElementById('teacher_id').value   = tid || '';
-    document.getElementById('teacher_name').value = tname || '';
-    checkReady();
-});
-document.getElementById('day_of_week').addEventListener('change', () => { checkConflict(); checkReady(); });
-document.getElementById('period_number').addEventListener('change', () => { checkConflict(); checkReady(); });
-
-function checkReady() {
-    const ok = document.getElementById('day_of_week').value &&
-               document.getElementById('period_number').value &&
-               document.getElementById('subject_id').value &&
-               document.getElementById('teacher_id').value;
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = !ok;
-    btn.style.opacity = ok ? '1' : '0.6';
-    btn.style.cursor  = ok ? 'pointer' : 'not-allowed';
+function colorCells() {
+    document.querySelectorAll('.cc').forEach(card => {
+        const sid = card.dataset.subjectId;
+        if (cmap[sid] !== undefined) {
+            const p = PAL[cmap[sid]];
+            card.style.background  = p.bg;
+            card.style.borderLeftColor = p.bd;
+            card.style.color       = p.tx;
+        }
+    });
 }
 
-function checkConflict() {
-    const day    = document.getElementById('day_of_week').value;
-    const period = document.getElementById('period_number').value;
-    if (!day || !period) return;
-    fetch('?action=check_schedule_conflict&course_id=' + courseId + '&day=' + day + '&period=' + period)
-        .then(r => r.json())
-        .then(data => {
-            const w = document.getElementById('schedule-warning');
-            if (data.exists) {
-                w.textContent = '⚠️ Esta hora ya está ocupada: ' + data.subject_name + ' — ' + data.teacher_name + '. Elimínala primero.';
-                w.style.display = 'block';
-                document.getElementById('submitBtn').disabled = true;
-                document.getElementById('submitBtn').style.opacity = '0.6';
-                setTimeout(() => { w.style.display = 'none'; }, 4000);
-            } else {
-                w.style.display = 'none';
+function buildLegend() {
+    const leg = document.getElementById('leg');
+    subjects.forEach(s => {
+        const p = PAL[cmap[s.subject_id]];
+        const el = document.createElement('div');
+        el.className = 'leg-i';
+        el.innerHTML = `<span class="leg-d" style="background:${p.bd}"></span>${s.subject_name}`;
+        leg.appendChild(el);
+    });
+}
+
+// ── Drag & drop ───────────────────────────────────────────────────
+function dov(e) { e.preventDefault(); e.currentTarget.classList.add('over'); }
+function dlv(e) { e.currentTarget.classList.remove('over'); }
+function drp(e) {
+    e.preventDefault();
+    const cell = e.currentTarget;
+    cell.classList.remove('over');
+    if (!dragSub) return;
+    if (cell.dataset.sid) { toast('Esta hora ya está ocupada.','err'); return; }
+    saveClass(cell, dragSub);
+}
+
+// ── Cell click ────────────────────────────────────────────────────
+function cellClick(cell) {
+    if (cell.dataset.sid) return; // occupied
+    // If mobile subject pre-selected, assign directly
+    if (selSub) {
+        saveClass(cell, selSub);
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected-mobile'));
+        selSub = null;
+        return;
+    }
+    openAsgn(cell);
+}
+
+// ── Assign modal ──────────────────────────────────────────────────
+function openAsgn(cell) {
+    asgnTarget = cell;
+    const day = cell.dataset.day, per = cell.dataset.period;
+    document.getElementById('asgnLbl').textContent = (DLABELS[day]||day) + ', ' + per + 'ª hora';
+    const sel = document.getElementById('asgnSel');
+    sel.innerHTML = '<option value="">Seleccionar materia...</option>';
+    // Only show subjects that still have hours available
+    subjects.forEach(s => {
+        const sid  = String(s.subject_id);
+        const hrs  = parseInt(s.hours_per_week) || 1;
+        const done = parseInt(ASSIGNED[sid]) || 0;
+        if (done >= hrs) return; // skip full subjects
+        const o = document.createElement('option');
+        o.value = s.subject_id;
+        o.textContent = s.subject_name + (s.teacher_name && s.teacher_name !== 'Sin docente' ? ' — ' + s.teacher_name : '');
+        o.dataset.teacherId   = s.teacher_id   || '';
+        o.dataset.teacherName = s.teacher_name || '';
+        sel.appendChild(o);
+    });
+    if (sel.options.length === 1) {
+        toast('Todas las materias ya tienen sus horas completas.', 'inf');
+        return;
+    }
+    document.getElementById('asgnTch').textContent = '';
+    document.getElementById('asgnOk').disabled = true;
+    document.getElementById('moAsgn').classList.add('on');
+}
+function closeAsgn() {
+    document.getElementById('moAsgn').classList.remove('on');
+    asgnTarget = null; selSub = null;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected-mobile'));
+}
+document.getElementById('asgnSel').addEventListener('change', function(){
+    const o = this.options[this.selectedIndex];
+    document.getElementById('asgnTch').textContent = o.dataset.teacherName ? '👤 ' + o.dataset.teacherName : '';
+    document.getElementById('asgnOk').disabled = !this.value;
+});
+function confirmAsgn() {
+    const sel  = document.getElementById('asgnSel');
+    const o    = sel.options[sel.selectedIndex];
+    const cell = asgnTarget; // save before closeAsgn nullifies it
+    const s    = {
+        subject_id:   parseInt(sel.value),
+        teacher_id:   o.dataset.teacherId || '',
+        subject_name: o.textContent.split(' — ')[0],
+        teacher_name: o.dataset.teacherName || ''
+    };
+    closeAsgn();
+    saveClass(cell, s);
+}
+
+// ── Save ──────────────────────────────────────────────────────────
+function saveClass(cell, s) {
+    const sid  = String(s.subject_id);
+    const subj = subjects.find(x => String(x.subject_id) === sid) || {};
+    const hrs  = parseInt(subj.hours_per_week) || 1;
+    const done = parseInt(ASSIGNED[sid]) || 0;
+    if (done >= hrs) {
+        toast('⚠️ ' + s.subject_name + ' ya tiene todas sus horas asignadas (' + hrs + '/' + hrs + ').', 'err');
+        return;
+    }
+    // Update local counter immediately
+    ASSIGNED[sid] = done + 1;
+    // Mark chip full if reached limit
+    if (ASSIGNED[sid] >= hrs) {
+        document.querySelectorAll('.chip').forEach(c => {
+            if (String(c.dataset.subjectId) === sid) {
+                c.classList.add('full');
+                c.draggable = false;
             }
         });
+    }
+    document.getElementById('sf_sub').value = s.subject_id;
+    document.getElementById('sf_tch').value = s.teacher_id || '';
+    document.getElementById('sf_day').value = cell.dataset.day;
+    document.getElementById('sf_per').value = cell.dataset.period;
+    document.getElementById('saveFrm').submit();
 }
 
-function openModal(id)  { document.getElementById(id).classList.add('on'); }
-function closeModal(id) { document.getElementById(id).classList.remove('on'); }
-document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.addEventListener('click', e => { if(e.target === m) closeModal(m.id); });
-});
+// ── Delete modal ──────────────────────────────────────────────────
+function openDel(e, id, subj, day, per) {
+    e.stopPropagation();
+    document.getElementById('delSid').value  = id;
+    document.getElementById('delTxt').innerHTML = `¿Eliminar <strong>${subj}</strong> del ${day}, ${per}ª hora?`;
+    document.getElementById('moDel').classList.add('on');
+}
+
+// ── Generic modal close ───────────────────────────────────────────
+function closeMo(id) { document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.mo').forEach(m =>
+    m.addEventListener('click', e => { if(e.target===m){ closeMo(m.id); closeAsgn(); } })
+);
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'show ' + (type||'');
+    clearTimeout(t._t); t._t = setTimeout(() => t.className='', 3400);
+}
+(function(){
+    const p = new URLSearchParams(location.search);
+    if(p.get('success')) toast('✓ Clase agregada al horario','ok');
+    if(p.get('deleted')) toast('✓ Clase eliminada','ok');
+    if(p.get('error'))   toast('✗ ' + p.get('error'),'err');
+    if(p.get('success')||p.get('deleted')||p.get('error')) {
+        const u = new URL(location.href);
+        ['success','deleted','error'].forEach(k=>u.searchParams.delete(k));
+        history.replaceState(null,'',u);
+    }
+})();
 </script>
 </body>
 </html>

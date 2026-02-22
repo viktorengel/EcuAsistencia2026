@@ -46,7 +46,7 @@ class ScheduleController {
             $data = [
                 ':course_id' => $courseId,
                 ':subject_id' => (int)$_POST['subject_id'],
-                ':teacher_id' => (int)$_POST['teacher_id'],
+                ':teacher_id' => !empty($_POST['teacher_id']) ? (int)$_POST['teacher_id'] : null,
                 ':school_year_id' => $activeYear['id'],
                 ':day_of_week' => $_POST['day_of_week'],
                 ':period_number' => (int)$_POST['period_number']
@@ -100,18 +100,24 @@ class ScheduleController {
             exit;
         }
         
-        // Obtener asignaturas con sus docentes asignados al curso
-        $sql = "SELECT DISTINCT ta.subject_id, s.name as subject_name, 
-                ta.teacher_id, CONCAT(u.last_name, ' ', u.first_name) as teacher_name
-                FROM teacher_assignments ta
-                INNER JOIN subjects s ON ta.subject_id = s.id
-                INNER JOIN users u ON ta.teacher_id = u.id
-                WHERE ta.course_id = :course_id
+        // Obtener asignaturas del curso (con o sin docente asignado)
+        $sql = "SELECT DISTINCT
+                    s.id as subject_id,
+                    s.name as subject_name,
+                    ta.teacher_id,
+                    COALESCE(CONCAT(u.last_name, ' ', u.first_name), 'Sin docente') as teacher_name,
+                    COALESCE(cs.hours_per_week, 1) as hours_per_week
+                FROM course_subjects cs
+                INNER JOIN subjects s ON cs.subject_id = s.id
+                LEFT JOIN teacher_assignments ta ON ta.subject_id = s.id
+                    AND ta.course_id = :course_id AND ta.is_tutor = 0
+                LEFT JOIN users u ON u.id = ta.teacher_id
+                WHERE cs.course_id = :course_id2
                 ORDER BY s.name";
         
         $db = new Database();
         $stmt = $db->connect()->prepare($sql);
-        $stmt->execute([':course_id' => $courseId]);
+        $stmt->execute([':course_id' => $courseId, ':course_id2' => $courseId]);
         $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         header('Content-Type: application/json');

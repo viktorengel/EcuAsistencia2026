@@ -9,10 +9,10 @@ class ClassSchedule {
     public function create($data) {
         // Verificar si ya existe una clase en ese horario
         $checkSql = "SELECT s.name as subject_name, 
-                     CONCAT(u.last_name, ' ', u.first_name) as teacher_name
+                     COALESCE(CONCAT(u.last_name, ' ', u.first_name), 'Sin docente') as teacher_name
                      FROM class_schedule cs
                      INNER JOIN subjects s ON cs.subject_id = s.id
-                     INNER JOIN users u ON cs.teacher_id = u.id
+                     LEFT JOIN users u ON cs.teacher_id = u.id
                      WHERE cs.course_id = :course_id 
                      AND cs.day_of_week = :day_of_week 
                      AND cs.period_number = :period_number
@@ -51,10 +51,10 @@ class ClassSchedule {
     public function getByCourse($courseId, $schoolYearId) {
         $sql = "SELECT cs.*, 
                 s.name as subject_name,
-                CONCAT(u.last_name, ' ', u.first_name) as teacher_name
+                COALESCE(CONCAT(u.last_name, ' ', u.first_name), 'Sin docente') as teacher_name
                 FROM class_schedule cs
                 INNER JOIN subjects s ON cs.subject_id = s.id
-                INNER JOIN users u ON cs.teacher_id = u.id
+                LEFT JOIN users u ON cs.teacher_id = u.id
                 WHERE cs.course_id = :course_id 
                 AND cs.school_year_id = :school_year_id
                 ORDER BY cs.day_of_week, cs.period_number";
