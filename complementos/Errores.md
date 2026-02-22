@@ -30,3 +30,6 @@ en Configiración academica en la sección Cursos registrados mostrar el filtro 
 Asignaciones Docente — Materia y eliminar este modulo por que está de mas
 
 en Cursos Registrados muestrar el nombre del tutor o si no tiene, en el boton estudiantes de las acciones quiero que sea el que permita matricular estudiantes y eliminamos la página estudiantes matriculados y ahi se debe mostrar los estudiantes matriculados en ese curso.
+
+ALTER TABLE course_subjects
+ADD COLUMN hours_per_week INT NOT NULL DEFAULT 1;
