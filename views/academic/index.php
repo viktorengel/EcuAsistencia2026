@@ -568,7 +568,8 @@
                                     style="padding:5px 10px;font-size:12px;background:#6f42c1;color:white;">
                                 📚 Asignaturas
                             </button>
-                            <button onclick="location.href='?action=enroll_students&course_id=<?= $course['id'] ?>'"
+                            <button onclick="toggleStudentsRow(<?= $course['id'] ?>)"
+                                    id="btnEst_<?= $course['id'] ?>"
                                     style="padding:5px 10px;font-size:12px;background:#007bff;">
                                 👥 Estudiantes
                             </button>
@@ -583,6 +584,61 @@
                                     🗑️ Eliminar
                                 </button>
                             </form>
+                        </td>
+                    </tr>
+                    <!-- Fila expandible estudiantes -->
+                    <tr id="rowEst_<?= $course['id'] ?>" style="display:none;">
+                        <td colspan="5" style="padding:0;background:#f8fbff;border-bottom:2px solid #1565c0;">
+                            <div style="padding:16px 20px;">
+                                <!-- Cabecera del panel -->
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                    <span style="font-weight:700;font-size:14px;color:#1a237e;">
+                                        👥 <?= htmlspecialchars($course['name']) ?>
+                                        &nbsp;<span style="background:#e3f2fd;color:#1565c0;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:700;">
+                                            <?= count($enrollmentsByCourse[$course['id']] ?? []) ?> matriculados
+                                        </span>
+                                    </span>
+                                    <button onclick="openEnrollModal(<?= $course['id'] ?>, '<?= htmlspecialchars(addslashes($course['name']), ENT_QUOTES) ?>')"
+                                            style="padding:6px 14px;font-size:12px;background:#28a745;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;">
+                                        ➕ Matricular nuevo
+                                    </button>
+                                </div>
+                                <!-- Buscador -->
+                                <?php if(!empty($enrollmentsByCourse[$course['id']])): ?>
+                                <input type="text" placeholder="🔍 Buscar estudiante..." oninput="filterInlineEnrolled(this, <?= $course['id'] ?>)"
+                                    style="width:100%;max-width:320px;padding:7px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:10px;">
+                                <?php endif; ?>
+                                <!-- Tabla matriculados -->
+                                <?php if(!empty($enrollmentsByCourse[$course['id']])): ?>
+                                <table id="tblEst_<?= $course['id'] ?>" style="width:100%;border-collapse:collapse;font-size:13px;">
+                                    <thead>
+                                        <tr style="background:#e8eaf6;">
+                                            <th style="padding:7px 10px;text-align:left;width:36px;">#</th>
+                                            <th style="padding:7px 10px;text-align:left;">Apellidos y Nombres</th>
+                                            <th style="padding:7px 10px;text-align:left;">Cédula</th>
+                                            <th style="padding:7px 10px;text-align:center;width:90px;">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $ni=1; foreach($enrollmentsByCourse[$course['id']] as $est): ?>
+                                        <tr data-course="<?= $course['id'] ?>" data-name="<?= strtolower($est['last_name'].' '.$est['first_name']) ?>" style="border-bottom:1px solid #e8eaf6;">
+                                            <td style="padding:7px 10px;"><?= $ni++ ?></td>
+                                            <td style="padding:7px 10px;"><strong><?= htmlspecialchars($est['last_name'].' '.$est['first_name']) ?></strong></td>
+                                            <td style="padding:7px 10px;"><?= $est['dni'] ?? '-' ?></td>
+                                            <td style="padding:7px 10px;text-align:center;">
+                                                <button onclick="smConfirmUnenroll(<?= $est['id'] ?>, '<?= addslashes($est['last_name'].' '.$est['first_name']) ?>', <?= $course['id'] ?>)"
+                                                        style="padding:3px 9px;font-size:12px;background:#dc3545;color:#fff;border:none;border-radius:4px;cursor:pointer;">
+                                                    ✕ Retirar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                                <?php else: ?>
+                                <div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">📭 Ningún estudiante matriculado aún.</div>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -780,6 +836,162 @@ function closeRemoveModal() { document.getElementById('removeTutorModal').style.
 
 document.getElementById('tutorModal').addEventListener('click', function(e){ if(e.target===this) closeTutorModal(); });
 document.getElementById('removeTutorModal').addEventListener('click', function(e){ if(e.target===this) closeRemoveModal(); });
+</script>
+
+
+<!-- ══ Modal Matricular ══ -->
+<div id="enrollModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;width:90%;max-width:460px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+        <div style="padding:20px 24px 14px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+            <div>
+                <h3 style="margin:0;font-size:16px;color:#1a237e;">➕ Matricular Estudiantes</h3>
+                <p id="emCourseLabel" style="margin:4px 0 0;font-size:13px;color:#777;"></p>
+            </div>
+            <button onclick="closeEnrollModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#aaa;">✕</button>
+        </div>
+        <div style="padding:16px 24px;overflow-y:auto;flex:1;">
+            <form method="POST" action="?action=enroll_students" id="emForm">
+                <input type="hidden" name="course_id" id="emCourseId">
+                <input type="hidden" name="redirect_to" value="academic">
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+                    <input type="text" id="emSearch" placeholder="🔍 Buscar..." oninput="filterEmAvail()"
+                        style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
+                    <button type="button" onclick="emSelectAll()"
+                        style="padding:7px 13px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">
+                        Seleccionar todos
+                    </button>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <span id="emCounter" style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 10px;border-radius:10px;">0 seleccionados</span>
+                </div>
+                <div id="emList" style="max-height:260px;overflow-y:auto;padding-right:2px;"></div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                    <button type="button" onclick="closeEnrollModal()"
+                        style="padding:8px 18px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:6px;cursor:pointer;">Cancelar</button>
+                    <button type="submit" id="emSubmit" disabled
+                        style="padding:8px 18px;background:#28a745;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">
+                        ✓ Matricular seleccionados
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Modal Confirmar Retirar ══ -->
+<div id="smUnenrollModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;padding:28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+        <h3 style="margin:0 0 12px;color:#dc3545;">⚠️ Retirar Estudiante</h3>
+        <p id="smUnenrollMsg" style="color:#555;font-size:14px;margin-bottom:6px;"></p>
+        <p style="color:#999;font-size:12px;">Los registros de asistencia se conservarán.</p>
+        <form method="POST" action="?action=unenroll_student" id="smUnenrollForm">
+            <input type="hidden" name="student_id" id="smUnenrollStudentId">
+            <input type="hidden" name="course_id" id="smUnenrollCourseId">
+            <input type="hidden" name="redirect_to" value="academic">
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                <button type="button" onclick="closeSmUnenroll()"
+                    style="padding:8px 18px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:6px;cursor:pointer;">Cancelar</button>
+                <button type="submit"
+                    style="padding:8px 18px;background:#dc3545;color:#fff;border:none;border-radius:6px;cursor:pointer;">Sí, Retirar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+var smAvailableStudents = <?= json_encode(array_values($availableStudents)) ?>;
+
+function toggleStudentsRow(courseId) {
+    var row = document.getElementById('rowEst_' + courseId);
+    var btn = document.getElementById('btnEst_' + courseId);
+    if (!row) return;
+    var isOpen = row.style.display !== 'none';
+    document.querySelectorAll('[id^="rowEst_"]').forEach(function(r) { r.style.display = 'none'; });
+    document.querySelectorAll('[id^="btnEst_"]').forEach(function(b) { b.style.background = '#007bff'; });
+    if (!isOpen) {
+        row.style.display = '';
+        btn.style.background = '#0056b3';
+    }
+}
+
+function filterInlineEnrolled(input, courseId) {
+    var q = input.value.toLowerCase();
+    document.querySelectorAll('#tblEst_' + courseId + ' tbody tr').forEach(function(tr) {
+        tr.style.display = (tr.dataset.name || '').includes(q) ? '' : 'none';
+    });
+}
+
+function emToggleCheck(div) {
+    var cb = div.querySelector('input[type="checkbox"]');
+    if (cb) { cb.checked = !cb.checked; emUpdateCounter(); }
+}
+
+function openEnrollModal(courseId, courseName) {
+    document.getElementById('emCourseId').value = courseId;
+    document.getElementById('emCourseLabel').textContent = courseName;
+    document.getElementById('emSearch').value = '';
+    document.getElementById('emCounter').textContent = '0 seleccionados';
+    document.getElementById('emSubmit').disabled = true;
+
+    var html = '';
+    smAvailableStudents.forEach(function(s) {
+        var name = (s.last_name || '') + ' ' + (s.first_name || '');
+        var dni  = s.dni ? ' <span style="color:#aaa;font-size:11px;">· ' + s.dni + '</span>' : '';
+        html += '<div class="emItem" data-name="' + name.toLowerCase() + '" '
+            + 'style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;margin-bottom:5px;cursor:pointer;" '
+            + 'onclick="emToggleCheck(this)" >'
+            + '<input type="checkbox" name="student_ids[]" value="' + s.id + '" '
+            + 'onclick="event.stopPropagation();" onchange="emUpdateCounter()" '
+            + 'style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">'
+            + '<span style="font-size:13px;"><strong>' + name + '</strong>' + dni + '</span></div>';
+    });
+    if (!html) html = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px;">No hay estudiantes disponibles para matricular.</p>';
+    document.getElementById('emList').innerHTML = html;
+    document.getElementById('enrollModal').style.display = 'flex';
+}
+
+function closeEnrollModal() {
+    document.getElementById('enrollModal').style.display = 'none';
+}
+
+document.getElementById('enrollModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEnrollModal();
+});
+
+function filterEmAvail() {
+    var q = document.getElementById('emSearch').value.toLowerCase();
+    document.querySelectorAll('#emList .emItem').forEach(function(el) {
+        el.style.display = (el.dataset.name || '').includes(q) ? '' : 'none';
+    });
+}
+
+function emSelectAll() {
+    document.querySelectorAll('#emList .emItem').forEach(function(el) {
+        if (el.style.display !== 'none') el.querySelector('input[type="checkbox"]').checked = true;
+    });
+    emUpdateCounter();
+}
+
+function emUpdateCounter() {
+    var n = document.querySelectorAll('#emList input[type="checkbox"]:checked').length;
+    document.getElementById('emCounter').textContent = n + ' seleccionado' + (n !== 1 ? 's' : '');
+    document.getElementById('emSubmit').disabled = n === 0;
+}
+
+function smConfirmUnenroll(studentId, name, courseId) {
+    document.getElementById('smUnenrollStudentId').value = studentId;
+    document.getElementById('smUnenrollCourseId').value  = courseId;
+    document.getElementById('smUnenrollMsg').innerHTML   = '¿Retirar a <strong>' + name + '</strong> del curso?';
+    document.getElementById('smUnenrollModal').style.display = 'flex';
+}
+
+function closeSmUnenroll() {
+    document.getElementById('smUnenrollModal').style.display = 'none';
+}
+
+document.getElementById('smUnenrollModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSmUnenroll();
+});
 </script>
 
 </body>

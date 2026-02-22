@@ -42,6 +42,14 @@ class AcademicController {
         // Solo asignaciones de docente-materia (no tutores)
         $assignments = array_filter($assignments, fn($a) => !$a['is_tutor']);
 
+        // Datos para modal de estudiantes
+        $activeYear        = $this->schoolYearModel->getActive();
+        $availableStudents = $activeYear ? $this->userModel->getStudentsNotEnrolled($activeYear['id']) : [];
+        $enrollmentsByCourse = [];
+        foreach ($courses as $c) {
+            $enrollmentsByCourse[$c['id']] = $this->courseModel->getEnrolledStudents($c['id']);
+        }
+
         include BASE_PATH . '/views/academic/index.php';
     }
 
@@ -448,11 +456,12 @@ class AcademicController {
         $activeYear = $this->schoolYearModel->getActive();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $courseId = (int)$_POST['course_id'];
+            $courseId   = (int)$_POST['course_id'];
+            $redirectTo = $_POST['redirect_to'] ?? 'enroll_students';
             $studentIds = $_POST['student_ids'] ?? [];
-            
+
             $enrolled = 0;
-            $errors = 0;
+            $errors   = 0;
 
             foreach ($studentIds as $studentId) {
                 if ($this->courseModel->enrollStudent($courseId, (int)$studentId, $activeYear['id'])) {
@@ -462,7 +471,7 @@ class AcademicController {
                 }
             }
 
-            header('Location: ?action=enroll_students&course_id=' . $courseId . '&enrolled=' . $enrolled . '&errors=' . $errors);
+            header('Location: ?action=' . $redirectTo . '&course_id=' . $courseId . '&enrolled=' . $enrolled . '&errors=' . $errors);
             exit;
         }
 
@@ -486,29 +495,30 @@ class AcademicController {
 
     public function unenrollStudent() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $studentId = (int)$_POST['student_id'];
-            $courseId = (int)($_POST['course_id'] ?? 0);
+            $studentId  = (int)$_POST['student_id'];
+            $courseId   = (int)($_POST['course_id'] ?? 0);
+            $redirectTo = $_POST['redirect_to'] ?? 'enroll_students';
             $activeYear = $this->schoolYearModel->getActive();
 
+            $base = '?action=' . $redirectTo . '&course_id=' . $courseId;
+
             if (!$activeYear) {
-                header('Location: ?action=enroll_students&course_id=' . $courseId . '&error=no_active_year');
+                header('Location: ' . $base . '&error=no_active_year');
                 exit;
             }
 
-            // Verificar que el estudiante existe y está matriculado
             $course = $this->userModel->getStudentCourse($studentId, $activeYear['id']);
-            
+
             if (!$course) {
-                header('Location: ?action=enroll_students&course_id=' . $courseId . '&error=not_enrolled');
+                header('Location: ' . $base . '&error=not_enrolled');
                 exit;
             }
 
-            // Retirar estudiante
             if ($this->courseModel->unenrollStudent($studentId, $activeYear['id'])) {
-                header('Location: ?action=enroll_students&course_id=' . $courseId . '&unenrolled=1');
+                header('Location: ' . $base . '&unenrolled=1');
                 exit;
             } else {
-                header('Location: ?action=enroll_students&course_id=' . $courseId . '&error=unenroll_failed');
+                header('Location: ' . $base . '&error=unenroll_failed');
                 exit;
             }
         }
@@ -516,17 +526,21 @@ class AcademicController {
 
     public function viewCourseStudents() {
         $courseId = (int)($_GET['course_id'] ?? 0);
-        
+
         if (!$courseId) {
             header('Location: ?action=academic');
             exit;
         }
 
-        $course = $this->courseModel->getAll();
-        $course = array_filter($course, fn($c) => $c['id'] == $courseId);
-        $course = reset($course);
+        $course = $this->courseModel->findById($courseId);
+        if (!$course) {
+            header('Location: ?action=academic');
+            exit;
+        }
 
-        $students = $this->courseModel->getEnrolledStudents($courseId);
+        $activeYear        = $this->schoolYearModel->getActive();
+        $students          = $this->courseModel->getEnrolledStudents($courseId);
+        $availableStudents = $activeYear ? $this->userModel->getStudentsNotEnrolled($activeYear['id']) : [];
 
         include BASE_PATH . '/views/academic/course_students.php';
     }
