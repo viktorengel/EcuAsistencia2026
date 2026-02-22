@@ -102,20 +102,16 @@ class Course {
     }
 
     public function delete($id) {
-        // Eliminar relaciones primero
-        $sql = "DELETE FROM course_students WHERE course_id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $id]);
-
-        // Eliminar horarios
-        $sql = "DELETE FROM class_schedule WHERE course_id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $id]);
-
-        // Eliminar curso
-        $sql = "DELETE FROM courses WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':id' => $id]);
+        // 1. Desmatricular estudiantes
+        $this->db->prepare("DELETE FROM course_students WHERE course_id = :id")->execute([':id' => $id]);
+        // 2. Eliminar asignaciones docentes (incluye tutor)
+        $this->db->prepare("DELETE FROM teacher_assignments WHERE course_id = :id")->execute([':id' => $id]);
+        // 3. Eliminar horarios
+        $this->db->prepare("DELETE FROM class_schedule WHERE course_id = :id")->execute([':id' => $id]);
+        // 4. Eliminar asignaturas del curso
+        $this->db->prepare("DELETE FROM course_subjects WHERE course_id = :id")->execute([':id' => $id]);
+        // 5. Eliminar curso
+        return $this->db->prepare("DELETE FROM courses WHERE id = :id")->execute([':id' => $id]);
     }
 
     public function unenrollStudent($studentId, $schoolYearId) {
@@ -127,5 +123,20 @@ class Course {
             ':student_id' => $studentId,
             ':school_year_id' => $schoolYearId
         ]);
+    }
+
+    public function getAllWithTutor() {
+        $sql = "SELECT c.*, s.name as shift_name, sy.name as year_name,
+                       u.first_name as tutor_first, u.last_name as tutor_last
+                FROM courses c
+                INNER JOIN shifts s ON c.shift_id = s.id
+                INNER JOIN school_years sy ON c.school_year_id = sy.id
+                LEFT JOIN teacher_assignments ta ON (ta.course_id = c.id AND ta.is_tutor = 1 AND ta.school_year_id = c.school_year_id)
+                LEFT JOIN users u ON u.id = ta.teacher_id
+                WHERE c.institution_id = :institution_id
+                ORDER BY c.name";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':institution_id' => $_SESSION['institution_id']]);
+        return $stmt->fetchAll();
     }
 }

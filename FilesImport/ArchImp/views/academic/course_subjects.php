@@ -92,6 +92,7 @@
                     <th>#</th>
                     <th>Asignatura</th>
                     <th>Código</th>
+                    <th style="text-align:center;">Hrs/semana</th>
                     <th>Docente</th>
                     <th style="width:220px; text-align:center;">Acciones</th>
                 </tr>
@@ -102,6 +103,14 @@
                     <td><?= $i + 1 ?></td>
                     <td><strong><?= htmlspecialchars($sub['name']) ?></strong></td>
                     <td><?= htmlspecialchars($sub['code']) ?: '<span style="color:#bbb;">—</span>' ?></td>
+                    <td style="text-align:center;">
+                        <form method="POST" action="?action=set_subject_hours&course_id=<?= $course['id'] ?>" style="display:inline-flex;align-items:center;gap:4px;">
+                            <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
+                            <input type="number" name="hours_per_week" value="<?= (int)($sub['hours_per_week'] ?? 1) ?>"
+                                   min="1" max="20" style="width:52px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;">
+                            <button type="submit" style="padding:4px 8px;background:#007bff;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">✓</button>
+                        </form>
+                    </td>
                     <td>
                         <?php if (!empty($sub['teacher_name'])): ?>
                             <span class="teacher-ok">👤 <?= htmlspecialchars($sub['teacher_name']) ?></span>
@@ -112,7 +121,7 @@
                     <td style="text-align:center; white-space:nowrap;">
                         <button class="btn btn-assign"
                             onclick="abrirModal(<?= $sub['id'] ?>, '<?= htmlspecialchars(addslashes($sub['name'])) ?>', <?= $sub['assignment_id'] ?? 'null' ?>, <?= $sub['teacher_id'] ?? 'null' ?>)">
-                            <?= empty($sub['teacher_name']) ? '👤 Asignar' : '🔄 Cambiar' ?>
+                            <?= empty($sub['teacher_name']) ? '👤' : '🔄👤' ?>
                         </button>
 
                         <?php if (!empty($sub['teacher_name'])): ?>

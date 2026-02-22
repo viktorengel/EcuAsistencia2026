@@ -106,7 +106,7 @@ CREATE TABLE `class_schedule` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `course_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
-  `teacher_id` int(11) NOT NULL,
+  `teacher_id` int(11) DEFAULT NULL,
   `school_year_id` int(11) NOT NULL,
   `day_of_week` enum('lunes','martes','miercoles','jueves','viernes') NOT NULL,
   `start_time` time NOT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE `class_schedule` (
   CONSTRAINT `class_schedule_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`),
   CONSTRAINT `class_schedule_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`),
   CONSTRAINT `class_schedule_ibfk_4` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -131,6 +131,7 @@ CREATE TABLE `class_schedule` (
 
 LOCK TABLES `class_schedule` WRITE;
 /*!40000 ALTER TABLE `class_schedule` DISABLE KEYS */;
+INSERT INTO `class_schedule` VALUES (15,6,1,38,1,'lunes','00:00:00','00:00:00',2,'2026-02-22 01:09:31'),(16,6,3,NULL,1,'martes','00:00:00','00:00:00',2,'2026-02-22 01:09:35'),(17,6,2,NULL,1,'martes','00:00:00','00:00:00',1,'2026-02-22 01:13:11'),(18,6,3,NULL,1,'martes','00:00:00','00:00:00',3,'2026-02-22 01:13:13'),(19,6,3,NULL,1,'lunes','00:00:00','00:00:00',4,'2026-02-22 01:13:15'),(21,6,2,NULL,1,'lunes','00:00:00','00:00:00',1,'2026-02-22 04:18:39');
 /*!40000 ALTER TABLE `class_schedule` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -179,12 +180,13 @@ CREATE TABLE `course_subjects` (
   `course_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `hours_per_week` tinyint(3) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_course_subject` (`course_id`,`subject_id`),
-  KEY `cs_ibfk_2` (`subject_id`),
-  CONSTRAINT `cs_ibfk_1` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `cs_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  UNIQUE KEY `uq_course_subject` (`course_id`,`subject_id`),
+  KEY `fk_cs_subject` (`subject_id`),
+  CONSTRAINT `fk_cs_course` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cs_subject` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -193,7 +195,7 @@ CREATE TABLE `course_subjects` (
 
 LOCK TABLES `course_subjects` WRITE;
 /*!40000 ALTER TABLE `course_subjects` DISABLE KEYS */;
-INSERT INTO `course_subjects` VALUES (7,8,1,'2026-02-20 15:12:47'),(8,8,2,'2026-02-20 15:12:47'),(9,8,3,'2026-02-20 15:12:47');
+INSERT INTO `course_subjects` VALUES (12,6,1,'2026-02-21 19:05:09',1),(13,6,2,'2026-02-21 19:05:09',2),(14,6,3,'2026-02-21 19:05:09',3);
 /*!40000 ALTER TABLE `course_subjects` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -221,7 +223,7 @@ CREATE TABLE `courses` (
   CONSTRAINT `courses_ibfk_1` FOREIGN KEY (`institution_id`) REFERENCES `institutions` (`id`),
   CONSTRAINT `courses_ibfk_2` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`),
   CONSTRAINT `courses_ibfk_3` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -230,7 +232,7 @@ CREATE TABLE `courses` (
 
 LOCK TABLES `courses` WRITE;
 /*!40000 ALTER TABLE `courses` DISABLE KEYS */;
-INSERT INTO `courses` VALUES (8,1,1,'Inicial 1 (0-3 años) \"A\" - Matutina','Inicial 1 (0-3 años)','A',1,'2026-02-20 15:12:47','2026-02-20 15:12:47');
+INSERT INTO `courses` VALUES (6,1,1,'Inicial 1 (0-3 años) \"A\" - Matutina','Inicial 1 (0-3 años)','A',1,'2026-02-21 19:05:09','2026-02-21 19:05:09');
 /*!40000 ALTER TABLE `courses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -287,6 +289,7 @@ CREATE TABLE `institutions` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `working_days_list` varchar(100) DEFAULT '["lunes","martes","miercoles","jueves","viernes"]',
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -298,7 +301,7 @@ CREATE TABLE `institutions` (
 
 LOCK TABLES `institutions` WRITE;
 /*!40000 ALTER TABLE `institutions` DISABLE KEYS */;
-INSERT INTO `institutions` VALUES (1,'Unidad Educativa Pomasqui','UEP001','Av. Manuel Cordova Galarza 123, Quito, Ecuador','Pichincha','Quito','02-2351072','contacto@uep.edu.ec','MSc. Nombre Apellido','17h01988','https://www.uep.edu.ec','uploads/institution/logo_1771594918.jpg',1,'2026-02-11 23:56:53','2026-02-20 13:41:58');
+INSERT INTO `institutions` VALUES (1,'Unidad Educativa Pomasqui','UEP001','Av. Manuel Cordova Galarza 123, Quito, Ecuador','Pichincha','Quito','02-2351072','contacto@uep.edu.ec','MSc. Nombre Apellido','17h01988','https://www.uep.edu.ec','uploads/institution/logo_1771592885.jpg',1,'2026-02-11 23:56:53','2026-02-20 13:08:05','[\"lunes\",\"martes\",\"miercoles\",\"jueves\",\"viernes\"]');
 /*!40000 ALTER TABLE `institutions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -426,7 +429,7 @@ CREATE TABLE `representatives` (
   KEY `student_id` (`student_id`),
   CONSTRAINT `representatives_ibfk_1` FOREIGN KEY (`representative_id`) REFERENCES `users` (`id`),
   CONSTRAINT `representatives_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -435,6 +438,7 @@ CREATE TABLE `representatives` (
 
 LOCK TABLES `representatives` WRITE;
 /*!40000 ALTER TABLE `representatives` DISABLE KEYS */;
+INSERT INTO `representatives` VALUES (1,58,53,'Madre',0,'2026-02-21 17:49:12'),(4,60,53,'Tutor Legal',0,'2026-02-21 18:06:06');
 /*!40000 ALTER TABLE `representatives` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -494,7 +498,7 @@ CREATE TABLE `school_years` (
 
 LOCK TABLES `school_years` WRITE;
 /*!40000 ALTER TABLE `school_years` DISABLE KEYS */;
-INSERT INTO `school_years` VALUES (1,1,'2025-2026','2025-09-01','2026-07-30',1,'2026-02-20 13:42:21','2026-02-20 13:42:21');
+INSERT INTO `school_years` VALUES (1,1,'2025-2026','2025-09-01','2026-07-30',1,'2026-02-20 13:19:51','2026-02-20 13:19:51');
 /*!40000 ALTER TABLE `school_years` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -540,7 +544,7 @@ CREATE TABLE `subjects` (
   PRIMARY KEY (`id`),
   KEY `institution_id` (`institution_id`),
   CONSTRAINT `subjects_ibfk_1` FOREIGN KEY (`institution_id`) REFERENCES `institutions` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -549,7 +553,7 @@ CREATE TABLE `subjects` (
 
 LOCK TABLES `subjects` WRITE;
 /*!40000 ALTER TABLE `subjects` DISABLE KEYS */;
-INSERT INTO `subjects` VALUES (1,1,'Desarrollo Personal y Social','','2026-02-20 14:42:59','2026-02-20 14:42:59'),(2,1,'Expresión y Comunicación','','2026-02-20 14:42:59','2026-02-20 14:42:59'),(3,1,'Relación con el Entorno Natural y Cultural','','2026-02-20 14:42:59','2026-02-20 14:42:59');
+INSERT INTO `subjects` VALUES (1,1,'Desarrollo Personal y Social','DESA','2026-02-20 21:17:28','2026-02-20 21:17:28'),(2,1,'Expresión y Comunicación','EXPR','2026-02-20 21:22:21','2026-02-20 21:22:21'),(3,1,'Relación con el Entorno Natural y Cultural','RELA','2026-02-20 21:22:21','2026-02-20 21:22:21'),(4,1,'Manejo de Emociones','ME','2026-02-20 21:55:07','2026-02-20 21:55:07'),(5,1,'Inglés','Ing','2026-02-21 15:29:34','2026-02-21 15:29:34');
 /*!40000 ALTER TABLE `subjects` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -577,7 +581,7 @@ CREATE TABLE `teacher_assignments` (
   CONSTRAINT `teacher_assignments_ibfk_2` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`),
   CONSTRAINT `teacher_assignments_ibfk_3` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`),
   CONSTRAINT `teacher_assignments_ibfk_4` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -586,6 +590,7 @@ CREATE TABLE `teacher_assignments` (
 
 LOCK TABLES `teacher_assignments` WRITE;
 /*!40000 ALTER TABLE `teacher_assignments` DISABLE KEYS */;
+INSERT INTO `teacher_assignments` VALUES (9,38,6,1,1,0,'2026-02-22 00:27:01');
 /*!40000 ALTER TABLE `teacher_assignments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -606,7 +611,7 @@ CREATE TABLE `user_roles` (
   KEY `role_id` (`role_id`),
   CONSTRAINT `user_roles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_roles_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -615,7 +620,7 @@ CREATE TABLE `user_roles` (
 
 LOCK TABLES `user_roles` WRITE;
 /*!40000 ALTER TABLE `user_roles` DISABLE KEYS */;
-INSERT INTO `user_roles` VALUES (1,1,4,'2026-02-19 17:49:20'),(2,1,1,'2026-02-19 17:49:20'),(3,1,2,'2026-02-19 17:49:20'),(4,1,3,'2026-02-19 17:49:20'),(5,1,5,'2026-02-19 17:49:20'),(8,32,1,'2026-02-20 15:28:31');
+INSERT INTO `user_roles` VALUES (1,1,4,'2026-02-19 17:49:20'),(2,1,1,'2026-02-19 17:49:20'),(3,1,2,'2026-02-19 17:49:20'),(4,1,3,'2026-02-19 17:49:20'),(5,1,5,'2026-02-19 17:49:20'),(13,45,3,'2026-02-21 15:41:16'),(14,38,1,'2026-02-21 15:41:24'),(15,41,1,'2026-02-21 15:41:29'),(16,46,3,'2026-02-21 15:41:34'),(17,42,1,'2026-02-21 15:41:37'),(18,39,1,'2026-02-21 15:41:47'),(19,40,1,'2026-02-21 15:41:56'),(20,53,2,'2026-02-21 15:43:36'),(21,58,5,'2026-02-21 15:43:51'),(22,55,2,'2026-02-21 15:44:00'),(23,60,5,'2026-02-21 15:44:05'),(24,57,5,'2026-02-21 15:44:10'),(25,52,2,'2026-02-21 15:44:15'),(26,56,2,'2026-02-21 15:44:20'),(27,61,5,'2026-02-21 15:44:26'),(28,59,5,'2026-02-21 15:44:31'),(29,54,2,'2026-02-21 15:44:34');
 /*!40000 ALTER TABLE `user_roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -648,7 +653,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `dni` (`dni`),
   KEY `institution_id` (`institution_id`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`institution_id`) REFERENCES `institutions` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -657,7 +662,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,1,'admin','admin@uep.edu.ec','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','Administrador','Sistema','1700000000','0999999999',NULL,NULL,1,1,'2026-02-11 23:56:54','2026-02-19 17:49:20'),(32,1,'banad','kiritalu@mailinator.com','$2y$10$VfaVbxseIR836FgIPVtxjeHBaxwX8eH358/2MsXxZtbpnJi3jwZ6S','Noel','Henderson','At in voluptates mol','+1 (853) 583-6642',NULL,NULL,1,0,'2026-02-20 15:28:31','2026-02-20 15:28:31');
+INSERT INTO `users` VALUES (1,1,'admin','admin@uep.edu.ec','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','Administrador','Sistema','1700000000','0999999999',NULL,NULL,1,1,'2026-02-11 23:56:54','2026-02-19 17:49:20'),(38,1,'docente1','docente1@mail.com','password','María','Gómez','0101010102','0990000002',NULL,NULL,1,0,'2026-02-21 15:40:49','2026-02-21 15:40:49'),(39,1,'docente2','docente2@mail.com','password','Carlos','Ruiz','0101010103','0990000003',NULL,NULL,1,0,'2026-02-21 15:40:49','2026-02-21 15:40:49'),(40,1,'docente3','docente3@mail.com','password','Ana','Torres','0101010104','0990000004',NULL,NULL,1,0,'2026-02-21 15:40:49','2026-02-21 15:40:49'),(41,1,'docente4','docente4@mail.com','password','Luis','Herrera','0101010105','0990000005',NULL,NULL,1,0,'2026-02-21 15:40:49','2026-02-21 15:40:49'),(42,1,'docente5','docente5@mail.com','password','Sofía','Mendoza','0101010106','0990000006',NULL,NULL,1,0,'2026-02-21 15:40:49','2026-02-21 15:40:49'),(45,1,'inspector1','inspector1@mail.com','password','Diego','Castro','0101010109','0990000009',NULL,NULL,1,0,'2026-02-21 15:40:49','2026-02-21 15:40:49'),(46,1,'inspector2','inspector2@mail.com','password','Fernando','León','0101010110','0990000010',NULL,NULL,1,0,'2026-02-21 15:40:49','2026-02-21 15:40:49'),(52,1,'estudiante1','est1@mail.com','password','Kevin','Mendoza','0202020201','0981000001',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(53,1,'estudiante2','est2@mail.com','password','Luis','Cedeño','0202020202','0981000002',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(54,1,'estudiante3','est3@mail.com','password','Santiago','Vera','0202020203','0981000003',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(55,1,'estudiante4','est4@mail.com','password','Mateo','Chávez','0202020204','0981000004',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(56,1,'estudiante5','est5@mail.com','password','Daniel','Rojas','0202020205','0981000005',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(57,1,'representante1','rep1@mail.com','password','Carlos','Mendoza','0303030301','0982000001',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(58,1,'representante2','rep2@mail.com','password','Patricia','Cedeño','0303030302','0982000002',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(59,1,'representante3','rep3@mail.com','password','Jorge','Vera','0303030303','0982000003',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(60,1,'representante4','rep4@mail.com','password','Sandra','Chávez','0303030304','0982000004',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19'),(61,1,'representante5','rep5@mail.com','password','Luis','Rojas','0303030305','0982000005',NULL,NULL,1,0,'2026-02-21 15:43:19','2026-02-21 15:43:19');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -670,4 +675,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-20 10:44:53
+-- Dump completed on 2026-02-21 23:22:04

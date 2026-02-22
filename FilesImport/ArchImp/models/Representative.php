@@ -6,24 +6,104 @@ class Representative {
         $this->db = $database->connect();
     }
 
-    public function assignStudent($representativeId, $studentId, $relationship, $isPrimary = 0) {
-        $sql = "INSERT INTO representatives 
-                (representative_id, student_id, relationship, is_primary) 
-                VALUES 
-                (:rep_id, :stu_id, :rel_ins, :prim_ins)
-                ON DUPLICATE KEY UPDATE 
-                relationship = :rel_upd,
-                is_primary = :prim_upd";
+    /**
+     * Verifica si ya existe un representante con el mismo parentesco exclusivo (Padre/Madre)
+     * para el estudiante dado. Excluye al propio representante si es una actualización.
+     */
+    public function hasExclusiveRelationship($studentId, $relationship, $excludeRepId = null) {
+        $exclusivos = ['Padre', 'Madre'];
+        if (!in_array($relationship, $exclusivos)) return false;
+
+        $sql = "SELECT COUNT(*) FROM representatives
+                WHERE student_id = :student_id
+                  AND relationship = :relationship";
+
+        if ($excludeRepId) {
+            $sql .= " AND representative_id != :exclude_rep";
+        }
 
         $stmt = $this->db->prepare($sql);
+        $params = [':student_id' => $studentId, ':relationship' => $relationship];
+        if ($excludeRepId) $params[':exclude_rep'] = $excludeRepId;
 
-        return $stmt->execute([
-            ':rep_id'   => $representativeId,
-            ':stu_id'   => $studentId,
-            ':rel_ins'  => $relationship,
-            ':prim_ins' => $isPrimary,
-            ':rel_upd'  => $relationship,
-            ':prim_upd' => $isPrimary
+        $stmt->execute($params);
+        return $stmt->fetchColumn() > 0;
+    }
+
+    public function assignStudent($representativeId, $studentId, $relationship, $isPrimary = 0) {
+        // Verificar duplicado de parentesco exclusivo
+        // Se excluye al propio representante para permitir actualizar su propio parentesco
+        if ($this->hasExclusiveRelationship($studentId, $relationship, $representativeId)) {
+            return ['error' => "Este estudiante ya tiene un representante con parentesco \"{$relationship}\". Solo puede haber uno."];
+        }
+
+        // Verificar si ya existe la relación (para decidir INSERT o UPDATE)
+        $stmtCheck = $this->db->prepare(
+            "SELECT COUNT(*) FROM representatives
+             WHERE representative_id = :rep_id AND student_id = :stu_id"
+        );
+        $stmtCheck->execute([':rep_id' => $representativeId, ':stu_id' => $studentId]);
+        $exists = $stmtCheck->fetchColumn() > 0;
+
+        if ($exists) {
+            $sql = "UPDATE representatives SET relationship = :relationship, is_primary = :is_primary
+                    WHERE representative_id = :rep_id AND student_id = :stu_id";
+            $stmt = $this->db->prepare($sql);
+            $ok = $stmt->execute([
+                ':relationship' => $relationship,
+                ':is_primary'   => $isPrimary,
+                ':rep_id'       => $representativeId,
+                ':stu_id'       => $studentId
+            ]);
+        } else {
+            $sql = "INSERT INTO representatives (representative_id, student_id, relationship, is_primary)
+                    VALUES (:rep_id, :stu_id, :relationship, :is_primary)";
+            $stmt = $this->db->prepare($sql);
+            $ok = $stmt->execute([
+                ':rep_id'       => $representativeId,
+                ':stu_id'       => $studentId,
+                ':relationship' => $relationship,
+                ':is_primary'   => $isPrimary
+            ]);
+        }
+
+        return $ok ? true : ['error' => 'Error al guardar la relación.'];
+    }
+
+    /**
+     * Cambia el tipo (Principal <-> Secundario) de una relación específica.
+     * Si se marca como Principal, el otro representante del mismo estudiante pasa a Secundario.
+     */
+    public function togglePrimary($representativeId, $studentId) {
+        // Obtener estado actual
+        $stmt = $this->db->prepare(
+            "SELECT is_primary FROM representatives
+             WHERE representative_id = :rep_id AND student_id = :stu_id"
+        );
+        $stmt->execute([':rep_id' => $representativeId, ':stu_id' => $studentId]);
+        $current = $stmt->fetchColumn();
+
+        if ($current === false) return false;
+
+        $newValue = $current ? 0 : 1;
+
+        // Si se va a marcar como Principal, quitar Principal a los demás del mismo estudiante
+        if ($newValue == 1) {
+            $stmtReset = $this->db->prepare(
+                "UPDATE representatives SET is_primary = 0
+                 WHERE student_id = :stu_id AND representative_id != :rep_id"
+            );
+            $stmtReset->execute([':stu_id' => $studentId, ':rep_id' => $representativeId]);
+        }
+
+        $stmtUpdate = $this->db->prepare(
+            "UPDATE representatives SET is_primary = :val
+             WHERE representative_id = :rep_id AND student_id = :stu_id"
+        );
+        return $stmtUpdate->execute([
+            ':val'    => $newValue,
+            ':rep_id' => $representativeId,
+            ':stu_id' => $studentId
         ]);
     }
 

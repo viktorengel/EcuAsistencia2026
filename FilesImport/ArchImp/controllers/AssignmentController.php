@@ -79,9 +79,9 @@ class AssignmentController {
             $result = $this->assignmentModel->setTutor($courseId, $teacherId, $activeYear['id']);
             
             if ($result['success']) {
-                header('Location: ?action=tutor_management&tutor_success=1');
+                header('Location: ?action=academic&tutor_success=1');
             } else {
-                header('Location: ?action=tutor_management&tutor_error=' . urlencode($result['message']));
+                header('Location: ?action=academic&tutor_error=' . urlencode($result['message']));
             }
             exit;
         }
@@ -109,7 +109,7 @@ class AssignmentController {
                 ':school_year_id' => $activeYear['id']
             ]);
             
-            header('Location: ?action=tutor_management&tutor_removed=1');
+            header('Location: ?action=academic&tutor_removed=1');
             exit;
         }
     }

@@ -511,45 +511,75 @@
 
         </div>
 
+
         <!-- Lista de Cursos -->
         <div class="card">
-            <h2>Cursos Registrados</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 style="margin:0;">Cursos Registrados</h2>
+            </div>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>#</th>
                         <th>Nombre</th>
-                        <th>Nivel</th>
-                        <th>Paralelo</th>
                         <th>Jornada</th>
+                        <th>Tutor</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($courses as $course): ?>
+                    <?php $n=1; foreach($courses as $course): ?>
                     <tr>
-                        <td><?= $course['id'] ?></td>
-                        <td><?= htmlspecialchars($course['name']) ?></td>
-                        <td><?= htmlspecialchars($course['grade_level']) ?></td>
-                        <td><?= htmlspecialchars($course['parallel']) ?></td>
+                        <td><?= $n++ ?></td>
+                        <td><strong><?= htmlspecialchars($course['name']) ?></strong></td>
                         <td><?= ucfirst($course['shift_name']) ?></td>
-                        <td style="white-space: nowrap;">
-                            <button onclick="location.href='?action=course_subjects&course_id=<?= $course['id'] ?>'" 
-                                    style="padding: 5px 10px; font-size: 12px; background: #6f42c1; color:white;">
+                        <td style="white-space:nowrap;">
+                            <?php if(!empty($course['tutor_last'])): ?>
+                                <span style="color:#1565c0;font-size:13px;">
+                                    👤 <?= htmlspecialchars($course['tutor_last'].' '.$course['tutor_first']) ?>
+                                </span>
+                                <button class="btn-tutor-change"
+                                        data-course-id="<?= $course['id'] ?>"
+                                        data-course-name="<?= htmlspecialchars($course['name'], ENT_QUOTES) ?>"
+                                        data-has-tutor="1"
+                                        title="Cambiar tutor"
+                                        style="padding:2px 7px;font-size:14px;background:none;border:none;cursor:pointer;color:#f57c00;vertical-align:middle;">
+                                    🔄
+                                </button>
+                                <button class="btn-tutor-remove"
+                                        data-course-id="<?= $course['id'] ?>"
+                                        data-course-name="<?= htmlspecialchars($course['name'], ENT_QUOTES) ?>"
+                                        title="Quitar tutor"
+                                        style="padding:2px 7px;font-size:14px;background:none;border:none;cursor:pointer;color:#dc3545;vertical-align:middle;font-weight:bold;">
+                                    ✕
+                                </button>
+                            <?php else: ?>
+                                <button class="btn-tutor-assign"
+                                        data-course-id="<?= $course['id'] ?>"
+                                        data-course-name="<?= htmlspecialchars($course['name'], ENT_QUOTES) ?>"
+                                        data-has-tutor="0"
+                                        style="padding:3px 10px;font-size:12px;background:#17a2b8;color:white;border:none;border-radius:4px;cursor:pointer;">
+                                    👤 Asignar Tutor
+                                </button>
+                            <?php endif; ?>
+                        </td>
+                        <td style="white-space:nowrap;">
+                            <button onclick="location.href='?action=course_subjects&course_id=<?= $course['id'] ?>'"
+                                    style="padding:5px 10px;font-size:12px;background:#6f42c1;color:white;">
                                 📚 Asignaturas
                             </button>
-                            <button onclick="location.href='?action=view_course_students&course_id=<?= $course['id'] ?>'" 
-                                    style="padding: 5px 10px; font-size: 12px; background: #007bff;">
+                            <button onclick="location.href='?action=enroll_students&course_id=<?= $course['id'] ?>'"
+                                    style="padding:5px 10px;font-size:12px;background:#007bff;">
                                 👥 Estudiantes
                             </button>
-                            <button onclick="location.href='?action=edit_course&id=<?= $course['id'] ?>'" 
-                                    style="padding: 5px 10px; font-size: 12px; background: #ffc107; color: #000;">
+                            <button onclick="location.href='?action=edit_course&id=<?= $course['id'] ?>'"
+                                    style="padding:5px 10px;font-size:12px;background:#ffc107;color:#000;">
                                 ✏️ Editar
                             </button>
-                            <form method="POST" action="?action=delete_course" style="display: inline;" 
+                            <form method="POST" action="?action=delete_course" style="display:inline;"
                                   onsubmit="return confirmDeleteCourse(event, '<?= htmlspecialchars(addslashes($course['name'])) ?>')">
                                 <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
-                                <button type="submit" style="padding: 5px 10px; font-size: 12px; background: #dc3545;">
+                                <button type="submit" style="padding:5px 10px;font-size:12px;background:#dc3545;">
                                     🗑️ Eliminar
                                 </button>
                             </form>
@@ -558,11 +588,9 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <button onclick="location.href='?action=enroll_students'" class="btn-primary" style="margin-top: 15px;">
-                Matricular Estudiantes
-            </button>
         </div>
 
+    </div><!-- /container -->
     </div>
 
     <script>
@@ -575,7 +603,9 @@
         modalContent.innerHTML = `
             <h3 style="margin: 0 0 15px 0; color: #dc3545;">⚠️ Eliminar Curso</h3>
             <p style="margin: 0 0 20px 0; color: #666;">¿Está seguro de eliminar el curso <strong>${courseName}</strong>?</p>
-            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;"><strong>Nota:</strong> No se puede eliminar si tiene estudiantes o asignaciones docentes.</p>
+            <p style="margin: 0 0 20px 0; font-size: 13px; background:#fff3cd; color:#856404; padding:10px; border-radius:4px;">
+                ⚠️ Se desvinculará automáticamente a todos los estudiantes matriculados y docentes asignados.
+            </p>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" id="cancelCourseBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
                 <button type="button" id="confirmCourseBtn" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Sí, Eliminar</button>
@@ -637,5 +667,120 @@
         return false;
     }
 </script>
+
+<!-- ══ Modal Asignar/Cambiar Tutor ══ -->
+<div id="tutorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;padding:28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+        <h3 style="margin:0 0 6px;color:#1a237e;">👤 <span id="tutorModalTitle">Asignar Tutor</span></h3>
+        <p style="margin:0 0 16px;font-size:13px;color:#777;">Curso: <strong id="tutorModalCourse"></strong></p>
+        <div id="tutorLoadingMsg" style="color:#999;font-size:13px;margin-bottom:12px;display:none;">⏳ Cargando docentes...</div>
+        <div id="tutorNoTeachers" style="display:none;background:#fff3cd;color:#856404;padding:10px;border-radius:6px;font-size:13px;margin-bottom:12px;">
+            ⚠️ No hay docentes disponibles. Primero asigna docentes al curso en <strong>Asignaturas</strong>.
+        </div>
+        <form method="POST" action="?action=set_tutor" id="tutorForm">
+            <input type="hidden" name="course_id" id="tutorCourseId">
+            <div style="margin-bottom:16px;">
+                <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px;">Seleccionar Docente</label>
+                <select name="teacher_id" id="tutorTeacherSelect"
+                        style="width:100%;padding:9px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:13px;">
+                    <option value="">Seleccionar...</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" onclick="closeTutorModal()"
+                        style="padding:8px 18px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;">
+                    Cancelar
+                </button>
+                <button type="submit" id="tutorSubmitBtn" disabled
+                        style="padding:8px 18px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer;">
+                    ✓ Asignar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ══ Modal Quitar Tutor ══ -->
+<div id="removeTutorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;padding:28px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+        <h3 style="margin:0 0 12px;color:#dc3545;">✕ Quitar Tutor</h3>
+        <p style="font-size:14px;color:#555;margin-bottom:20px;">
+            ¿Quitar el tutor del curso <strong id="removeTutorCourseName"></strong>?
+        </p>
+        <form method="POST" action="?action=remove_tutor">
+            <input type="hidden" name="course_id" id="removeTutorCourseId">
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" onclick="closeRemoveModal()"
+                        style="padding:8px 18px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        style="padding:8px 18px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;">
+                    Sí, Quitar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ── Tutor: event delegation (evita problemas con comillas en nombres) ──
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-tutor-assign, .btn-tutor-change, .btn-tutor-remove');
+    if (!btn) return;
+    var courseId   = btn.dataset.courseId;
+    var courseName = btn.dataset.courseName;
+    if (btn.classList.contains('btn-tutor-remove')) {
+        openRemoveModal(courseId, courseName);
+    } else {
+        openTutorModal(courseId, courseName, btn.dataset.hasTutor === '1');
+    }
+});
+
+function openTutorModal(courseId, courseName, hasTutor) {
+    document.getElementById('tutorCourseId').value = courseId;
+    document.getElementById('tutorModalCourse').textContent = courseName;
+    document.getElementById('tutorModalTitle').textContent  = hasTutor ? 'Cambiar Tutor' : 'Asignar Tutor';
+    document.getElementById('tutorTeacherSelect').innerHTML = '<option value="">Seleccionar...</option>';
+    document.getElementById('tutorLoadingMsg').style.display = 'block';
+    document.getElementById('tutorNoTeachers').style.display = 'none';
+    document.getElementById('tutorSubmitBtn').disabled = true;
+    document.getElementById('tutorModal').style.display = 'flex';
+
+    fetch('?action=get_course_teachers&course_id=' + courseId)
+        .then(function(r){ return r.json(); })
+        .then(function(teachers) {
+            document.getElementById('tutorLoadingMsg').style.display = 'none';
+            if (!teachers || !teachers.length) {
+                document.getElementById('tutorNoTeachers').style.display = 'block';
+                return;
+            }
+            var sel = document.getElementById('tutorTeacherSelect');
+            teachers.forEach(function(t) {
+                var opt = document.createElement('option');
+                opt.value = t.teacher_id;
+                opt.textContent = t.teacher_name;
+                sel.appendChild(opt);
+            });
+            document.getElementById('tutorSubmitBtn').disabled = false;
+        })
+        .catch(function() {
+            document.getElementById('tutorLoadingMsg').textContent = '✗ Error al cargar docentes.';
+            document.getElementById('tutorLoadingMsg').style.color = '#dc3545';
+        });
+}
+function closeTutorModal() { document.getElementById('tutorModal').style.display = 'none'; }
+
+function openRemoveModal(courseId, courseName) {
+    document.getElementById('removeTutorCourseId').value = courseId;
+    document.getElementById('removeTutorCourseName').textContent = courseName;
+    document.getElementById('removeTutorModal').style.display = 'flex';
+}
+function closeRemoveModal() { document.getElementById('removeTutorModal').style.display = 'none'; }
+
+document.getElementById('tutorModal').addEventListener('click', function(e){ if(e.target===this) closeTutorModal(); });
+document.getElementById('removeTutorModal').addEventListener('click', function(e){ if(e.target===this) closeRemoveModal(); });
+</script>
+
 </body>
 </html>

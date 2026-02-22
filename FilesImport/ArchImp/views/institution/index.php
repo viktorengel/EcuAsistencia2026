@@ -224,6 +224,40 @@
 
                     <div id="shift-msg" style="font-size:12px;margin-top:10px;min-height:18px;"></div>
                 </div>
+                <!-- Días laborables -->
+                <div class="panel" style="margin-top:16px;">
+                    <h3 style="font-size:.95rem;color:#555;margin-bottom:6px;">📅 Días Laborables</h3>
+                    <p style="font-size:12px;color:#999;margin-bottom:14px;">Selecciona los días que aplican al horario de clases</p>
+                    <?php
+                    $savedDays = !empty($institution['working_days_list'])
+                        ? json_decode($institution['working_days_list'], true)
+                        : ['lunes','martes','miercoles','jueves','viernes'];
+                    $allDays = [
+                        'lunes'    => 'Lunes',
+                        'martes'   => 'Martes',
+                        'miercoles'=> 'Miércoles',
+                        'jueves'   => 'Jueves',
+                        'viernes'  => 'Viernes',
+                        'sabado'   => 'Sábado',
+                    ];
+                    ?>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <?php foreach($allDays as $key => $label):
+                            $isChecked  = in_array($key, $savedDays);
+                            $borderClr  = $isChecked ? '#1976d2' : '#ddd';
+                            $bgClr      = $isChecked ? '#e3f2fd' : '#fafafa';
+                        ?>
+                        <label style="display:flex;align-items:center;gap:7px;padding:7px 14px;border:1.5px solid <?= $borderClr ?>;border-radius:7px;background:<?= $bgClr ?>;cursor:pointer;font-size:13px;font-weight:600;color:#333;transition:all .15s;" class="day-label">
+                            <input type="checkbox" name="working_days[]" value="<?= $key ?>"
+                                   <?= $isChecked ? 'checked' : '' ?>
+                                   onchange="updateDayStyle(this)"
+                                   style="accent-color:#1976d2;width:15px;height:15px;">
+                            <?= $label ?>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -236,6 +270,18 @@
 </div>
 
 <script>
+
+function updateDayStyle(cb) {
+    const lbl = cb.closest('.day-label') || cb.parentElement;
+    if (cb.checked) {
+        lbl.style.borderColor = '#1976d2';
+        lbl.style.background  = '#e3f2fd';
+    } else {
+        lbl.style.borderColor = '#ddd';
+        lbl.style.background  = '#fafafa';
+    }
+}
+
 // ── Toggle jornada vía AJAX ──────────────────────────────────
 function toggleShift(shiftId, card) {
     card.classList.add('shift-saving');

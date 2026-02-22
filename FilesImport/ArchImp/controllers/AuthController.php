@@ -29,7 +29,7 @@ class AuthController {
             ];
 
             if ($this->userModel->create($data)) {
-                header('Location: ' . BASE_URL . '/public/index.php?action=login&registered=1');
+                header('Location: ' . BASE_URL . '/?action=login&registered=1');
                 exit;
             }
         }
@@ -58,7 +58,7 @@ class AuthController {
                 $_SESSION['roles']          = $this->userModel->getUserRoles($user['id']);
                 $_SESSION['is_superadmin']  = !empty($user['is_superadmin']);
 
-                header('Location: ' . BASE_URL . '/public/index.php?action=dashboard');
+                header('Location: ' . BASE_URL . '/?action=dashboard');
                 exit;
             } else {
                 $error = 'Credenciales incorrectas';
@@ -70,7 +70,7 @@ class AuthController {
 
     public function logout() {
         session_destroy();
-        header('Location: ' . BASE_URL . '/public/index.php?action=login');
+        header('Location: ' . BASE_URL . '/?action=login');
         exit;
     }
 
@@ -83,7 +83,7 @@ class AuthController {
                 $token = bin2hex(random_bytes(32));
                 $this->userModel->setResetToken($email, $token);
 
-                $resetLink = BASE_URL . "/public/index.php?action=reset&token={$token}";
+                $resetLink = BASE_URL . "/?action=reset&token={$token}";
                 $body = "Haga clic aquí para restablecer su contraseña: <a href='{$resetLink}'>{$resetLink}</a>";
                 
                 Mailer::send($email, 'Restablecer contraseña', $body);
@@ -103,7 +103,7 @@ class AuthController {
             
             if ($user && $_POST['password'] === $_POST['password_confirm']) {
                 $this->userModel->resetPassword($user['id'], $_POST['password']);
-                header('Location: ' . BASE_URL . '/public/index.php?action=login&reset=1');
+                header('Location: ' . BASE_URL . '/?action=login&reset=1');
                 exit;
             }
         }

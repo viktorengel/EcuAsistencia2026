@@ -1,6 +1,13 @@
 <?php
 
-require_once '../config/config.php';
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+if ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_NAME'] === '127.0.0.1') {
+    require_once __DIR__ . '/../config/config.php';  // local
+} else {
+    require_once '/home/ecuasysc/ecuasistencia/config/config.php';  // producción
+}
 
 $action = $_GET['action'] ?? 'login';
 
@@ -105,6 +112,12 @@ switch ($action) {
         require_once BASE_PATH . '/controllers/AcademicController.php';
         $acadCtrl = new AcademicController();
         $acadCtrl->viewCourseStudents();
+        break;
+
+    case 'set_subject_hours':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->setSubjectHours();
         break;
 
     case 'course_subjects':

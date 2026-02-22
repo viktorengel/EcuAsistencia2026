@@ -29,10 +29,18 @@ class AcademicController {
     }
 
     public function index() {
-        $courses = $this->courseModel->getAll();
-        $subjects = $this->subjectModel->getAll();
+        $courses     = $this->courseModel->getAllWithTutor();
+        $subjects    = $this->subjectModel->getAll();
         $schoolYears = $this->schoolYearModel->getAll();
-        $shifts = $this->shiftModel->getAll();
+        $shifts      = $this->shiftModel->getAll();
+        $teachers    = $this->userModel->getByRole('docente');
+
+        // Asignaciones docente-materia
+        require_once BASE_PATH . '/models/TeacherAssignment.php';
+        $assignmentModel = new TeacherAssignment($this->db);
+        $assignments     = $assignmentModel->getAll();
+        // Solo asignaciones de docente-materia (no tutores)
+        $assignments = array_filter($assignments, fn($a) => !$a['is_tutor']);
 
         include BASE_PATH . '/views/academic/index.php';
     }
@@ -240,7 +248,8 @@ class AcademicController {
             "SELECT s.id, s.name, s.code,
                     ta.id   AS assignment_id,
                     ta.teacher_id,
-                    CONCAT(u.last_name,' ',u.first_name) AS teacher_name
+                    CONCAT(u.last_name,' ',u.first_name) AS teacher_name,
+                    COALESCE(cs.hours_per_week, 1) AS hours_per_week
              FROM subjects s
              INNER JOIN course_subjects cs ON s.id = cs.subject_id AND cs.course_id = :cid
              LEFT JOIN teacher_assignments ta ON ta.subject_id = s.id
@@ -726,5 +735,21 @@ class AcademicController {
                 exit;
             }
         }
+    }
+
+    public function setSubjectHours() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ?action=academic'); exit;
+        }
+        $courseId  = (int)($_GET['course_id'] ?? $_POST['course_id'] ?? 0);
+        $subjectId = (int)$_POST['subject_id'];
+        $hours     = max(1, min(20, (int)$_POST['hours_per_week']));
+
+        $pdo = $this->db->connect();
+        $pdo->prepare("UPDATE course_subjects SET hours_per_week = :h WHERE course_id = :cid AND subject_id = :sid")
+            ->execute([':h' => $hours, ':cid' => $courseId, ':sid' => $subjectId]);
+
+        header('Location: ?action=course_subjects&course_id=' . $courseId . '&updated=1');
+        exit;
     }
 }

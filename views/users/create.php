@@ -24,7 +24,6 @@ if (!Security::hasRole('autoridad')) die('Acceso denegado');
         .field-hint { font-size: 11.5px; color: #888; margin-top: 3px; }
         .field-error { font-size: 12px; color: #dc3545; margin-top: 3px; display: none; }
         .field-error.show { display: block; }
-        #passport-row { display: none; }
         .doc-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .doc-toggle label { margin: 0; font-size: 13px; color: #555; cursor: pointer; user-select: none; }
     </style>
@@ -40,6 +39,19 @@ if (!Security::hasRole('autoridad')) die('Acceso denegado');
 </div>
 
 <div class="container mt-4">
+
+    <!-- Page header -->
+    <div style="background:linear-gradient(135deg,#1a237e,#3949ab);color:#fff;border-radius:10px;
+                padding:18px 24px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
+        <span style="font-size:28px;">👤</span>
+        <div>
+            <h1 style="font-size:1.2rem;font-weight:800;margin:0;line-height:1.2;">Crear Nuevo Usuario</h1>
+            <p style="font-size:12px;opacity:.8;margin:3px 0 0;">Completa los datos para registrar un nuevo usuario en el sistema</p>
+        </div>
+        <a href="?action=users" style="margin-left:auto;padding:7px 16px;background:rgba(255,255,255,.18);
+           color:#fff;text-decoration:none;border-radius:7px;font-size:12px;
+           border:1px solid rgba(255,255,255,.3);">← Volver</a>
+    </div>
 
     <?php if (!empty($errors)): ?>
         <div class="alert alert-danger">
@@ -112,14 +124,15 @@ if (!Security::hasRole('autoridad')) die('Acceso denegado');
                     <div class="doc-toggle">
                         <span style="font-size:13px;font-weight:600;color:#333;">Documento de Identidad</span>
                         <div class="form-check form-switch ms-3">
-                            <input class="form-check-input" type="checkbox" id="es_extranjero" onchange="toggleDoc()">
+                            <input class="form-check-input" type="checkbox" id="es_extranjero" onchange="toggleDoc()"
+                                   <?= !empty($_POST['es_extranjero']) ? 'checked' : '' ?>>
                             <label class="form-check-label" for="es_extranjero">Extranjero (Pasaporte)</label>
                         </div>
                     </div>
                 </div>
 
                 <!-- Cédula ecuatoriana -->
-                <div class="col-md-6" id="cedula-row">
+                <div class="col-md-6" id="cedula-row" style="display:<?= !empty($_POST['es_extranjero']) ? 'none' : 'block' ?>;">
                     <label class="form-label">Cédula de Identidad</label>
                     <div class="input-wrap">
                         <input type="text" name="dni" id="cedula" class="form-control"
@@ -132,8 +145,8 @@ if (!Security::hasRole('autoridad')) die('Acceso denegado');
                     <div class="field-error" id="err-cedula"></div>
                 </div>
 
-                <!-- Pasaporte (extranjero) — oculto por defecto -->
-                <div class="col-md-6" id="passport-row" style="display:none;">
+                <!-- Pasaporte (extranjero) -->
+                <div class="col-md-6" id="passport-row" style="display:<?= !empty($_POST['es_extranjero']) ? 'block' : 'none' ?>;">
                     <label class="form-label">Número de Pasaporte</label>
                     <input type="text" name="passport" id="passport" class="form-control"
                            value="<?= htmlspecialchars($_POST['passport'] ?? '') ?>"

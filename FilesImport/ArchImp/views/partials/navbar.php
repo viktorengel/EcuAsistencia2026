@@ -348,8 +348,6 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
                     <a href="?action=academic"     class="<?= $current_page==='academic'?'active':'' ?>">🏫 Configuración Académica</a>
                     <a href="?action=users"        class="<?= $current_page==='users'?'active':'' ?>">👥 Gestión de Usuarios</a>
                     <div class="ec-dropdown__divider"></div>
-                    <a href="?action=assignments"            class="<?= $current_page==='assignments'?'active':'' ?>">📚 Asignaciones Docente-Materia</a>
-                    <a href="?action=tutor_management"       class="<?= $current_page==='tutor_management'?'active':'' ?>">👨‍🏫 Asignación de Tutores</a>
                     <a href="?action=manage_representatives" class="<?= $current_page==='manage_representatives'?'active':'' ?>">👨‍👩‍👧‍👦 Representantes</a>
                     <div class="ec-dropdown__divider"></div>
                     <a href="?action=schedules" class="<?= $current_page==='schedules'?'active':'' ?>">📅 Horarios de Clases</a>
@@ -504,8 +502,6 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             <a href="?action=institution"            class="ec-acc__link <?= $current_page==='institution'?'active':'' ?>"><span class="ec-acc__link__icon">🏢</span> Configuración General</a>
             <a href="?action=academic"               class="ec-acc__link <?= $current_page==='academic'?'active':'' ?>"><span class="ec-acc__link__icon">🏫</span> Configuración Académica</a>
             <a href="?action=users"                  class="ec-acc__link <?= $current_page==='users'?'active':'' ?>"><span class="ec-acc__link__icon">👥</span> Gestión de Usuarios</a>
-            <a href="?action=assignments"            class="ec-acc__link <?= $current_page==='assignments'?'active':'' ?>"><span class="ec-acc__link__icon">📚</span> Asignaciones Docente-Materia</a>
-            <a href="?action=tutor_management"       class="ec-acc__link <?= $current_page==='tutor_management'?'active':'' ?>"><span class="ec-acc__link__icon">👨‍🏫</span> Asignación de Tutores</a>
             <a href="?action=manage_representatives" class="ec-acc__link <?= $current_page==='manage_representatives'?'active':'' ?>"><span class="ec-acc__link__icon">👨‍👩‍👧‍👦</span> Representantes</a>
             <a href="?action=schedules"              class="ec-acc__link <?= $current_page==='schedules'?'active':'' ?>"><span class="ec-acc__link__icon">📅</span> Horarios de Clases</a>
             <a href="?action=backups"                class="ec-acc__link <?= $current_page==='backups'?'active':'' ?>"><span class="ec-acc__link__icon">💾</span> Respaldos del Sistema</a>

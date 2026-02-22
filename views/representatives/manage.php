@@ -160,7 +160,9 @@
                     </div>
                     <div>
                         <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Curso</label>
-                        <input type="text" id="filterCourse" class="form-control" placeholder="Curso..." oninput="applyFilters()">
+                        <select id="filterCourse" class="form-control" onchange="applyFilters()">
+                            <option value="">Todos los cursos...</option>
+                        </select>
                     </div>
                 </div>
                 <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="clearFilters()">🗑️ Limpiar</button>
@@ -176,7 +178,7 @@
                     $hasRelations = true;
                 ?>
                 <div class="rep-block"
-                     data-repname="<?= strtolower($rep['last_name'] . ' ' . $rep['first_name']) ?>">
+                     data-repname="<?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>"><?php // norm() en JS maneja tildes ?>
                     <div class="rep-block-header">
                         <div>
                             <div class="rep-name">👤 <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?></div>
@@ -198,8 +200,8 @@
                             <tbody>
                                 <?php foreach($children as $child): ?>
                                 <tr class="student-row"
-                                    data-student="<?= strtolower($child['last_name'] . ' ' . $child['first_name']) ?>"
-                                    data-course="<?= strtolower($child['course_name'] ?? '') ?>">
+                                    data-student="<?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?>"
+                                    data-course="<?= htmlspecialchars($child['course_name'] ?? '') ?>">
                                     <td><strong><?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?></strong></td>
                                     <td><?= htmlspecialchars($child['relationship']) ?></td>
                                     <td>
@@ -344,45 +346,96 @@ function removeToast(t) {
 <?php if($toastMsg): ?>
 document.addEventListener('DOMContentLoaded', () => {
     showToast(<?= json_encode($toastMsg) ?>, <?= json_encode($toastType) ?>, true);
-    // Limpiar parámetros GET de la URL sin recargar
     if (window.location.search) {
         const url = window.location.pathname + '?action=manage_representatives';
         history.replaceState(null, '', url);
     }
 });
 <?php endif; ?>
+
 function openEdit(repId, stuId, repName, stuName, relationship, isPrimary) {
-    document.getElementById('editRepId').value       = repId;
-    document.getElementById('editStuId').value       = stuId;
-    document.getElementById('editRepName').textContent = repName;
-    document.getElementById('editStuName').textContent = stuName;
+    document.getElementById('editRepId').value        = repId;
+    document.getElementById('editStuId').value        = stuId;
+    document.getElementById('editRepName').textContent  = repName;
+    document.getElementById('editStuName').textContent  = stuName;
     const sel = document.getElementById('editRelationship');
     for (let o of sel.options) o.selected = (o.value === relationship);
     document.getElementById('editIsPrimary').checked = isPrimary == 1;
     document.getElementById('modalEdit').classList.add('on');
 }
+
+// ── Normaliza: minúsculas + sin tildes ────────────────────────────
+function norm(str) {
+    const map = {
+        'a':['á','à','ä','â','ã'],
+        'e':['é','è','ë','ê'],
+        'i':['í','ì','ï','î'],
+        'o':['ó','ò','ö','ô','õ'],
+        'u':['ú','ù','ü','û'],
+        'n':['ñ'], 'c':['ç']
+    };
+    let s = (str || '').toLowerCase();
+    for (const [rep, chars] of Object.entries(map)) {
+        for (const ch of chars) {
+            s = s.split(ch).join(rep);
+        }
+    }
+    return s;
+}
+
+// ── Filtros ───────────────────────────────────────────────────────
 function applyFilters() {
-    const rep    = document.getElementById('filterRep').value.toLowerCase();
-    const stu    = document.getElementById('filterStu').value.toLowerCase();
-    const course = document.getElementById('filterCourse').value.toLowerCase();
+    const rep    = norm(document.getElementById('filterRep').value);
+    const stu    = norm(document.getElementById('filterStu').value);
+    const course = document.getElementById('filterCourse').value;
     document.querySelectorAll('.rep-block').forEach(block => {
-        const repName = block.dataset.repname;
-        const rows = block.querySelectorAll('.student-row');
+        const repName = norm(block.dataset.repname);
+        const rows    = block.querySelectorAll('.student-row');
         let vis = false;
         rows.forEach(row => {
-            const ok = (!rep || repName.includes(rep)) &&
-                       (!stu || row.dataset.student.includes(stu)) &&
-                       (!course || row.dataset.course.includes(course));
+            const ok = (!rep    || repName.includes(rep)) &&
+                       (!stu    || norm(row.dataset.student).includes(stu)) &&
+                       (!course || row.dataset.coursenorm === course);
             row.style.display = ok ? '' : 'none';
-            if(ok) vis = true;
+            if (ok) vis = true;
         });
         block.style.display = vis ? '' : 'none';
     });
 }
+
+// ── Poblar select de cursos desde el DOM ──────────────────────────
+function populateCourseSelect() {
+    const seen = new Set();
+    const sel  = document.getElementById('filterCourse');
+    document.querySelectorAll('.student-row').forEach(row => {
+        const raw = (row.dataset.course || '').trim();
+        const nrm = norm(raw);
+        if (!raw || seen.has(nrm)) return;
+        seen.add(nrm);
+        row.dataset.coursenorm = nrm;
+        const o = document.createElement('option');
+        o.value       = nrm;
+        o.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
+        sel.appendChild(o);
+    });
+    document.querySelectorAll('.student-row').forEach(row => {
+        if (!row.dataset.coursenorm)
+            row.dataset.coursenorm = norm(row.dataset.course || '');
+    });
+    const opts = Array.from(sel.options).slice(1)
+        .sort((a, b) => a.text.localeCompare(b.text));
+    while (sel.options.length > 1) sel.remove(1);
+    opts.forEach(o => sel.appendChild(o));
+}
+document.addEventListener('DOMContentLoaded', populateCourseSelect);
+
 function clearFilters() {
-    ['filterRep','filterStu','filterCourse'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('filterRep').value   = '';
+    document.getElementById('filterStu').value   = '';
+    document.getElementById('filterCourse').selectedIndex = 0;
     applyFilters();
 }
+
 function confirmRemove(repId, stuId, repName, stuName) {
     document.getElementById('modalRemoveBody').innerHTML =
         '<p>¿Eliminar la relación entre:</p>' +
@@ -394,6 +447,7 @@ function confirmRemove(repId, stuId, repName, stuName) {
         '?action=remove_representative&rep_id=' + repId + '&student_id=' + stuId;
     document.getElementById('modalRemove').classList.add('on');
 }
+
 function confirmToggle(repId, stuId, repName, stuName, isPrimary) {
     const accion = isPrimary
         ? 'pasar a <strong>Secundario</strong>'
@@ -408,9 +462,10 @@ function confirmToggle(repId, stuId, repName, stuName, isPrimary) {
         '?action=toggle_primary_representative&rep_id=' + repId + '&student_id=' + stuId;
     document.getElementById('modalToggle').classList.add('on');
 }
+
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.addEventListener('click', e => { if(e.target === m) closeModal(m.id); });
+    m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
 });
 </script>
 </body>

@@ -9,7 +9,7 @@ if(isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - EcuAsist 2026</title>
+    <title>Iniciar Sesión - EcuAsistencia</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -45,7 +45,7 @@ if(isset($_SESSION['user_id'])) {
     <div class="login-card">
         <div class="login-logo">
             <div class="icon">🏫</div>
-            <h2>EcuAsist 2026</h2>
+            <h2>EcuAsistencia</h2>
             <p>Sistema de Asistencia Escolar</p>
         </div>
 
