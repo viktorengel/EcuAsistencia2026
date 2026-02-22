@@ -1,4 +1,5 @@
 <?php
+
 require_once BASE_PATH . '/config/config.php';
 require_once BASE_PATH . '/models/Institution.php';
 require_once BASE_PATH . '/models/InstitutionShift.php';
@@ -25,7 +26,7 @@ class InstitutionController {
         $institution      = $this->institutionModel->getById(1);
         $allShifts        = $this->shiftModel->getAll();
         $assignedShiftIds = $this->institutionShiftModel->getInstitutionShiftIds(1);
-
+        
         include BASE_PATH . '/views/institution/index.php';
     }
 

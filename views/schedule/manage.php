@@ -88,117 +88,204 @@ foreach($schedule as $cls) {
     #toast.err{background:#3b0d18;color:#ef476f;}
     #toast.inf{background:#1a2035;color:#fff;}
 
-    /* Layout */
-    .layout{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:start;}
-    @media(max-width:860px){.layout{grid-template-columns:1fr;}}
+    /* Layout - full width, no sidebar */
+    .layout { display:flex; flex-direction:column; gap:14px; }
 
-    /* Subjects panel */
-    .sp{background:var(--surface);border-radius:var(--radius);
-        box-shadow:var(--shadow);padding:14px;position:sticky;top:14px;}
-    .sp-title{font-size:11px;font-weight:800;color:var(--muted);
-               text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
-    .chip{display:flex;align-items:center;gap:8px;border-radius:8px;
-          padding:8px 10px;margin-bottom:6px;cursor:grab;
-          border:1.5px solid transparent;
-          transition:transform .12s,box-shadow .12s;user-select:none;font-size:12px;}
-    .chip:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12);}
-    .chip.dragging{opacity:.35;cursor:grabbing;}
-    .chip.full{opacity:.45;cursor:not-allowed;}
-    .chip.full:hover{transform:none;box-shadow:none;}
-    .chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-    .chip-name{font-weight:700;line-height:1.2;}
-    .chip-tch{font-size:10px;color:var(--muted);font-weight:400;}
-    /* Hours bar */
-    .chip-hrs{display:flex;align-items:center;gap:5px;margin-top:4px;}
-    .hrs-bar{height:4px;border-radius:2px;background:var(--border);flex:1;overflow:hidden;}
-    .hrs-fill{height:100%;border-radius:2px;transition:width .3s;}
-    .hrs-txt{font-size:9px;color:var(--muted);white-space:nowrap;}
-    .hrs-done .hrs-fill{background:#06d6a0;}
-    .hrs-over .hrs-fill{background:#ef476f;}
-    .hrs-partial .hrs-fill{background:#ffd166;}
-
-    .no-sub{text-align:center;color:var(--muted);font-size:12px;padding:16px 0;}
-
-    @media(max-width:860px){
-        .sp{position:static;}
-        .chips-wrap{display:flex;flex-wrap:wrap;gap:6px;}
-        .chip{margin:0;min-width:130px;}
+    /* ── Top subjects bar ───────────────────────────────── */
+    .sp {
+        background:var(--surface); border-radius:var(--radius);
+        box-shadow:var(--shadow); padding:14px 16px;
+    }
+    .sp-title {
+        font-size:11px; font-weight:800; color:var(--muted);
+        text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px;
+    }
+    .chips-wrap {
+        display:flex; flex-wrap:wrap; gap:8px;
+    }
+    .chip {
+        display:flex; align-items:center; gap:8px; border-radius:8px;
+        padding:8px 12px; cursor:grab; border:1.5px solid transparent;
+        transition:transform .12s, box-shadow .12s; user-select:none;
+        font-size:12px; flex-shrink:0;
+    }
+    .chip:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.14); }
+    .chip.dragging { opacity:.35; cursor:grabbing; }
+    .chip.full { opacity:.4; cursor:not-allowed; }
+    .chip.full:hover { transform:none; box-shadow:none; }
+    .chip.selected-mobile { outline:2px solid var(--accent); outline-offset:2px; }
+    .chip .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .chip-name { font-weight:700; line-height:1.2; }
+    .chip-tch { font-size:10px; color:var(--muted); font-weight:400; }
+    .chip-hrs { display:flex; align-items:center; gap:5px; margin-top:3px; }
+    .hrs-bar { height:4px; border-radius:2px; background:rgba(0,0,0,.1); width:60px; overflow:hidden; }
+    .hrs-fill { height:100%; border-radius:2px; transition:width .3s; }
+    .hrs-txt { font-size:9px; white-space:nowrap; opacity:.7; }
+    .hrs-done .hrs-fill { background:#06d6a0; }
+    .hrs-partial .hrs-fill { background:#ffd166; }
+    .no-sub { color:var(--muted); font-size:12px; padding:4px 0; }
+    .sp-hint {
+        font-size:11px; color:var(--muted); margin-top:10px;
+        padding-top:10px; border-top:1px solid var(--border);
     }
 
-    /* Grid card */
-    .gc{background:var(--surface);border-radius:var(--radius);
-        box-shadow:var(--shadow);overflow:hidden;}
-    .gs{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    /* ── Grid card ─────────────────────────────────────── */
+    .gc {
+        background:var(--surface); border-radius:var(--radius);
+        box-shadow:var(--shadow); overflow:hidden;
+    }
+
+    /* Scroll wrapper — only day columns scroll, hour column sticky */
+    .gs {
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+        position:relative;
+    }
 
     /* Schedule table */
-    .st{border-collapse:collapse;width:100%;min-width:560px;}
-    .st thead th{background:#1a237e;color:#fff;font-size:11px;font-weight:800;
-                  text-transform:uppercase;letter-spacing:.07em;
-                  height:40px;text-align:center;padding:0 8px;white-space:nowrap;}
-    .st thead th:first-child{background:#0d1545;text-align:left;
-                              padding-left:12px;width:var(--label-w);min-width:var(--label-w);}
-    /* Period label */
-    .pl{background:#f3f5fb;border-right:2px solid var(--border);
-        padding:0 10px;height:var(--cell-h);vertical-align:middle;white-space:nowrap;}
-    .pl .n{font-size:20px;font-weight:900;color:#d0d5ea;display:block;line-height:1;}
-    .pl .l{font-size:10px;color:var(--muted);margin-top:1px;}
+    .st {
+        border-collapse:collapse;
+        width:100%;
+        table-layout:fixed;
+    }
+
+    /* Sticky hour column */
+    .st thead th:first-child,
+    .st tbody td:first-child {
+        position:sticky;
+        left:0;
+        z-index:2;
+    }
+
+    /* Day column fixed width */
+    .st colgroup col.day-col { width:160px; }
+    .st colgroup col.hr-col  { width:80px; }
+
+    /* Header */
+    .st thead th {
+        background:#1a237e; color:#fff;
+        font-size:12px; font-weight:800;
+        text-transform:uppercase; letter-spacing:.06em;
+        height:46px; text-align:center; padding:0 10px;
+        border-right:1px solid rgba(255,255,255,.15);
+        white-space:nowrap;
+    }
+    .st thead th:first-child {
+        background:#0d1545; width:80px; min-width:80px;
+        border-right:3px solid rgba(255,255,255,.2);
+    }
+
+    /* Period label — sticky */
+    .pl {
+        background:#f0f2fa;
+        border-right:3px solid #c5cae9;
+        border-bottom:1px solid #dde1ee;
+        height:82px; vertical-align:middle;
+        text-align:center; padding:0;
+        width:80px; min-width:80px;
+    }
+    .pl .n {
+        font-size:26px; font-weight:900; color:#9fa8da;
+        display:block; line-height:1;
+    }
+    .pl .l {
+        font-size:10px; color:var(--muted); margin-top:2px;
+        font-weight:600; letter-spacing:.04em;
+    }
+
     /* Recreo */
-    .rl{background:#f8f9fc;border-right:2px solid var(--border);
-        height:30px;vertical-align:middle;padding:0 10px;}
-    .rl span{font-size:10px;font-weight:800;color:#c0c8e0;text-transform:uppercase;letter-spacing:.1em;}
-    .rc{background:#f8f9fc;border-bottom:1px solid var(--border);}
-    /* Cell */
-    .sc{border:1px solid var(--border);height:var(--cell-h);
-        vertical-align:top;padding:5px;position:relative;
-        transition:background .12s;min-width:120px;cursor:pointer;}
-    .sc:hover{background:#f0f3fd;}
-    .sc.over{background:#e8effe;outline:2px dashed var(--accent);}
-    .sc.occ{cursor:default;}
-    .sc.occ:hover{background:transparent;}
+    .rl {
+        background:#fafbfe; border-right:3px solid #c5cae9;
+        border-bottom:1px solid #dde1ee;
+        height:34px; vertical-align:middle; text-align:center;
+        position:sticky; left:0; z-index:2;
+    }
+    .rl span {
+        font-size:10px; font-weight:800; color:#b0bce8;
+        text-transform:uppercase; letter-spacing:.1em;
+    }
+    .rc {
+        background:#fafbfe;
+        border-right:1px solid #e8eaf6;
+        border-bottom:1px solid #dde1ee;
+        height:34px;
+    }
+
+    /* Schedule cells */
+    .sc {
+        border-right:1px solid #dde1ee;
+        border-bottom:1px solid #dde1ee;
+        height:82px; vertical-align:top;
+        padding:6px; position:relative;
+        transition:background .12s;
+        width:160px; min-width:160px;
+        cursor:pointer;
+    }
+    .sc:hover { background:#f0f3fd; }
+    .sc.over  { background:#e8effe; outline:2px dashed var(--accent); }
+    .sc.occ   { cursor:default; }
+    .sc.occ:hover { background:transparent; }
+
     /* Class card */
-    .cc{height:100%;border-radius:7px;padding:5px 8px;
-        display:flex;flex-direction:column;justify-content:center;
-        border-left:3px solid transparent;position:relative;overflow:hidden;}
-    .cc .s{font-size:12px;font-weight:800;line-height:1.2;
-           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .cc .t{font-size:10px;margin-top:2px;opacity:.7;
-           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .cc .x{position:absolute;top:3px;right:3px;width:17px;height:17px;
-           border-radius:50%;border:none;cursor:pointer;font-size:10px;
-           display:flex;align-items:center;justify-content:center;
-           background:rgba(0,0,0,.12);color:#fff;opacity:0;transition:opacity .12s;}
-    .cc:hover .x{opacity:1;}
-    .cc .x:hover{background:var(--danger);}
-    /* Empty */
-    .eh{height:100%;display:flex;align-items:center;justify-content:center;
-        color:#d0d5ea;font-size:16px;border-radius:7px;
-        border:1.5px dashed transparent;transition:all .12s;}
-    .sc:hover .eh{border-color:#b8c0e0;color:#8898cc;}
+    .cc {
+        height:100%; border-radius:8px; padding:6px 10px;
+        display:flex; flex-direction:column; justify-content:center;
+        border-left:4px solid transparent; position:relative; overflow:hidden;
+    }
+    .cc .s {
+        font-size:13px; font-weight:800; line-height:1.25;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .cc .t {
+        font-size:11px; margin-top:3px; opacity:.7;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .cc .x {
+        position:absolute; top:4px; right:4px;
+        width:18px; height:18px; border-radius:50%;
+        border:none; cursor:pointer; font-size:11px;
+        display:flex; align-items:center; justify-content:center;
+        background:rgba(0,0,0,.15); color:#fff;
+        opacity:0; transition:opacity .12s;
+    }
+    .cc:hover .x { opacity:1; }
+    .cc .x:hover { background:var(--danger); }
+
+    /* Empty hint */
+    .eh {
+        height:100%; display:flex; align-items:center; justify-content:center;
+        color:#d0d5ea; font-size:20px; border-radius:8px;
+        border:2px dashed transparent; transition:all .12s;
+    }
+    .sc:hover .eh { border-color:#c5cae9; color:#9fa8da; }
 
     /* Legend */
-    .leg{display:flex;gap:12px;flex-wrap:wrap;padding:10px 14px;
-         border-top:1px solid var(--border);font-size:11px;color:var(--muted);}
-    .leg-i{display:flex;align-items:center;gap:5px;}
-    .leg-d{width:9px;height:9px;border-radius:50%;}
+    .leg {
+        display:flex; gap:12px; flex-wrap:wrap;
+        padding:10px 16px; border-top:2px solid var(--border);
+        font-size:11px; color:var(--muted);
+    }
+    .leg-i { display:flex; align-items:center; gap:5px; }
+    .leg-d  { width:10px; height:10px; border-radius:50%; }
 
     /* Modals */
-    .mo{display:none;position:fixed;inset:0;background:rgba(10,15,40,.55);
-        z-index:8000;align-items:center;justify-content:center;}
-    .mo.on{display:flex;}
-    .mb{background:#fff;border-radius:14px;padding:26px;
-        max-width:380px;width:92%;box-shadow:0 10px 50px rgba(0,0,0,.2);}
-    .mb h3{font-size:1rem;font-weight:800;margin-bottom:8px;}
-    .mb p{color:var(--muted);font-size:13px;margin-bottom:18px;line-height:1.55;}
-    .ma{display:flex;gap:8px;justify-content:flex-end;}
-    .btn{padding:8px 18px;border:none;border-radius:7px;font-size:13px;
-         font-weight:700;cursor:pointer;transition:opacity .12s;}
-    .btn:hover{opacity:.85;}
-    .btn-g{background:#f0f2f9;color:var(--ink);}
-    .btn-d{background:var(--danger);color:#fff;}
-    .btn-p{background:var(--accent);color:#fff;}
-    .mb select{width:100%;padding:10px 12px;border:1.5px solid var(--border);
-               border-radius:8px;font-size:13px;margin-bottom:10px;outline:none;}
-    .mb select:focus{border-color:var(--accent);}
+    .mo { display:none; position:fixed; inset:0; background:rgba(10,15,40,.55);
+          z-index:8000; align-items:center; justify-content:center; }
+    .mo.on { display:flex; }
+    .mb { background:#fff; border-radius:14px; padding:26px;
+          max-width:380px; width:92%; box-shadow:0 10px 50px rgba(0,0,0,.2); }
+    .mb h3 { font-size:1rem; font-weight:800; margin-bottom:8px; }
+    .mb p  { color:var(--muted); font-size:13px; margin-bottom:18px; line-height:1.55; }
+    .ma    { display:flex; gap:8px; justify-content:flex-end; }
+    .btn   { padding:8px 18px; border:none; border-radius:7px; font-size:13px;
+             font-weight:700; cursor:pointer; transition:opacity .12s; }
+    .btn:hover { opacity:.85; }
+    .btn-g { background:#f0f2f9; color:var(--ink); }
+    .btn-d { background:var(--danger); color:#fff; }
+    .btn-p { background:var(--accent); color:#fff; }
+    .mb select { width:100%; padding:10px 12px; border:1.5px solid var(--border);
+                 border-radius:8px; font-size:13px; margin-bottom:10px; outline:none; }
+    .mb select:focus { border-color:var(--accent); }
     </style>
 </head>
 <body>
@@ -222,22 +309,28 @@ foreach($schedule as $cls) {
 
     <div class="layout">
 
-        <!-- ── Subjects panel ────────────────────── -->
+        <!-- ── Top subjects bar ──────────────────────── -->
         <div class="sp">
-            <div class="sp-title">📚 Materias del curso</div>
-            <div id="chipsList" class="chips-wrap"></div>
-            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);
-                        font-size:10px;color:var(--muted);line-height:1.7;">
-                <strong style="display:block;margin-bottom:3px;font-size:11px;">Cómo asignar</strong>
-                🖥 Arrastra la materia a una celda<br>
-                📱 Toca materia → toca la hora
+            <div class="sp-title">📚 Materias del curso — arrastra o toca para asignar</div>
+            <div id="chipsList" class="chips-wrap">
+                <span class="no-sub">Cargando...</span>
+            </div>
+            <div class="sp-hint">
+                🖥 <strong>Desktop:</strong> arrastra la materia a la celda &nbsp;·&nbsp;
+                📱 <strong>Móvil:</strong> toca la materia → toca la hora
             </div>
         </div>
 
-        <!-- ── Grid ──────────────────────────────── -->
+        <!-- ── Grid ──────────────────────────────────── -->
         <div class="gc">
             <div class="gs">
                 <table class="st">
+                    <colgroup>
+                        <col class="hr-col">
+                        <?php foreach($workingDays as $day): ?>
+                        <col class="day-col">
+                        <?php endforeach; ?>
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>Hora</th>
@@ -275,7 +368,7 @@ foreach($schedule as $cls) {
                                 onclick="cellClick(this)">
                                 <?php if($cls): ?>
                                 <div class="cc" data-subject-id="<?= $cls['subject_id'] ?>">
-                                    <button class="x" onclick="openDel(event,<?= $cls['id'] ?>,'<?= htmlspecialchars(addslashes($cls['subject_name'])) ?>','<?= $dayLabels[$day]?? ucfirst($day) ?>',<?= $p ?>)">×</button>
+                                    <button class="x" onclick="openDel(event,<?= $cls['id'] ?>,'<?= htmlspecialchars(addslashes($cls['subject_name'])) ?>','<?= $dayLabels[$day] ?? ucfirst($day) ?>',<?= $p ?>)">×</button>
                                     <span class="s"><?= htmlspecialchars($cls['subject_name']) ?></span>
                                     <span class="t">👤 <?= htmlspecialchars($cls['teacher_name'] ?? 'Sin docente') ?></span>
                                 </div>
