@@ -1,6 +1,10 @@
 <?php
 
-require_once '../config/config.php';
+if ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_NAME'] === '127.0.0.1') {
+    require_once __DIR__ . '/../config/config.php';  // local
+} else {
+    require_once '/home/ecuasysc/ecuasistencia/config/config.php';  // producción
+}
 
 $action = $_GET['action'] ?? 'login';
 
