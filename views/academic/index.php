@@ -204,7 +204,7 @@
                         </td>
                         <td style="white-space: nowrap;">
                             <button class="action-btn" style="background:#ffc107;color:#212529;"
-                                    onclick="location.href='?action=edit_school_year&id=<?= $year['id'] ?>'">
+                                    onclick="openEditSYModal(<?= $year['id'] ?>, '<?= htmlspecialchars(addslashes($year['name'])) ?>', '<?= $year['start_date'] ?>', '<?= $year['end_date'] ?>', <?= $year['is_active'] ? 'true' : 'false' ?>)">
                                 ✏️ Editar
                             </button>
 
@@ -301,7 +301,7 @@
                             👥 Estudiantes
                         </button>
                         <button class="action-btn" style="background:#ffc107;color:#000;"
-                                onclick="location.href='?action=edit_course&id=<?= $course['id'] ?>'">
+                                onclick="openEditCourseModal(<?= $course['id'] ?>, '<?= htmlspecialchars(addslashes($course['name'])) ?>', '<?= htmlspecialchars(addslashes($course['grade_level'])) ?>', '<?= $course['parallel'] ?>', <?= $course['shift_id'] ?>)">
                             ✏️ Editar
                         </button>
                         <form method="POST" action="?action=delete_course" style="display:inline;"
@@ -849,10 +849,11 @@ function toggleStudentsRow(courseId) {
     document.querySelectorAll('[id^="btnEst_"]').forEach(function(b){b.style.background='#007bff';});
     if (!isOpen){ row.style.display=''; btn.style.background='#0056b3'; }
 }
+function normalize(str){ return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function filterInlineEnrolled(input,courseId){
-    var q=input.value.toLowerCase();
+    var q=normalize(input.value);
     document.querySelectorAll('#tblEst_'+courseId+' tbody tr').forEach(function(tr){
-        tr.style.display=(tr.dataset.name||'').includes(q)?'':'none';
+        tr.style.display=normalize(tr.dataset.name||'').includes(q)?'':'none';
     });
 }
 
@@ -868,7 +869,7 @@ function openEnrollModal(courseId,courseName){
     smAvailableStudents.forEach(function(s){
         var name=(s.last_name||'')+' '+(s.first_name||'');
         var dni=s.dni?'<span style="color:#aaa;font-size:11px;">· '+s.dni+'</span>':'';
-        html+='<div class="emItem" data-name="'+name.toLowerCase()+'" '
+        html+='<div class="emItem" data-name="'+normalize(name)+'" '
             +'style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;margin-bottom:5px;cursor:pointer;" '
             +'onclick="emToggleCheck(this)">'
             +'<input type="checkbox" name="student_ids[]" value="'+s.id+'" '
@@ -882,8 +883,8 @@ function openEnrollModal(courseId,courseName){
 }
 function closeEnrollModal(){ document.getElementById('enrollModal').classList.remove('active'); }
 function filterEmAvail(){
-    var q=document.getElementById('emSearch').value.toLowerCase();
-    document.querySelectorAll('#emList .emItem').forEach(function(el){el.style.display=(el.dataset.name||'').includes(q)?'':'none';});
+    var q=normalize(document.getElementById('emSearch').value);
+    document.querySelectorAll('#emList .emItem').forEach(function(el){el.style.display=normalize(el.dataset.name||'').includes(q)?'':'none';});
 }
 function emSelectAll(){
     document.querySelectorAll('#emList .emItem').forEach(function(el){if(el.style.display!=='none')el.querySelector('input[type="checkbox"]').checked=true;});
@@ -911,6 +912,286 @@ document.addEventListener('keydown',function(e){
         closeSYModal(); closeCourseModal(); closeTutorModal();
         closeRemoveModal(); closeEnrollModal(); closeSmUnenroll();
     }
+});
+</script>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: EDITAR AÑO LECTIVO
+══════════════════════════════════════════════════════ -->
+<div id="modalEditSY" class="modal-overlay" onclick="if(event.target===this)closeEditSYModal()">
+    <div class="modal-box" style="max-width:540px;">
+        <div class="modal-header">
+            <div>
+                <h3>✏️ Editar Año Lectivo</h3>
+                <p id="editSYSubtitle"></p>
+            </div>
+            <button class="modal-close" onclick="closeEditSYModal()">✕</button>
+        </div>
+        <form method="POST" id="formEditSY">
+            <div class="modal-body">
+                <div class="mf-group">
+                    <label class="mf-label">Nombre del Año Lectivo *</label>
+                    <input type="text" name="name" id="editSYName" class="mf-input" required placeholder="Ej: 2025-2026">
+                    <small style="color:#aaa;font-size:11px;">Formato recomendado: AAAA-AAAA</small>
+                </div>
+                <div class="mf-row">
+                    <div>
+                        <label class="mf-label">Fecha de Inicio *</label>
+                        <input type="date" name="start_date" id="editSYStart" class="mf-input" required>
+                    </div>
+                    <div>
+                        <label class="mf-label">Fecha de Fin *</label>
+                        <input type="date" name="end_date" id="editSYEnd" class="mf-input" required>
+                    </div>
+                </div>
+                <div id="editSYActiveNote" style="display:none;background:#e8f5e9;color:#2e7d32;border-radius:7px;padding:10px 14px;font-size:13px;margin-top:4px;">
+                    ✅ Este es el <strong>año lectivo activo</strong> actualmente.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeEditSYModal()">Cancelar</button>
+                <button type="submit" class="btn-submit">💾 Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: EDITAR CURSO
+══════════════════════════════════════════════════════ -->
+<div id="modalEditCourse" class="modal-overlay" onclick="if(event.target===this)closeEditCourseModal()">
+    <div class="modal-box" style="max-width:580px;">
+        <div class="modal-header">
+            <div>
+                <h3>✏️ Editar Curso</h3>
+                <p id="editCourseSubtitle" style="color:#888;font-size:12px;"></p>
+            </div>
+            <button class="modal-close" onclick="closeEditCourseModal()">✕</button>
+        </div>
+        <form method="POST" id="formEditCourse">
+            <div class="modal-body">
+                <!-- Nivel + Grado -->
+                <div class="mf-row">
+                    <div>
+                        <label class="mf-label">Nivel Educativo *</label>
+                        <select name="education_type" id="editEduType" required onchange="editUpdateGradeLevels()" class="mf-input">
+                            <option value="">Seleccionar...</option>
+                            <option value="inicial">🧒 Educación Inicial</option>
+                            <option value="egb">📘 EGB</option>
+                            <option value="bgu">🎓 BGU</option>
+                            <option value="bt">🛠 Bachillerato Técnico</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mf-label">Grado / Año *</label>
+                        <select name="grade_level" id="editGradeLevel" required onchange="editOnGradeChange()" class="mf-input">
+                            <option value="">Seleccione nivel primero...</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- BT Especialidad -->
+                <div id="editGroupSpecialty" style="display:none;" class="mf-group">
+                    <label class="mf-label">Figura Profesional</label>
+                    <select name="specialty" id="editSpecialty" onchange="editUpdateCarreras()" class="mf-input">
+                        <option value="">Seleccionar figura...</option>
+                        <?php foreach(['Informática','Administración','Contabilidad','Comercialización y Ventas','Servicios Hoteleros','Turismo','Electromecánica Automotriz','Instalaciones Eléctricas','Electrónica de Consumo','Mecanizado y Construcciones Metálicas','Producción Agropecuaria','Acuicultura','Industrialización de Alimentos','Confección Textil','Música','Artes Plásticas','Diseño Gráfico','Servicios de Belleza','Atención Integral en Salud','Mecatrónica','Refrigeración y Climatización','Construcción','Redes y Telecomunicaciones','Seguridad Industrial','Logística y Transporte'] as $fig): ?>
+                            <option value="<?= $fig ?>"><?= $fig ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div id="editGroupCarrera" style="display:none;" class="mf-group">
+                    <label class="mf-label">Especialidad / Carrera <span style="color:#aaa;font-weight:400;">(opcional)</span></label>
+                    <select name="carrera" id="editCarrera" onchange="editGenerateName()" class="mf-input">
+                        <option value="">Sin especificar</option>
+                    </select>
+                </div>
+                <!-- Paralelo + Jornada -->
+                <div class="mf-row">
+                    <div>
+                        <label class="mf-label">Paralelo *</label>
+                        <select name="parallel" id="editParallel" required onchange="editGenerateName()" class="mf-input">
+                            <option value="">Seleccionar...</option>
+                            <?php foreach(range('A','J') as $l): ?>
+                                <option value="<?= $l ?>"><?= $l ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mf-label">Jornada *</label>
+                        <select name="shift_id" id="editShiftId" required onchange="editGenerateName()" class="mf-input">
+                            <option value="">Seleccionar...</option>
+                            <?php foreach($shifts as $shift): ?>
+                                <option value="<?= $shift['id'] ?>" data-shift="<?= $shift['name'] ?>"><?= ucfirst($shift['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <!-- Nombre generado -->
+                <div class="mf-group" style="margin-bottom:0;">
+                    <label class="mf-label">Nombre del Curso <span style="font-weight:400;color:#aaa;">← generado automáticamente</span></label>
+                    <div style="position:relative;">
+                        <input type="text" name="name" id="editCourseName" readonly class="mf-input"
+                               style="padding-left:34px;font-weight:600;color:#1a237e;background:#eef2ff;">
+                        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;">✏️</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeEditCourseModal()">Cancelar</button>
+                <button type="submit" class="btn-submit">💾 Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+/* ══ Editar Año Lectivo ══ */
+function openEditSYModal(id, name, startDate, endDate, isActive) {
+    document.getElementById('formEditSY').action = '?action=edit_school_year&id=' + id;
+    document.getElementById('editSYName').value  = name;
+    document.getElementById('editSYStart').value = startDate;
+    document.getElementById('editSYEnd').value   = endDate;
+    document.getElementById('editSYSubtitle').textContent = name;
+    document.getElementById('editSYActiveNote').style.display = isActive ? 'block' : 'none';
+    document.getElementById('modalEditSY').classList.add('active');
+}
+function closeEditSYModal() { document.getElementById('modalEditSY').classList.remove('active'); }
+document.getElementById('modalEditSY').addEventListener('click', function(e){ if(e.target===this) closeEditSYModal(); });
+
+/* ══ Editar Curso ══ */
+const editGradeLevels = {
+    inicial: ['Inicial 1 (0-3 años)','Inicial 2 (3-5 años)'],
+    egb: ['1.º EGB - Preparatoria','2.º EGB','3.º EGB','4.º EGB','5.º EGB','6.º EGB','7.º EGB','8.º EGB','9.º EGB','10.º EGB'],
+    bgu: ['1.º BGU','2.º BGU','3.º BGU'],
+    bt:  ['1.º BT','2.º BT','3.º BT']
+};
+const editEgbNocturna = ['8.º EGB','9.º EGB','10.º EGB'];
+const editCarrerasMap = {
+    'Informática': ['Aplicaciones Informáticas','Programación de Software','Soporte Técnico','Sistemas Microinformáticos y Redes'],
+    'Administración': ['Asistencia Administrativa','Gestión Empresarial'],
+    'Contabilidad': ['Contabilidad','Ventas e Información Comercial'],
+    'Comercialización y Ventas': ['Ventas e Información Comercial','Marketing'],
+    'Servicios Hoteleros': ['Hotelería','Hospitalidad'],
+    'Turismo': ['Turismo','Guía Turístico'],
+    'Electromecánica Automotriz': ['Electromecánica Automotriz','Mecánica Automotriz'],
+    'Instalaciones Eléctricas': ['Electricidad','Instalaciones Eléctricas'],
+    'Electrónica de Consumo': ['Electrónica','Mantenimiento Electrónico'],
+    'Atención Integral en Salud': ['Atención en Enfermería','Auxiliar de Salud'],
+    'Producción Agropecuaria': ['Producción Agropecuaria','Agroindustria'],
+    'Redes y Telecomunicaciones': ['Redes','Telecomunicaciones'],
+    'Diseño Gráfico': ['Diseño Gráfico','Multimedia'],
+    'Servicios de Belleza': ['Peluquería','Cosmetología']
+};
+
+function editDetectType(grade) {
+    if (!grade) return '';
+    if (grade.includes('Inicial')) return 'inicial';
+    if (grade.includes('EGB'))     return 'egb';
+    if (grade.includes('BGU'))     return 'bgu';
+    if (grade.includes('BT'))      return 'bt';
+    return '';
+}
+function editGetNocturna() {
+    var opts = document.getElementById('editShiftId').options;
+    for (var i=0;i<opts.length;i++) if ((opts[i].getAttribute('data-shift')||'').toLowerCase()==='nocturna') return opts[i];
+    return null;
+}
+function editUpdateNocturna(type, grade) {
+    var n = editGetNocturna(); if (!n) return;
+    var v = (type==='bgu'||type==='bt')||(type==='egb'&&editEgbNocturna.includes(grade));
+    n.style.display = v ? '' : 'none';
+    if (!v && n.selected) { document.getElementById('editShiftId').value=''; editGenerateName(); }
+}
+function editUpdateGradeLevels(preselect) {
+    var type = document.getElementById('editEduType').value;
+    var sel  = document.getElementById('editGradeLevel');
+    sel.innerHTML = '<option value="">Seleccionar grado...</option>';
+    if (!type) return;
+    (editGradeLevels[type]||[]).forEach(function(g){
+        var o=document.createElement('option'); o.value=o.textContent=g;
+        if (preselect && g===preselect) o.selected=true;
+        sel.appendChild(o);
+    });
+    var isBT = type==='bt';
+    document.getElementById('editGroupSpecialty').style.display = isBT?'block':'none';
+    document.getElementById('editGroupCarrera').style.display   = isBT?'block':'none';
+    document.getElementById('editSpecialty').required = isBT;
+    if (!isBT) { document.getElementById('editSpecialty').value=''; document.getElementById('editCarrera').innerHTML='<option value="">Sin especificar</option>'; }
+    editUpdateNocturna(type, sel.value);
+    editGenerateName();
+}
+function editOnGradeChange() {
+    editUpdateNocturna(document.getElementById('editEduType').value, document.getElementById('editGradeLevel').value);
+    editGenerateName();
+}
+function editUpdateCarreras(preselect) {
+    var fig = document.getElementById('editSpecialty').value;
+    var sel = document.getElementById('editCarrera');
+    sel.innerHTML = '<option value="">Sin especificar</option>';
+    (editCarrerasMap[fig]||[]).forEach(function(c){
+        var o=document.createElement('option'); o.value=o.textContent=c;
+        if (preselect && c===preselect) o.selected=true;
+        sel.appendChild(o);
+    });
+    editGenerateName();
+}
+function editGenerateName() {
+    var grade   = document.getElementById('editGradeLevel').value;
+    var parallel= document.getElementById('editParallel').value;
+    var shiftSel= document.getElementById('editShiftId');
+    var shiftOpt= shiftSel.options[shiftSel.selectedIndex];
+    var shiftName = shiftOpt ? (shiftOpt.getAttribute('data-shift')||'') : '';
+    var type    = document.getElementById('editEduType').value;
+    var spec    = document.getElementById('editSpecialty').value;
+    var car     = document.getElementById('editCarrera').value;
+    if (!grade||!parallel||!shiftName) { document.getElementById('editCourseName').value=''; return; }
+    var name = grade + ' "' + parallel + '"';
+    if (type==='bt'&&spec) { name += ' - '+spec; if(car) name += ' ('+car+')'; }
+    name += ' - '+shiftName.charAt(0).toUpperCase()+shiftName.slice(1);
+    document.getElementById('editCourseName').value = name;
+}
+
+function openEditCourseModal(id, courseName, gradeLevel, parallel, shiftId) {
+    document.getElementById('formEditCourse').action = '?action=edit_course&id=' + id;
+    document.getElementById('editCourseSubtitle').textContent = courseName;
+
+    // Detectar tipo y cargar grados
+    var type = editDetectType(gradeLevel);
+    document.getElementById('editEduType').value = type;
+    editUpdateGradeLevels(gradeLevel);
+
+    // Preseleccionar paralelo
+    document.getElementById('editParallel').value = parallel;
+
+    // Preseleccionar jornada
+    var shiftSel = document.getElementById('editShiftId');
+    for (var i=0;i<shiftSel.options.length;i++) {
+        if (parseInt(shiftSel.options[i].value) === shiftId) { shiftSel.selectedIndex=i; break; }
+    }
+
+    // Si es BT, parsear figura y carrera del nombre
+    if (type==='bt') {
+        var match = courseName.match(/- ([^(]+?)(?:\s*\(([^)]+)\))?\s*-\s*\w+$/);
+        if (match) {
+            var fig = match[1].trim(), car = match[2] ? match[2].trim() : '';
+            document.getElementById('editSpecialty').value = fig;
+            editUpdateCarreras(car);
+        }
+    }
+
+    editUpdateNocturna(type, gradeLevel);
+    editGenerateName();
+    document.getElementById('modalEditCourse').classList.add('active');
+}
+function closeEditCourseModal() { document.getElementById('modalEditCourse').classList.remove('active'); }
+document.getElementById('modalEditCourse').addEventListener('click', function(e){ if(e.target===this) closeEditCourseModal(); });
+
+/* Agregar ESC para nuevos modales */
+document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ closeEditSYModal(); closeEditCourseModal(); }
 });
 </script>
 
