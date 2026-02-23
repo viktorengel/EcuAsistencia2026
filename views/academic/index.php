@@ -1489,6 +1489,12 @@ function openRepModal(studentId, studentName, courseId) {
     if (typeof smRepsByStudent !== 'undefined' && smRepsByStudent) {
         reps = smRepsByStudent[String(studentId)] || [];
     }
+
+    // Auto-marcar Principal si no tiene representantes, Secundario si ya tiene
+    var chk = document.getElementById('repIsPrimary');
+    if (chk) {
+        chk.checked = (reps.length === 0);
+    }
     
     var html = '';
     if (reps.length === 0) {
@@ -1599,7 +1605,7 @@ document.addEventListener('keydown', function(e) {
                     </div>
                     <div style="margin-bottom:14px;">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal;font-size:13px;">
-                            <input type="checkbox" name="is_primary" value="1"
+                            <input type="checkbox" name="is_primary" id="repIsPrimary" value="1"
                                    style="width:16px;height:16px;accent-color:#17a2b8;">
                             <span>
                                 <strong>Representante Principal</strong>
