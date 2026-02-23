@@ -351,7 +351,8 @@
                                         <td style="padding:7px 10px;"><strong><?= htmlspecialchars($est['last_name'].' '.$est['first_name']) ?></strong></td>
                                         <td style="padding:7px 10px;"><?= $est['dni'] ?? '-' ?></td>
                                         <td style="padding:7px 10px;text-align:center;">
-                                            <button onclick="openRepModal(<?= $est['id'] ?>, this.dataset.name, <?= $course['id'] ?>)" data-name="<?= htmlspecialchars($est['last_name'].' '.$est['first_name'], ENT_QUOTES) ?>"
+                                            <td style="padding:7px 10px;text-align:center;">
+                                            <button onclick="openRepModal(<?= $est['id'] ?>, '<?= htmlspecialchars($est['last_name'].' '.$est['first_name'], ENT_QUOTES) ?>', <?= $course['id'] ?>)"
                                                     style="padding:3px 9px;font-size:12px;background:#17a2b8;color:#fff;border:none;border-radius:4px;cursor:pointer;margin:0;">
                                                 👨‍👩‍👦 Representantes
                                             </button>
@@ -1462,28 +1463,117 @@ document.addEventListener('keydown', function(e){
 
 
 <!-- ══════════════════════════════════════════════════════
-     MODAL: REPRESENTANTES DEL ESTUDIANTE
+     MODAL: REPRESENTANTES DEL ESTUDIANTE (con script ANTES)
 ══════════════════════════════════════════════════════ -->
-<div id="modalRep" class="modal-overlay" onclick="if(event.target===this)closeRepModal()">
+
+<!-- Script de la función openRepModal (DEFINIDO PRIMERO) -->
+<script>
+function openRepModal(studentId, studentName, courseId) {
+    console.log('openRepModal called', studentId, studentName, courseId); // Para debugging
+    
+    // Verificar que los datos existen
+    if (!studentId || !studentName || !courseId) {
+        console.error('Faltan parámetros en openRepModal');
+        return;
+    }
+    
+    // Asignar valores a los campos del modal
+    document.getElementById('repStudentId').value = studentId;
+    document.getElementById('repCourseId').value = courseId;
+    document.getElementById('repModalStudentName').textContent = studentName;
+    document.getElementById('repSelect').value = '';
+    document.getElementById('repRelationship').value = '';
+
+    // Cargar representantes actuales
+    var reps = [];
+    if (typeof smRepsByStudent !== 'undefined' && smRepsByStudent) {
+        reps = smRepsByStudent[String(studentId)] || [];
+    }
+    
+    var html = '';
+    if (reps.length === 0) {
+        html = '<p style="color:#aaa;font-size:13px;text-align:center;padding:12px 0;">Sin representantes asignados.</p>';
+    } else {
+        html = '<p style="font-size:13px;font-weight:600;color:#333;margin-bottom:10px;">Representantes actuales:</p>';
+        reps.forEach(function(r) {
+            var badge = r.is_primary
+                ? '<span style="background:#17a2b8;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">Principal</span>'
+                : '<span style="background:#e9ecef;color:#555;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">Secundario</span>';
+            var removeUrl = '?action=remove_rep_from_academic&rep_id=' + r.id
+                          + '&student_id=' + studentId + '&course_id=' + courseId;
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;'
+                  + 'padding:9px 12px;border:1px solid #e0e0e0;border-radius:7px;margin-bottom:7px;background:#fafafa;">'
+                  + '<div>'
+                  + '<span style="font-size:13px;font-weight:600;">👤 ' + (r.last_name || '') + ' ' + (r.first_name || '') + '</span>'
+                  + badge
+                  + '<br><span style="font-size:11px;color:#888;">' + (r.relationship || '') + '</span>'
+                  + '</div>'
+                  + '<a href="' + removeUrl + '" onclick="return confirm(\'¿Quitar representante?\')"'
+                  + ' style="padding:4px 10px;font-size:12px;background:#dc3545;color:white;border-radius:4px;text-decoration:none;">Quitar</a>'
+                  + '</div>';
+        });
+    }
+    
+    var currentList = document.getElementById('repCurrentList');
+    if (currentList) {
+        currentList.innerHTML = html;
+    } else {
+        console.error('Elemento repCurrentList no encontrado');
+    }
+    
+    // Mostrar el modal
+    var modal = document.getElementById('modalRep');
+    if (modal) {
+        modal.classList.add('active');
+    } else {
+        console.error('Modal no encontrado');
+    }
+}
+
+function closeRepModal() {
+    var modal = document.getElementById('modalRep');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Event listeners para cerrar modal
+document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('modalRep');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) closeRepModal();
+        });
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeRepModal();
+    }
+});
+</script>
+
+<!-- Luego el HTML del modal -->
+<div id="modalRep" class="modal-overlay">
     <div class="modal-box" style="max-width:560px;">
         <div class="modal-header">
             <div>
-                <h3 style="color:#17a2b8;">&#128106; Representantes</h3>
+                <h3 style="color:#17a2b8;">👨‍👩‍👦 Representantes</h3>
                 <p id="repModalStudentName" style="color:#888;font-size:12px;"></p>
             </div>
-            <button class="modal-close" onclick="closeRepModal()">&#x2715;</button>
+            <button class="modal-close" onclick="closeRepModal()">✕</button>
         </div>
         <div class="modal-body">
-
             <!-- Lista de representantes actuales -->
             <div id="repCurrentList" style="margin-bottom:18px;"></div>
 
             <!-- Formulario nueva asignacion -->
             <div style="border-top:1px solid #f0f0f0;padding-top:16px;">
-                <p style="font-size:13px;font-weight:600;color:#333;margin-bottom:12px;">&#10133; Asignar representante</p>
+                <p style="font-size:13px;font-weight:600;color:#333;margin-bottom:12px;">➕ Asignar representante</p>
                 <form method="POST" action="?action=assign_rep_from_academic" id="formAssignRep">
                     <input type="hidden" name="student_id" id="repStudentId">
-                    <input type="hidden" name="course_id"  id="repCourseId">
+                    <input type="hidden" name="course_id" id="repCourseId">
                     <div class="mf-row">
                         <div>
                             <label class="mf-label">Representante *</label>
@@ -1519,7 +1609,7 @@ document.addEventListener('keydown', function(e){
                     </div>
                     <button type="submit"
                             style="width:100%;padding:9px;background:#17a2b8;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin:0;">
-                        &#10003; Asignar Representante
+                        ✓ Asignar Representante
                     </button>
                 </form>
             </div>
@@ -1529,48 +1619,6 @@ document.addEventListener('keydown', function(e){
         </div>
     </div>
 </div>
-
-<script>
-function openRepModal(studentId, studentName, courseId) {
-    document.getElementById('repStudentId').value = studentId;
-    document.getElementById('repCourseId').value  = courseId;
-    document.getElementById('repModalStudentName').textContent = studentName;
-    document.getElementById('repSelect').value = '';
-    document.getElementById('repRelationship').value = '';
-
-    var reps = smRepsByStudent[String(studentId)] || [];
-    var html = '';
-    if (reps.length === 0) {
-        html = '<p style="color:#aaa;font-size:13px;text-align:center;padding:12px 0;">Sin representantes asignados.</p>';
-    } else {
-        html = '<p style="font-size:13px;font-weight:600;color:#333;margin-bottom:10px;">Representantes actuales:</p>';
-        reps.forEach(function(r) {
-            var badge = r.is_primary
-                ? '<span style="background:#17a2b8;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">Principal</span>'
-                : '<span style="background:#e9ecef;color:#555;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">Secundario</span>';
-            var removeUrl = '?action=remove_rep_from_academic&rep_id=' + r.id
-                          + '&student_id=' + studentId + '&course_id=' + courseId;
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;'
-                  + 'padding:9px 12px;border:1px solid #e0e0e0;border-radius:7px;margin-bottom:7px;background:#fafafa;">'
-                  + '<div>'
-                  + '<span style="font-size:13px;font-weight:600;">&#128100; ' + r.last_name + ' ' + r.first_name + '</span>'
-                  + badge
-                  + '<br><span style="font-size:11px;color:#888;">' + r.relationship + '</span>'
-                  + '</div>'
-                  + '<a href="' + removeUrl + '" onclick="return confirm('Quitar representante?')"'
-                  + ' style="padding:4px 10px;font-size:12px;background:#dc3545;color:white;border-radius:4px;text-decoration:none;">Quitar</a>'
-                  + '</div>';
-        });
-    }
-    document.getElementById('repCurrentList').innerHTML = html;
-    document.getElementById('modalRep').classList.add('active');
-}
-function closeRepModal() {
-    document.getElementById('modalRep').classList.remove('active');
-}
-document.getElementById('modalRep').addEventListener('click', function(e){ if(e.target===this) closeRepModal(); });
-document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeRepModal(); });
-</script>
 
 </body>
 </html>
