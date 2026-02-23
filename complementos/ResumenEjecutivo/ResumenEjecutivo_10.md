@@ -1,3 +1,44 @@
+📋 RESUMEN EJECUTIVO — EcuAsist 2026 v1.7
+Fecha: 23 Feb 2026 | Estado: Sistema funcional, en pruebas
+Patrón de BD en el proyecto
+php// CORRECTO — así usa el proyecto:
+$db = new Database();
+$this->model = new Model($db);
+
+// Para queries directas en controllers:
+$db = (new Database())->getConnection(); // retorna PDO
+```
+
+### Rutas completas en public/index.php para representantes
+```
+manage_representatives          → manageRepresentatives()
+remove_representative           → removeRelation()
+toggle_primary_representative   → togglePrimary()
+edit_representative             → editRelation()
+```
+
+### Archivos modificados esta sesión
+```
+public/index.php                         ← rutas nuevas agregadas
+controllers/RepresentativeController.php ← togglePrimary(), editRelation()
+controllers/AcademicController.php       ← viewCourseStudents ampliado
+controllers/ScheduleController.php       ← $institution pasado a vista
+views/academic/course_students.php       ← modal matricular/retirar
+views/academic/index.php                 ← sin botón Matricular
+views/representatives/manage.php         ← norm() sin tildes, select cursos
+SQL ejecutado en BD local
+sqlALTER TABLE institutions ADD COLUMN working_days_list VARCHAR(100)
+    DEFAULT '["lunes","martes","miercoles","jueves","viernes"]';
+ALTER TABLE course_subjects ADD COLUMN hours_per_week TINYINT UNSIGNED NOT NULL DEFAULT 1;
+ALTER TABLE class_schedule MODIFY start_time TIME NULL DEFAULT NULL;
+ALTER TABLE class_schedule MODIFY end_time TIME NULL DEFAULT NULL;
+Pendiente próxima sesión
+
+Dashboard con métricas y gráficos (Chart.js)
+Breadcrumbs globales
+Notificaciones usando tabla notifications
+Probar flujo completo: horarios → asistencia → justificaciones → reportes
+
 📋 RESUMEN EJECUTIVO CONSOLIDADO — ECUASIST 2026
 Sistema de Gestión Académica
 

@@ -47,12 +47,12 @@
         }
         .toast-close:hover { opacity: 1; }
         .btn-toggle-primary {
-            font-size:0.75rem; padding:3px 10px; border-radius:20px; cursor:pointer; border:none;
-            transition: background 0.2s;
+            font-size:0.75rem; padding:3px 10px; border-radius:6px; cursor:pointer; border:none;
+            transition: background 0.2s; text-decoration: none; display: inline-block;
         }
-        .btn-toggle-on  { background:#ffc107; color:#333; }
+        .btn-toggle-on  { background:#007bff; color:#fff; }
         .btn-toggle-off { background:#e9ecef; color:#555; }
-        .btn-toggle-on:hover  { background:#e0a800; }
+        .btn-toggle-on:hover  { background:#0056d2; }
         .btn-toggle-off:hover { background:#dee2e6; }
         .actions-cell { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
     </style>
@@ -213,22 +213,19 @@
                                     </td>
                                     <td>
                                         <?php if($child['is_primary']): ?>
-                                            <span class="badge badge-yellow">⭐ Principal</span>
+                                            <span class="badge badge-blue">⭐Principal</span>
                                         <?php else: ?>
-                                            <span class="badge badge-gray">Secundario</span>
+                                            <span class="badge badge-red">📌Secundario</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="actions-cell">
                                             <!-- Toggle Principal / Secundario -->
-                                            <button class="btn-toggle-primary <?= $child['is_primary'] ? 'btn-toggle-on' : 'btn-toggle-off' ?>"
-                                                onclick="confirmToggle(<?= $rep['id'] ?>, <?= $child['id'] ?>,
-                                                    '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
-                                                    '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>',
-                                                    <?= $child['is_primary'] ? 1 : 0 ?>)"
-                                                title="<?= $child['is_primary'] ? 'Cambiar a Secundario' : 'Cambiar a Principal' ?>">
-                                                <?= $child['is_primary'] ? '☆ Secundario' : '⭐ Principal' ?>
-                                            </button>
+                                            <a href="?action=toggle_primary_representative&rep_id=<?= $rep['id'] ?>&student_id=<?= $child['id'] ?>"
+                                               class="btn-toggle-primary <?= $child['is_primary'] ? 'btn-toggle-on' : 'btn-toggle-on' ?>"
+                                               title="<?= $child['is_primary'] ? 'Cambiar a Secundario' : 'Cambiar a Principal' ?>">
+                                                <?= $child['is_primary'] ? '📌' : '⭐' ?>
+                                            </a>
                                             <!-- Editar -->
                                             <button class="btn btn-warning btn-sm"
                                                 onclick="openEdit(<?= $rep['id'] ?>, <?= $child['id'] ?>,
@@ -313,17 +310,7 @@
     </div>
 </div>
 
-<!-- Modal confirmar toggle -->
-<div class="modal-overlay" id="modalToggle">
-    <div class="modal-box" style="max-width:460px;">
-        <h3 id="modalToggleTitle">🔄 Cambiar Tipo de Representante</h3>
-        <div id="modalToggleBody" style="margin:12px 0;color:#555;font-size:0.88rem;"></div>
-        <div class="modal-actions">
-            <button class="btn btn-outline" onclick="closeModal('modalToggle')">Cancelar</button>
-            <a id="confirmToggleLink" href="#" class="btn btn-primary">✓ Confirmar</a>
-        </div>
-    </div>
-</div>
+
 
 <!-- Toast container -->
 <div id="toast-container"></div>
@@ -352,12 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 <?php endif; ?>
-
 function openEdit(repId, stuId, repName, stuName, relationship, isPrimary) {
-    document.getElementById('editRepId').value        = repId;
-    document.getElementById('editStuId').value        = stuId;
-    document.getElementById('editRepName').textContent  = repName;
-    document.getElementById('editStuName').textContent  = stuName;
+    document.getElementById('editRepId').value       = repId;
+    document.getElementById('editStuId').value       = stuId;
+    document.getElementById('editRepName').textContent = repName;
+    document.getElementById('editStuName').textContent = stuName;
     const sel = document.getElementById('editRelationship');
     for (let o of sel.options) o.selected = (o.value === relationship);
     document.getElementById('editIsPrimary').checked = isPrimary == 1;
@@ -367,37 +353,38 @@ function openEdit(repId, stuId, repName, stuName, relationship, isPrimary) {
 // ── Normaliza: minúsculas + sin tildes ────────────────────────────
 function norm(str) {
     const map = {
-        'a':['á','à','ä','â','ã'],
-        'e':['é','è','ë','ê'],
-        'i':['í','ì','ï','î'],
-        'o':['ó','ò','ö','ô','õ'],
-        'u':['ú','ù','ü','û'],
-        'n':['ñ'], 'c':['ç']
+        'á':'a','à':'a','ä':'a','â':'a','ã':'a',
+        'é':'e','è':'e','ë':'e','ê':'e',
+        'í':'i','ì':'i','ï':'i','î':'i',
+        'ó':'o','ò':'o','ö':'o','ô':'o','õ':'o',
+        'ú':'u','ù':'u','ü':'u','û':'u',
+        'ñ':'n','ç':'c',
+        'Á':'a','À':'a','Ä':'a','Â':'a','Ã':'a',
+        'É':'e','È':'e','Ë':'e','Ê':'e',
+        'Í':'i','Ì':'i','Ï':'i','Î':'i',
+        'Ó':'o','Ò':'o','Ö':'o','Ô':'o','Õ':'o',
+        'Ú':'u','Ù':'u','Ü':'u','Û':'u',
+        'Ñ':'n','Ç':'c'
     };
-    let s = (str || '').toLowerCase();
-    for (const [rep, chars] of Object.entries(map)) {
-        for (const ch of chars) {
-            s = s.split(ch).join(rep);
-        }
-    }
-    return s;
+    return (str || '').replace(/[áàäâãéèëêíìïîóòöôõúùüûñçÁÀÄÂÃÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑÇ]/g,
+        c => map[c] || c).toLowerCase();
 }
 
 // ── Filtros ───────────────────────────────────────────────────────
 function applyFilters() {
     const rep    = norm(document.getElementById('filterRep').value);
     const stu    = norm(document.getElementById('filterStu').value);
-    const course = document.getElementById('filterCourse').value;
+    const course = document.getElementById('filterCourse').value; // ya normalizado al crear options
     document.querySelectorAll('.rep-block').forEach(block => {
         const repName = norm(block.dataset.repname);
-        const rows    = block.querySelectorAll('.student-row');
+        const rows = block.querySelectorAll('.student-row');
         let vis = false;
         rows.forEach(row => {
             const ok = (!rep    || repName.includes(rep)) &&
                        (!stu    || norm(row.dataset.student).includes(stu)) &&
                        (!course || row.dataset.coursenorm === course);
             row.style.display = ok ? '' : 'none';
-            if (ok) vis = true;
+            if(ok) vis = true;
         });
         block.style.display = vis ? '' : 'none';
     });
@@ -408,34 +395,34 @@ function populateCourseSelect() {
     const seen = new Set();
     const sel  = document.getElementById('filterCourse');
     document.querySelectorAll('.student-row').forEach(row => {
-        const raw = (row.dataset.course || '').trim();
-        const nrm = norm(raw);
-        if (!raw || seen.has(nrm)) return;
+        const raw  = row.dataset.course || '';  // original con tildes
+        const nrm  = norm(raw);
+        if (!raw.trim() || seen.has(nrm)) return;
         seen.add(nrm);
+        // Guardar versión normalizada en el row para comparación exacta
         row.dataset.coursenorm = nrm;
         const o = document.createElement('option');
-        o.value       = nrm;
+        o.value = nrm;
         o.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
         sel.appendChild(o);
     });
+    // Marcar filas de cursos ya vistos
     document.querySelectorAll('.student-row').forEach(row => {
-        if (!row.dataset.coursenorm)
-            row.dataset.coursenorm = norm(row.dataset.course || '');
+        if (!row.dataset.coursenorm) row.dataset.coursenorm = norm(row.dataset.course || '');
     });
-    const opts = Array.from(sel.options).slice(1)
-        .sort((a, b) => a.text.localeCompare(b.text));
-    while (sel.options.length > 1) sel.remove(1);
+    // Ordenar alfabéticamente
+    const opts = Array.from(sel.options).slice(1).sort((a,b) => a.text.localeCompare(b.text));
+    while(sel.options.length > 1) sel.remove(1);
     opts.forEach(o => sel.appendChild(o));
 }
 document.addEventListener('DOMContentLoaded', populateCourseSelect);
 
 function clearFilters() {
-    document.getElementById('filterRep').value   = '';
-    document.getElementById('filterStu').value   = '';
+    document.getElementById('filterRep').value = '';
+    document.getElementById('filterStu').value = '';
     document.getElementById('filterCourse').selectedIndex = 0;
     applyFilters();
 }
-
 function confirmRemove(repId, stuId, repName, stuName) {
     document.getElementById('modalRemoveBody').innerHTML =
         '<p>¿Eliminar la relación entre:</p>' +
@@ -448,24 +435,9 @@ function confirmRemove(repId, stuId, repName, stuName) {
     document.getElementById('modalRemove').classList.add('on');
 }
 
-function confirmToggle(repId, stuId, repName, stuName, isPrimary) {
-    const accion = isPrimary
-        ? 'pasar a <strong>Secundario</strong>'
-        : 'marcar como <strong>Principal</strong> (los demás pasarán a Secundario)';
-    document.getElementById('modalToggleTitle').textContent =
-        isPrimary ? '🔄 Cambiar a Secundario' : '⭐ Marcar como Principal';
-    document.getElementById('modalToggleBody').innerHTML =
-        '<p>' + repName + ' → ' + stuName + '</p>' +
-        '<p style="margin:10px 0;padding:10px;background:#fff3cd;border-radius:6px;">' +
-        'Se va a ' + accion + '.</p>';
-    document.getElementById('confirmToggleLink').href =
-        '?action=toggle_primary_representative&rep_id=' + repId + '&student_id=' + stuId;
-    document.getElementById('modalToggle').classList.add('on');
-}
-
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+    m.addEventListener('click', e => { if(e.target === m) closeModal(m.id); });
 });
 </script>
 </body>

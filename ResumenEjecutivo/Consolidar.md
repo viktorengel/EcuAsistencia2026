@@ -1,1 +1,0 @@
-Quiero que el contenido de este archivo resumen Ejecutivo lo consolides con todos los avances y mejoras que se hayan realizado sin repetir, dame en formato markdown listo para guardar

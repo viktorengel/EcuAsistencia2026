@@ -42,7 +42,7 @@
         <div class="ph-icon">🎓</div>
         <div>
             <h1>Matricular Estudiantes</h1>
-            <p>Asigna estudiantes a sus cursos del año lectivo activo</p>
+            <p>Curso: <strong><?= htmlspecialchars($course['name']) ?></strong> &nbsp;|&nbsp; Jornada: <?= ucfirst($course['shift_name'] ?? '') ?></p>
         </div>
     </div>
         <?php if(isset($_GET['enrolled'])): ?>
@@ -84,17 +84,7 @@
             </p>
             
             <form method="POST" action="?action=enroll_students">
-                <div class="form-group">
-                    <label>Curso</label>
-                    <select name="course_id" required>
-                        <option value="">Seleccionar curso...</option>
-                        <?php foreach($courses as $course): ?>
-                            <option value="<?= $course['id'] ?>">
-                                <?= $course['name'] ?> - <?= $course['shift_name'] ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
 
                 <div class="student-list">
                     <label>Seleccionar Estudiantes</label>
@@ -167,6 +157,7 @@
                                 <form method="POST" action="?action=unenroll_student" style="display: inline;" 
                                       onsubmit="return confirmUnenroll(event, '<?= addslashes($student['last_name'] . ' ' . $student['first_name']) ?>', '<?= addslashes($course['name']) ?>')">
                                     <input type="hidden" name="student_id" value="<?= $student['id'] ?>">
+                                    <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
                                     <button type="submit" 
                                             style="padding: 6px 12px; background: #dc3545; font-size: 13px;">
                                         ✗ Retirar

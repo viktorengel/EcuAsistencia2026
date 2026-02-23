@@ -1,8 +1,5 @@
 <?php
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 if ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_NAME'] === '127.0.0.1') {
     require_once __DIR__ . '/../config/config.php';  // local
 } else {
@@ -102,18 +99,6 @@ switch ($action) {
         $acadCtrl->createSubject();
         break;
     
-    case 'enroll_students':
-        require_once BASE_PATH . '/controllers/AcademicController.php';
-        $acadCtrl = new AcademicController();
-        $acadCtrl->enrollStudents();
-        break;
-    
-    case 'view_course_students':
-        require_once BASE_PATH . '/controllers/AcademicController.php';
-        $acadCtrl = new AcademicController();
-        $acadCtrl->viewCourseStudents();
-        break;
-
     case 'set_subject_hours':
         require_once BASE_PATH . '/controllers/AcademicController.php';
         $controller = new AcademicController();
@@ -124,6 +109,12 @@ switch ($action) {
         require_once BASE_PATH . '/controllers/AcademicController.php';
         $acadCtrl = new AcademicController();
         $acadCtrl->courseSubjects();
+        break;
+
+    case 'view_course_students':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $acadCtrl = new AcademicController();
+        $acadCtrl->viewCourseStudents();
         break;
 
     case 'edit_course_subject':
@@ -513,6 +504,18 @@ switch ($action) {
         require_once BASE_PATH . '/controllers/RepresentativeController.php';
         $controller = new RepresentativeController();
         $controller->removeRelation();
+        break;
+
+    case 'toggle_primary_representative':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $controller = new RepresentativeController();
+        $controller->togglePrimary();
+        break;
+
+    case 'edit_representative':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $controller = new RepresentativeController();
+        $controller->editRelation();
         break;
 
     case 'notifications':

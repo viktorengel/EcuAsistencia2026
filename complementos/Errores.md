@@ -17,3 +17,7 @@ Asignaciones Docente — Materia y eliminar este modulo por que está de mas
 
 ALTER TABLE course_subjects
 ADD COLUMN hours_per_week INT NOT NULL DEFAULT 1;
+ALTER TABLE institutions 
+ADD COLUMN working_days_list VARCHAR(100) DEFAULT '["lunes","martes","miercoles","jueves","viernes"]';
+
+Estoy en https://www.ecuasys.com/?action=manage_representatives quiero que el bloque ➕ Nueva Relación desaparezca y se convierta en un model y solo se muestre un boton para agregar las relaciones
