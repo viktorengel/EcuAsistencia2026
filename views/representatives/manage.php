@@ -85,181 +85,191 @@
             <h1>Gestión de Representantes</h1>
             <p>Vincula representantes con sus estudiantes</p>
         </div>
+        <div style="margin-left:auto;">
+            <button class="btn btn-success" onclick="openModalNuevaRelacion()">➕ Nueva Relación</button>
+        </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
+    <!-- Filtros -->
+    <div class="filters" style="margin-bottom:12px;">
+        <h3 style="font-size:0.85rem;font-weight:600;color:#555;margin-bottom:8px;">🔍 Buscar</h3>
+        <div class="filter-grid">
+            <div>
+                <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Representante</label>
+                <input type="text" id="filterRep" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
+            </div>
+            <div>
+                <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Estudiante</label>
+                <input type="text" id="filterStu" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
+            </div>
+            <div>
+                <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Curso</label>
+                <select id="filterCourse" class="form-control" onchange="applyFilters()">
+                    <option value="">Todos los cursos...</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="clearFilters()">🗑️ Limpiar</button>
+    </div>
 
-        <!-- Formulario -->
-        <div class="panel">
-            <h3 style="margin-bottom:16px;font-size:1rem;">➕ Nueva Relación</h3>
-            <form method="POST">
-                <div class="form-group">
-                    <label>Representante *</label>
-                    <select name="representative_id" class="form-control" required>
-                        <option value="">Seleccionar representante...</option>
-                        <?php foreach($representatives as $rep): ?>
-                            <option value="<?= $rep['id'] ?>" <?= (isset($_POST['representative_id']) && $_POST['representative_id'] == $rep['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>
-                                (<?= htmlspecialchars($rep['dni'] ?? 'Sin cédula') ?>)
-                            </option>
+    <!-- Relaciones -->
+    <div id="rep-list">
+        <?php
+        $hasRelations = false;
+        foreach($representatives as $rep):
+            $children = $this->representativeModel->getStudentsByRepresentative($rep['id']);
+            if(!count($children)) continue;
+            $hasRelations = true;
+        ?>
+        <div class="rep-block"
+             data-repname="<?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>">
+            <div class="rep-block-header">
+                <div>
+                    <div class="rep-name">👤 <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?></div>
+                    <div class="rep-email"><?= htmlspecialchars($rep['email']) ?></div>
+                </div>
+                <span class="badge badge-blue"><?= count($children) ?> representado(s)</span>
+            </div>
+            <div class="table-wrap" style="margin-bottom:0;">
+                <table style="table-layout:fixed;width:100%;">
+                    <colgroup>
+                        <col style="width:25%;">
+                        <col style="width:13%;">
+                        <col style="width:32%;">
+                        <col style="width:15%;">
+                        <col style="width:15%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Parentesco</th>
+                            <th>Curso</th>
+                            <th>Tipo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($children as $child): ?>
+                        <tr class="student-row"
+                            data-student="<?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?>"
+                            data-course="<?= htmlspecialchars($child['course_name'] ?? '') ?>">
+                            <td><strong><?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?></strong></td>
+                            <td><?= htmlspecialchars($child['relationship']) ?></td>
+                            <td>
+                                <?php if($child['course_name']): ?>
+                                    <span class="badge badge-teal"><?= htmlspecialchars($child['course_name']) ?></span>
+                                <?php else: ?>
+                                    <span style="color:#ccc;">Sin curso</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if($child['is_primary']): ?>
+                                    <span class="badge badge-blue">⭐Principal</span>
+                                <?php else: ?>
+                                    <span class="badge badge-red">📌Secundario</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    <!-- Toggle Principal / Secundario -->
+                                    <a href="?action=toggle_primary_representative&rep_id=<?= $rep['id'] ?>&student_id=<?= $child['id'] ?>"
+                                       class="btn-toggle-primary btn-toggle-on"
+                                       title="<?= $child['is_primary'] ? 'Cambiar a Secundario' : 'Cambiar a Principal' ?>">
+                                        <?= $child['is_primary'] ? '📌' : '⭐' ?>
+                                    </a>
+                                    <!-- Editar -->
+                                    <button class="btn btn-warning btn-sm"
+                                        onclick="openEdit(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                            '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                            '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>',
+                                            '<?= addslashes(htmlspecialchars($child['relationship'])) ?>',
+                                            <?= $child['is_primary'] ? 1 : 0 ?>)"
+                                        title="Editar relación">✏️</button>
+                                    <!-- Eliminar -->
+                                    <button class="btn btn-danger btn-sm"
+                                        onclick="confirmRemove(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                            '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                            '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>')"
+                                        title="Eliminar relación">✕</button>
+                                </div>
+                            </td>
+                        </tr>
                         <?php endforeach; ?>
-                    </select>
-                </div>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php endforeach; ?>
 
-                <div class="form-group">
-                    <label>Parentesco *</label>
-                    <select name="relationship" class="form-control" required>
-                        <option value="">Seleccionar...</option>
-                        <?php foreach(['Padre','Madre','Tutor Legal','Abuelo/a','Tío/a','Hermano/a','Otro'] as $rel): ?>
-                            <option <?= (isset($_POST['relationship']) && $_POST['relationship'] === $rel) ? 'selected' : '' ?>><?= $rel ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <small style="color:#888;font-size:0.77rem;">
-                        ⚠️ Solo puede haber un Padre y una Madre por estudiante.
-                    </small>
-                </div>
+        <?php if(!$hasRelations): ?>
+        <div class="empty-state">
+            <div class="icon">📂</div>
+            <p>No hay relaciones representante-estudiante registradas.</p>
+            <button class="btn btn-success" style="margin-top:12px;" onclick="openModalNuevaRelacion()">➕ Crear primera relación</button>
+        </div>
+        <?php endif; ?>
+    </div>
 
-                <div class="form-group">
-                    <label>Estudiante *</label>
-                    <select name="student_id" class="form-control" required>
-                        <option value="">Seleccionar estudiante...</option>
-                        <?php foreach($students as $s): ?>
-                            <option value="<?= $s['id'] ?>" <?= (isset($_POST['student_id']) && $_POST['student_id'] == $s['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($s['last_name'] . ' ' . $s['first_name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+</div>
 
-                <div class="form-group">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="is_primary" id="isPrimary" value="1" <?= !empty($_POST['is_primary']) ? 'checked' : '' ?>> Representante Principal
-                    </label>
-                    <small style="color:#888;font-size:0.77rem;">
-                        El representante principal recibe las notificaciones prioritarias.
-                    </small>
-                </div>
+<!-- ===== MODAL: Nueva Relación ===== -->
+<div class="modal-overlay" id="modalNuevaRelacion">
+    <div class="modal-box" style="max-width:480px;">
+        <h3>➕ Nueva Relación</h3>
+        <form method="POST" style="margin-top:16px;">
+            <div class="form-group">
+                <label>Representante *</label>
+                <select name="representative_id" class="form-control" required>
+                    <option value="">Seleccionar representante...</option>
+                    <?php foreach($representatives as $rep): ?>
+                        <option value="<?= $rep['id'] ?>">
+                            <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>
+                            (<?= htmlspecialchars($rep['dni'] ?? 'Sin cédula') ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
+            <div class="form-group">
+                <label>Parentesco *</label>
+                <select name="relationship" class="form-control" required>
+                    <option value="">Seleccionar...</option>
+                    <?php foreach(['Padre','Madre','Tutor Legal','Abuelo/a','Tío/a','Hermano/a','Otro'] as $rel): ?>
+                        <option><?= $rel ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <small style="color:#888;font-size:0.77rem;">
+                    ⚠️ Solo puede haber un Padre y una Madre por estudiante.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>Estudiante *</label>
+                <select name="student_id" class="form-control" required>
+                    <option value="">Seleccionar estudiante...</option>
+                    <?php foreach($students as $s): ?>
+                        <option value="<?= $s['id'] ?>">
+                            <?= htmlspecialchars($s['last_name'] . ' ' . $s['first_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" name="is_primary" value="1"> Representante Principal
+                </label>
+                <small style="color:#888;font-size:0.77rem;">
+                    El representante principal recibe las notificaciones prioritarias.
+                </small>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalNuevaRelacion')">Cancelar</button>
                 <button type="submit" class="btn btn-success">➕ Asignar Relación</button>
-            </form>
-        </div>
-
-        <!-- Listado -->
-        <div>
-            <!-- Filtros -->
-            <div class="filters" style="margin-bottom:12px;">
-                <h3 style="font-size:0.85rem;font-weight:600;color:#555;margin-bottom:8px;">🔍 Buscar</h3>
-                <div class="filter-grid">
-                    <div>
-                        <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Representante</label>
-                        <input type="text" id="filterRep" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
-                    </div>
-                    <div>
-                        <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Estudiante</label>
-                        <input type="text" id="filterStu" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
-                    </div>
-                    <div>
-                        <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Curso</label>
-                        <select id="filterCourse" class="form-control" onchange="applyFilters()">
-                            <option value="">Todos los cursos...</option>
-                        </select>
-                    </div>
-                </div>
-                <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="clearFilters()">🗑️ Limpiar</button>
             </div>
-
-            <!-- Relaciones -->
-            <div id="rep-list">
-                <?php
-                $hasRelations = false;
-                foreach($representatives as $rep):
-                    $children = $this->representativeModel->getStudentsByRepresentative($rep['id']);
-                    if(!count($children)) continue;
-                    $hasRelations = true;
-                ?>
-                <div class="rep-block"
-                     data-repname="<?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>"><?php // norm() en JS maneja tildes ?>
-                    <div class="rep-block-header">
-                        <div>
-                            <div class="rep-name">👤 <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?></div>
-                            <div class="rep-email"><?= htmlspecialchars($rep['email']) ?></div>
-                        </div>
-                        <span class="badge badge-blue"><?= count($children) ?> representado(s)</span>
-                    </div>
-                    <div class="table-wrap" style="margin-bottom:0;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Estudiante</th>
-                                    <th>Parentesco</th>
-                                    <th>Curso</th>
-                                    <th>Tipo</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach($children as $child): ?>
-                                <tr class="student-row"
-                                    data-student="<?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?>"
-                                    data-course="<?= htmlspecialchars($child['course_name'] ?? '') ?>">
-                                    <td><strong><?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?></strong></td>
-                                    <td><?= htmlspecialchars($child['relationship']) ?></td>
-                                    <td>
-                                        <?php if($child['course_name']): ?>
-                                            <span class="badge badge-teal"><?= htmlspecialchars($child['course_name']) ?></span>
-                                        <?php else: ?>
-                                            <span style="color:#ccc;">Sin curso</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if($child['is_primary']): ?>
-                                            <span class="badge badge-blue">⭐Principal</span>
-                                        <?php else: ?>
-                                            <span class="badge badge-red">📌Secundario</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <div class="actions-cell">
-                                            <!-- Toggle Principal / Secundario -->
-                                            <a href="?action=toggle_primary_representative&rep_id=<?= $rep['id'] ?>&student_id=<?= $child['id'] ?>"
-                                               class="btn-toggle-primary <?= $child['is_primary'] ? 'btn-toggle-on' : 'btn-toggle-on' ?>"
-                                               title="<?= $child['is_primary'] ? 'Cambiar a Secundario' : 'Cambiar a Principal' ?>">
-                                                <?= $child['is_primary'] ? '📌' : '⭐' ?>
-                                            </a>
-                                            <!-- Editar -->
-                                            <button class="btn btn-warning btn-sm"
-                                                onclick="openEdit(<?= $rep['id'] ?>, <?= $child['id'] ?>,
-                                                    '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
-                                                    '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>',
-                                                    '<?= addslashes(htmlspecialchars($child['relationship'])) ?>',
-                                                    <?= $child['is_primary'] ? 1 : 0 ?>)"
-                                                title="Editar relación">✏️</button>
-                                            <!-- Eliminar -->
-                                            <button class="btn btn-danger btn-sm"
-                                                onclick="confirmRemove(<?= $rep['id'] ?>, <?= $child['id'] ?>,
-                                                    '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
-                                                    '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>')"
-                                                title="Eliminar relación">✕</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-
-                <?php if(!$hasRelations): ?>
-                <div class="empty-state">
-                    <div class="icon">📂</div>
-                    <p>No hay relaciones representante-estudiante registradas.</p>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        </form>
     </div>
-
 </div>
 
 <!-- Modal confirmar eliminar -->
@@ -310,8 +320,6 @@
     </div>
 </div>
 
-
-
 <!-- Toast container -->
 <div id="toast-container"></div>
 
@@ -339,9 +347,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 <?php endif; ?>
+
+function openModalNuevaRelacion() {
+    document.getElementById('modalNuevaRelacion').classList.add('on');
+}
+
 function openEdit(repId, stuId, repName, stuName, relationship, isPrimary) {
-    document.getElementById('editRepId').value       = repId;
-    document.getElementById('editStuId').value       = stuId;
+    document.getElementById('editRepId').value        = repId;
+    document.getElementById('editStuId').value        = stuId;
     document.getElementById('editRepName').textContent = repName;
     document.getElementById('editStuName').textContent = stuName;
     const sel = document.getElementById('editRelationship');
@@ -374,7 +387,7 @@ function norm(str) {
 function applyFilters() {
     const rep    = norm(document.getElementById('filterRep').value);
     const stu    = norm(document.getElementById('filterStu').value);
-    const course = document.getElementById('filterCourse').value; // ya normalizado al crear options
+    const course = document.getElementById('filterCourse').value;
     document.querySelectorAll('.rep-block').forEach(block => {
         const repName = norm(block.dataset.repname);
         const rows = block.querySelectorAll('.student-row');
@@ -395,22 +408,19 @@ function populateCourseSelect() {
     const seen = new Set();
     const sel  = document.getElementById('filterCourse');
     document.querySelectorAll('.student-row').forEach(row => {
-        const raw  = row.dataset.course || '';  // original con tildes
+        const raw  = row.dataset.course || '';
         const nrm  = norm(raw);
         if (!raw.trim() || seen.has(nrm)) return;
         seen.add(nrm);
-        // Guardar versión normalizada en el row para comparación exacta
         row.dataset.coursenorm = nrm;
         const o = document.createElement('option');
         o.value = nrm;
         o.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
         sel.appendChild(o);
     });
-    // Marcar filas de cursos ya vistos
     document.querySelectorAll('.student-row').forEach(row => {
         if (!row.dataset.coursenorm) row.dataset.coursenorm = norm(row.dataset.course || '');
     });
-    // Ordenar alfabéticamente
     const opts = Array.from(sel.options).slice(1).sort((a,b) => a.text.localeCompare(b.text));
     while(sel.options.length > 1) sel.remove(1);
     opts.forEach(o => sel.appendChild(o));
