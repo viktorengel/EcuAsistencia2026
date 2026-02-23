@@ -488,6 +488,12 @@ switch ($action) {
         $controller->deleteSubject();
         break;
 
+    case 'enroll_students':
+        require_once BASE_PATH . '/controllers/AcademicController.php';
+        $controller = new AcademicController();
+        $controller->enrollStudents();
+        break;
+
     case 'unenroll_student':
         require_once BASE_PATH . '/controllers/AcademicController.php';
         $controller = new AcademicController();
