@@ -188,33 +188,27 @@ class AcademicController {
                 exit;
             }
 
-            // Verificar si tiene estudiantes matriculados
-            $students = $this->courseModel->getEnrolledStudents($courseId);
-            if (count($students) > 0) {
-                header('Location: ?action=academic&error=course_has_students');
-                exit;
-            }
+            $db  = new Database();
+            $pdo = $db->connect();
 
-            // Verificar si tiene asignaciones docentes
-            $db = new Database();
-            $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM teacher_assignments WHERE course_id = :id");
-            $stmt->execute([':id' => $courseId]);
-            $result = $stmt->fetch();
-            
-            if ($result['count'] > 0) {
-                header('Location: ?action=academic&error=course_has_assignments');
-                exit;
-            }
+            // 1. Eliminar asignaciones docentes del curso
+            $pdo->prepare("DELETE FROM teacher_assignments WHERE course_id = :id")
+                ->execute([':id' => $courseId]);
 
+            // 2. Eliminar horarios del curso
+            $pdo->prepare("DELETE FROM class_schedule WHERE course_id = :id")
+                ->execute([':id' => $courseId]);
+
+            // 3. Eliminar matrículas
+            $pdo->prepare("DELETE FROM course_students WHERE course_id = :id")
+                ->execute([':id' => $courseId]);
+
+            // 4. Eliminar relaciones curso-asignatura
+            $pdo->prepare("DELETE FROM course_subjects WHERE course_id = :id")
+                ->execute([':id' => $courseId]);
+
+            // 5. Eliminar el curso
             if ($this->courseModel->delete($courseId)) {
-                // Eliminar asignaturas sin docentes asignados
-                $pdo2 = new Database();
-                $pdo2->connect()->prepare("
-                    DELETE s FROM subjects s
-                    INNER JOIN course_subjects cs ON s.id = cs.subject_id
-                    LEFT JOIN teacher_assignments ta ON s.id = ta.subject_id
-                    WHERE cs.course_id = :cid AND ta.id IS NULL
-                ")->execute([':cid' => $courseId]);
                 header('Location: ?action=academic&course_deleted=1');
                 exit;
             } else {
