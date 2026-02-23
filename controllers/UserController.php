@@ -320,4 +320,121 @@ class UserController {
         $digVer  = $residuo === 0 ? 0 : 10 - $residuo;
         return $digVer === (int)$cedula[9];
     }
+
+    // ── Crear usuario desde modal ─────────────────────────────────────────
+    public function createFromModal() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=users'); exit; }
+
+        $errors = [];
+        if (empty($_POST['username']))                                          $errors[] = "El usuario es obligatorio";
+        if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $errors[] = "Email inválido";
+        if (empty($_POST['password']) || strlen($_POST['password']) < 6)       $errors[] = "La contraseña debe tener al menos 6 caracteres";
+        if ($_POST['password'] !== $_POST['confirm_password'])                  $errors[] = "Las contraseñas no coinciden";
+        if (empty($_POST['first_name']))                                        $errors[] = "El nombre es obligatorio";
+        if (empty($_POST['last_name']))                                         $errors[] = "El apellido es obligatorio";
+        if ($this->userModel->findByUsername($_POST['username']))               $errors[] = "El usuario ya está registrado";
+        if ($this->userModel->findByEmail($_POST['email']))                     $errors[] = "El email ya está registrado";
+
+        $dniValue = null;
+        if (!empty($_POST['dni'])) {
+            $d = preg_replace('/\D/', '', $_POST['dni']);
+            if (strlen($d) === 10) {
+                if (!self::validarCedulaEcuador($d)) $errors[] = "Cédula inválida";
+                else $dniValue = $d;
+            } else {
+                $dniValue = Security::sanitize($_POST['dni']);
+            }
+        }
+
+        $phoneValue = null;
+        if (!empty($_POST['phone'])) {
+            $t = preg_replace('/[\s\-]/', '', $_POST['phone']);
+            if (!preg_match('/^09\d{8}$/', $t) && !preg_match('/^0[2-7]\d{7}$/', $t)) $errors[] = "Teléfono inválido";
+            else $phoneValue = $t;
+        }
+
+        if (!empty($errors)) {
+            $_SESSION['modal_create_errors'] = $errors;
+            $_SESSION['modal_create_data']   = $_POST;
+            $_SESSION['open_modal']          = 'create';
+            header('Location: ?action=users'); exit;
+        }
+
+        $userData = [
+            'institution_id' => $_SESSION['institution_id'],
+            'username'   => Security::sanitize($_POST['username']),
+            'email'      => Security::sanitize($_POST['email']),
+            'password'   => $_POST['password'],
+            'first_name' => Security::sanitize($_POST['first_name']),
+            'last_name'  => Security::sanitize($_POST['last_name']),
+            'dni'        => $dniValue,
+            'phone'      => $phoneValue,
+        ];
+
+        if ($this->userModel->create($userData)) {
+            $newId = $this->userModel->db->lastInsertId();
+            if (!empty($_POST['roles'])) {
+                foreach ($_POST['roles'] as $rid) $this->userModel->assignRole($newId, (int)$rid);
+            }
+            header('Location: ?action=users&created=1'); exit;
+        }
+
+        $_SESSION['modal_create_errors'] = ['Error al crear el usuario'];
+        $_SESSION['modal_create_data']   = $_POST;
+        $_SESSION['open_modal']          = 'create';
+        header('Location: ?action=users'); exit;
+    }
+
+    // ── Editar usuario desde modal ────────────────────────────────────────
+    public function editFromModal() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=users'); exit; }
+
+        $userId = (int)$_POST['user_id'];
+        $user   = $this->userModel->findById($userId);
+        if (!$user || $user['institution_id'] != $_SESSION['institution_id']) { header('Location: ?action=users&error=not_found'); exit; }
+
+        $errors = [];
+        if (empty($_POST['username']))                                          $errors[] = "El usuario es obligatorio";
+        if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $errors[] = "Email inválido";
+        if (empty($_POST['first_name']))                                        $errors[] = "El nombre es obligatorio";
+        if (empty($_POST['last_name']))                                         $errors[] = "El apellido es obligatorio";
+
+        $existing = $this->userModel->findByUsername($_POST['username']);
+        if ($existing && $existing['id'] != $userId) $errors[] = "El usuario ya está registrado";
+        $existingEmail = $this->userModel->findByEmail($_POST['email']);
+        if ($existingEmail && $existingEmail['id'] != $userId) $errors[] = "El email ya está registrado";
+
+        if (!empty($_POST['password'])) {
+            if (strlen($_POST['password']) < 6)               $errors[] = "La contraseña debe tener al menos 6 caracteres";
+            if ($_POST['password'] !== $_POST['confirm_password']) $errors[] = "Las contraseñas no coinciden";
+        }
+
+        if (!empty($errors)) {
+            $_SESSION['modal_edit_errors'] = $errors;
+            $_SESSION['modal_edit_data']   = array_merge($_POST, ['user_id' => $userId]);
+            $_SESSION['open_modal']        = 'edit';
+            header('Location: ?action=users'); exit;
+        }
+
+        $updateData = [
+            'id'         => $userId,
+            'username'   => Security::sanitize($_POST['username']),
+            'email'      => Security::sanitize($_POST['email']),
+            'first_name' => Security::sanitize($_POST['first_name']),
+            'last_name'  => Security::sanitize($_POST['last_name']),
+            'dni'        => !empty($_POST['dni'])   ? Security::sanitize($_POST['dni'])   : null,
+            'phone'      => !empty($_POST['phone']) ? Security::sanitize($_POST['phone']) : null,
+        ];
+        if (!empty($_POST['password'])) $updateData['password'] = $_POST['password'];
+
+        if ($this->userModel->update($updateData)) {
+            header('Location: ?action=users&updated=1'); exit;
+        }
+
+        $_SESSION['modal_edit_errors'] = ['Error al actualizar el usuario'];
+        $_SESSION['modal_edit_data']   = array_merge($_POST, ['user_id' => $userId]);
+        $_SESSION['open_modal']        = 'edit';
+        header('Location: ?action=users'); exit;
+    }
+
 }

@@ -422,6 +422,18 @@ switch ($action) {
         $controller->create();
         break;
 
+    case 'create_user_modal':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $controller = new UserController();
+        $controller->createFromModal();
+        break;
+
+    case 'edit_user_modal':
+        require_once BASE_PATH . '/controllers/UserController.php';
+        $controller = new UserController();
+        $controller->editFromModal();
+        break;
+
     case 'edit_user':
         require_once BASE_PATH . '/controllers/UserController.php';
         $controller = new UserController();

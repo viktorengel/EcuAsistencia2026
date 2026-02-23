@@ -1,7 +1,5 @@
 Tengo un problema, hay 2 tipos de faltas, una que el estudiante falta por horas de clase y otra que haya faltado todo el dia, como podemos definir ese aspecto.
 
-👥 Asignar Estudiante a Representante me parece que esta mal, seleccionar representate, estudiante y parentezco por que si hay miles de estudiantes va ha ser tedioso, promero sera de selecionar un curso, luego un estudiantes y asignar quen va ha ser su representante o algo asi.
-
 Falta Ver logs de actividad del sistema
 
 Quiero póder importar desde excel o csv los datos de los estudiantes, docentes, asignaturas, etc

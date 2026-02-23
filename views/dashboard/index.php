@@ -21,11 +21,7 @@
         <div class="ph-icon">👋</div>
         <div>
             <h1>Bienvenido, <?= htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']) ?></h1>
-            <p>
-                <?php foreach($_SESSION['roles'] as $role): ?>
-                    <span class="badge badge-blue"><?= ucfirst($role) ?></span>
-                <?php endforeach; ?>
-            </p>
+
         </div>
     </div>
 
