@@ -146,6 +146,7 @@
     <?php if(isset($_GET['sy_activated'])): ?><div class="success">✓ Año lectivo activado correctamente</div><?php endif; ?>
     <?php if(isset($_GET['sy_deactivated'])): ?><div class="success">✓ Año lectivo desactivado correctamente</div><?php endif; ?>
 
+    <?php if(isset($_GET['hours_updated'])): ?><div class="success">&#10003; Horas actualizadas. El horario fue ajustado autom&#225;ticamente.</div><?php endif; ?>
     <?php if(isset($_GET['rep_assigned'])): ?><div class="success">&#10003; Representante asignado correctamente</div><?php endif; ?>
     <?php if(isset($_GET['rep_removed'])): ?><div class="success">&#10003; Representante eliminado correctamente</div><?php endif; ?>
     <?php if(isset($_GET['rep_error'])): ?><div class="error">&#10007; <?= htmlspecialchars($_GET['rep_error']) ?></div><?php endif; ?>
@@ -359,7 +360,7 @@
                                         <td style="padding:7px 10px;text-align:center;white-space:nowrap;">
                                             <button onclick="openRepModal(<?= $est['id'] ?>, '<?= htmlspecialchars($est['last_name'].' '.$est['first_name'], ENT_QUOTES) ?>', <?= $course['id'] ?>)"
                                                     style="padding:3px 9px;font-size:12px;background:#17a2b8;color:#fff;border:none;border-radius:4px;cursor:pointer;margin:0;">
-                                                👪 Representantes
+                                                Representantes
                                             </button>
                                             <button onclick="smConfirmUnenroll(<?= $est['id'] ?>, '<?= addslashes($est['last_name'].' '.$est['first_name']) ?>', <?= $course['id'] ?>)"
                                                     style="padding:3px 9px;font-size:12px;background:#dc3545;color:#fff;border:none;border-radius:4px;cursor:pointer;margin:0;">

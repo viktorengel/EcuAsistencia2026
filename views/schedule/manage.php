@@ -3,13 +3,17 @@
 // ── Working days from institution ──────────────────────────────────
 $workingDays = ['lunes','martes','miercoles','jueves','viernes']; // default
 if(!empty($_SESSION['institution_id'])) {
-    $db2 = new Database();
-    $instRow = $db2->connect()->prepare("SELECT working_days_list FROM institutions WHERE id = :id");
-    $instRow->execute([':id' => $_SESSION['institution_id']]);
-    $inst = $instRow->fetch();
-    if(!empty($inst['working_days_list'])) {
-        $parsed = json_decode($inst['working_days_list'], true);
-        if(is_array($parsed) && count($parsed)) $workingDays = $parsed;
+    try {
+        $db2 = new Database();
+        $instRow = $db2->connect()->prepare("SELECT working_days_list FROM institutions WHERE id = :id");
+        $instRow->execute([':id' => $_SESSION['institution_id']]);
+        $inst = $instRow->fetch();
+        if(!empty($inst['working_days_list'])) {
+            $parsed = json_decode($inst['working_days_list'], true);
+            if(is_array($parsed) && count($parsed)) $workingDays = $parsed;
+        }
+    } catch (PDOException $e) {
+        // Columna working_days_list no existe aun, usar dias por defecto
     }
 }
 
@@ -111,8 +115,7 @@ foreach($schedule as $cls) {
     }
     .chip:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.14); }
     .chip.dragging { opacity:.35; cursor:grabbing; }
-    .chip.full { opacity:.4; cursor:not-allowed; }
-    .chip.full:hover { transform:none; box-shadow:none; }
+    .chip.full { display:none; }
     .chip.selected-mobile { outline:2px solid var(--accent); outline-offset:2px; }
     .chip .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
     .chip-name { font-weight:700; line-height:1.2; }
@@ -483,6 +486,7 @@ fetch('?action=get_course_subjects_schedule&course_id=' + CID)
             const chip = document.createElement('div');
             chip.className = 'chip' + (full ? ' full' : '');
             chip.draggable = !full;
+            if (full) chip.style.display = 'none';
             chip.dataset.subjectId   = sid;
             chip.dataset.teacherId   = s.teacher_id   || '';
             chip.dataset.teacherName = s.teacher_name || 'Sin docente';
@@ -510,10 +514,7 @@ fetch('?action=get_course_subjects_schedule&course_id=' + CID)
             chip.addEventListener('dragend', () => { chip.classList.remove('dragging'); dragSub = null; });
 
             chip.addEventListener('click', () => {
-                if (chip.classList.contains('full')) {
-                    toast('⚠️ ' + s.subject_name + ' ya tiene todas sus horas asignadas.', 'err');
-                    return;
-                }
+                if (chip.classList.contains('full')) return;
                 // Toggle selection
                 const already = selSub && selSub.subject_id == s.subject_id;
                 document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected-mobile'));
@@ -642,12 +643,13 @@ function saveClass(cell, s) {
     }
     // Update local counter immediately
     ASSIGNED[sid] = done + 1;
-    // Mark chip full if reached limit
+    // Hide chip when hours are exhausted
     if (ASSIGNED[sid] >= hrs) {
         document.querySelectorAll('.chip').forEach(c => {
             if (String(c.dataset.subjectId) === sid) {
                 c.classList.add('full');
                 c.draggable = false;
+                c.style.display = 'none';
             }
         });
     }
