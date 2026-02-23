@@ -146,6 +146,10 @@
     <?php if(isset($_GET['sy_activated'])): ?><div class="success">✓ Año lectivo activado correctamente</div><?php endif; ?>
     <?php if(isset($_GET['sy_deactivated'])): ?><div class="success">✓ Año lectivo desactivado correctamente</div><?php endif; ?>
 
+    <?php if(isset($_GET['rep_assigned'])): ?><div class="success">&#10003; Representante asignado correctamente</div><?php endif; ?>
+    <?php if(isset($_GET['rep_removed'])): ?><div class="success">&#10003; Representante eliminado correctamente</div><?php endif; ?>
+    <?php if(isset($_GET['rep_error'])): ?><div class="error">&#10007; <?= htmlspecialchars($_GET['rep_error']) ?></div><?php endif; ?>
+
     <?php if(isset($_GET['error'])): ?>
         <?php $errMap = [
             'no_active_year'       => 'No hay un año lectivo activo',
@@ -337,7 +341,7 @@
                                         <th style="padding:7px 10px;text-align:left;width:36px;">#</th>
                                         <th style="padding:7px 10px;text-align:left;">Apellidos y Nombres</th>
                                         <th style="padding:7px 10px;text-align:left;">Cédula</th>
-                                        <th style="padding:7px 10px;text-align:center;width:90px;">Acción</th>
+                                        <th style="padding:7px 10px;text-align:center;width:160px;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -347,6 +351,10 @@
                                         <td style="padding:7px 10px;"><strong><?= htmlspecialchars($est['last_name'].' '.$est['first_name']) ?></strong></td>
                                         <td style="padding:7px 10px;"><?= $est['dni'] ?? '-' ?></td>
                                         <td style="padding:7px 10px;text-align:center;">
+                                            <button onclick="openRepModal(<?= $est['id'] ?>, this.dataset.name, <?= $course['id'] ?>)" data-name="<?= htmlspecialchars($est['last_name'].' '.$est['first_name'], ENT_QUOTES) ?>"
+                                                    style="padding:3px 9px;font-size:12px;background:#17a2b8;color:#fff;border:none;border-radius:4px;cursor:pointer;margin:0;">
+                                                👨‍👩‍👦 Representantes
+                                            </button>
                                             <button onclick="smConfirmUnenroll(<?= $est['id'] ?>, '<?= addslashes($est['last_name'].' '.$est['first_name']) ?>', <?= $course['id'] ?>)"
                                                     style="padding:3px 9px;font-size:12px;background:#dc3545;color:#fff;border:none;border-radius:4px;cursor:pointer;margin:0;">
                                                 ✕ Retirar
@@ -521,6 +529,7 @@
                 $cf = $_SESSION['course_form'] ?? [];
                 unset($_SESSION['course_form']);
                 ?>
+                <script type="application/json" id="_dataCF"><?= json_encode(["education_type"=>$cf["education_type"]??"","grade_level"=>$cf["grade_level"]??"","specialty"=>$cf["specialty"]??"","carrera"=>$cf["carrera"]??""], JSON_HEX_TAG|JSON_HEX_AMP) ?></script>
 
                 <!-- Nivel + Grado -->
                 <div class="mf-row">
@@ -731,41 +740,45 @@
 <!-- ══════════════════════════════════════════════════════
      SCRIPTS
 ══════════════════════════════════════════════════════ -->
+
+<script type="application/json" id="_dataAvailable"><?= json_encode(array_values($availableStudents), JSON_HEX_TAG|JSON_HEX_AMP) ?></script>
+<script type="application/json" id="_dataReps"><?= json_encode(array_values($representatives ?? []), JSON_HEX_TAG|JSON_HEX_AMP) ?></script>
+<script type="application/json" id="_dataRepsByStudent"><?= json_encode($repsByStudent ?? [], JSON_HEX_TAG|JSON_HEX_AMP) ?></script>
 <script>
-/* ── Modales SY y Curso ── */
+/* \u2500\u2500 Modales SY y Curso \u2500\u2500 */
 function openSYModal()     { document.getElementById('modalSY').classList.add('active'); }
 function closeSYModal()    { document.getElementById('modalSY').classList.remove('active'); document.getElementById('formSY').reset(); }
 function openCourseModal() { document.getElementById('modalCourse').classList.add('active'); }
 function closeCourseModal(){ document.getElementById('modalCourse').classList.remove('active'); }
 
-/* Si hubo error de duplicado, reabrir modal de curso automáticamente */
+/* Si hubo error de duplicado, reabrir modal de curso autom\u00e1ticamente */
 <?php if(isset($_GET['error']) && in_array($_GET['error'], ['course_duplicate','no_active_year']) && !empty($cf)): ?>
 document.addEventListener('DOMContentLoaded', function(){ openCourseModal(); });
 <?php endif; ?>
 
-/* ── Grade levels (curso) ── */
+/* \u2500\u2500 Grade levels (curso) \u2500\u2500 */
 const gradeLevels = {
-    inicial: ['Inicial 1 (0-3 años)','Inicial 2 (3-5 años)'],
-    egb: ['1.º EGB - Preparatoria','2.º EGB','3.º EGB','4.º EGB','5.º EGB','6.º EGB','7.º EGB','8.º EGB','9.º EGB','10.º EGB'],
-    bgu: ['1.º BGU','2.º BGU','3.º BGU'],
-    bt:  ['1.º BT','2.º BT','3.º BT']
+    inicial: ['Inicial 1 (0-3 a\u00f1os)','Inicial 2 (3-5 a\u00f1os)'],
+    egb: ['1.\u00ba EGB - Preparatoria','2.\u00ba EGB','3.\u00ba EGB','4.\u00ba EGB','5.\u00ba EGB','6.\u00ba EGB','7.\u00ba EGB','8.\u00ba EGB','9.\u00ba EGB','10.\u00ba EGB'],
+    bgu: ['1.\u00ba BGU','2.\u00ba BGU','3.\u00ba BGU'],
+    bt:  ['1.\u00ba BT','2.\u00ba BT','3.\u00ba BT']
 };
-const egbNocturnaAllowed = ['8.º EGB','9.º EGB','10.º EGB'];
+const egbNocturnaAllowed = ['8.\u00ba EGB','9.\u00ba EGB','10.\u00ba EGB'];
 const carreras = {
-    'Informática': ['Aplicaciones Informáticas','Programación de Software','Soporte Técnico','Sistemas Microinformáticos y Redes'],
-    'Administración': ['Asistencia Administrativa','Gestión Empresarial'],
-    'Contabilidad': ['Contabilidad','Ventas e Información Comercial'],
-    'Comercialización y Ventas': ['Ventas e Información Comercial','Marketing'],
-    'Servicios Hoteleros': ['Hotelería','Hospitalidad'],
-    'Turismo': ['Turismo','Guía Turístico'],
-    'Electromecánica Automotriz': ['Electromecánica Automotriz','Mecánica Automotriz'],
-    'Instalaciones Eléctricas': ['Electricidad','Instalaciones Eléctricas'],
-    'Electrónica de Consumo': ['Electrónica','Mantenimiento Electrónico'],
-    'Atención Integral en Salud': ['Atención en Enfermería','Auxiliar de Salud'],
-    'Producción Agropecuaria': ['Producción Agropecuaria','Agroindustria'],
+    'Inform\u00e1tica': ['Aplicaciones Inform\u00e1ticas','Programaci\u00f3n de Software','Soporte T\u00e9cnico','Sistemas Microinform\u00e1ticos y Redes'],
+    'Administraci\u00f3n': ['Asistencia Administrativa','Gesti\u00f3n Empresarial'],
+    'Contabilidad': ['Contabilidad','Ventas e Informaci\u00f3n Comercial'],
+    'Comercializaci\u00f3n y Ventas': ['Ventas e Informaci\u00f3n Comercial','Marketing'],
+    'Servicios Hoteleros': ['Hoteler\u00eda','Hospitalidad'],
+    'Turismo': ['Turismo','Gu\u00eda Tur\u00edstico'],
+    'Electromec\u00e1nica Automotriz': ['Electromec\u00e1nica Automotriz','Mec\u00e1nica Automotriz'],
+    'Instalaciones El\u00e9ctricas': ['Electricidad','Instalaciones El\u00e9ctricas'],
+    'Electr\u00f3nica de Consumo': ['Electr\u00f3nica','Mantenimiento Electr\u00f3nico'],
+    'Atenci\u00f3n Integral en Salud': ['Atenci\u00f3n en Enfermer\u00eda','Auxiliar de Salud'],
+    'Producci\u00f3n Agropecuaria': ['Producci\u00f3n Agropecuaria','Agroindustria'],
     'Redes y Telecomunicaciones': ['Redes','Telecomunicaciones'],
-    'Diseño Gráfico': ['Diseño Gráfico','Multimedia'],
-    'Servicios de Belleza': ['Peluquería','Cosmetología']
+    'Dise\u00f1o Gr\u00e1fico': ['Dise\u00f1o Gr\u00e1fico','Multimedia'],
+    'Servicios de Belleza': ['Peluquer\u00eda','Cosmetolog\u00eda']
 };
 
 function getNocturnaOption() {
@@ -823,11 +836,12 @@ function generateCourseName() {
     document.getElementById('course_name').value = name;
 }
 
-/* Restaurar form si volvió con error */
+/* Restaurar form si volvi\u00f3 con error */
 (function restoreForm() {
-    var savedType  = <?= json_encode($cf['education_type'] ?? '') ?>;
-    var savedGrade = <?= json_encode($cf['grade_level']    ?? '') ?>;
-    var savedSpec  = <?= json_encode($cf['specialty']      ?? '') ?>;
+    var _cfData   = JSON.parse(document.getElementById('_dataCF').textContent);
+    var savedType  = _cfData.education_type || '';
+    var savedGrade = _cfData.grade_level    || '';
+    var savedSpec  = _cfData.specialty      || '';
     if (!savedType) return;
     document.getElementById('education_type').value = savedType;
     updateGradeLevels();
@@ -835,26 +849,26 @@ function generateCourseName() {
         if (savedGrade) { document.getElementById('grade_level').value=savedGrade; onGradeChange(); }
         if (savedType==='bt'&&savedSpec) {
             var s=document.getElementById('specialty'); if(s){s.value=savedSpec;updateCarreras();}
-            setTimeout(function(){ var c=document.getElementById('carrera'); if(c) c.value=<?= json_encode($cf['carrera'] ?? '') ?>; generateCourseName(); },60);
+            setTimeout(function(){ var c=document.getElementById('carrera'); if(c) c.value=_cfData.carrera||''; generateCourseName(); },60);
         } else { generateCourseName(); }
     },60);
 })();
 
-/* ── Confirmaciones ── */
+/* \u2500\u2500 Confirmaciones \u2500\u2500 */
 function confirmDeleteCourse(event, courseName) {
     event.preventDefault();
-    showConfirmModal('⚠️ Eliminar Curso','#dc3545',
-        '¿Está seguro de eliminar el curso <strong>'+courseName+'</strong>?',
-        '<p style="font-size:13px;background:#fff3cd;color:#856404;padding:10px;border-radius:4px;margin-top:8px;">⚠️ Se desvinculará automáticamente a todos los estudiantes matriculados y docentes asignados.</p>',
-        'Sí, Eliminar', event.target);
+    showConfirmModal('\u26a0\ufe0f Eliminar Curso','#dc3545',
+        '\u00bfEst\u00e1 seguro de eliminar el curso <strong>'+courseName+'</strong>?',
+        '<p style="font-size:13px;background:#fff3cd;color:#856404;padding:10px;border-radius:4px;margin-top:8px;">\u26a0\ufe0f Se desvincular\u00e1 autom\u00e1ticamente a todos los estudiantes matriculados y docentes asignados.</p>',
+        'S\u00ed, Eliminar', event.target);
     return false;
 }
 function confirmDelete(event, yearName) {
     event.preventDefault();
-    showConfirmModal('⚠️ Eliminar Año Lectivo','#dc3545',
-        '¿Está seguro de eliminar el año lectivo <strong>'+yearName+'</strong>?',
+    showConfirmModal('\u26a0\ufe0f Eliminar A\u00f1o Lectivo','#dc3545',
+        '\u00bfEst\u00e1 seguro de eliminar el a\u00f1o lectivo <strong>'+yearName+'</strong>?',
         '<p style="font-size:13px;color:#666;margin-top:8px;"><strong>Nota:</strong> No se puede eliminar si tiene cursos asociados.</p>',
-        'Sí, Eliminar', event.target);
+        'S\u00ed, Eliminar', event.target);
     return false;
 }
 function confirmSY(event, accion, nombre) {
@@ -862,9 +876,9 @@ function confirmSY(event, accion, nombre) {
     var esActivar = accion==='activar';
     var color = esActivar ? '#28a745' : '#6c757d';
     var desc  = esActivar
-        ? 'Se desactivará el año lectivo actual y se activará <strong>'+nombre+'</strong>.'
-        : '¿Seguro que deseas desactivar <strong>'+nombre+'</strong>?';
-    showConfirmModal((esActivar?'✓ Activar':'⊘ Desactivar')+' Año Lectivo', color, desc, '', esActivar?'Sí, Activar':'Sí, Desactivar', event.target);
+        ? 'Se desactivar\u00e1 el a\u00f1o lectivo actual y se activar\u00e1 <strong>'+nombre+'</strong>.'
+        : '\u00bfSeguro que deseas desactivar <strong>'+nombre+'</strong>?';
+    showConfirmModal((esActivar?'\u2713 Activar':'\u2298 Desactivar')+' A\u00f1o Lectivo', color, desc, '', esActivar?'S\u00ed, Activar':'S\u00ed, Desactivar', event.target);
     return false;
 }
 function showConfirmModal(title, color, msg, extra, btnTxt, form) {
@@ -883,7 +897,7 @@ function showConfirmModal(title, color, msg, extra, btnTxt, form) {
     m.onclick = function(e){ if(e.target===m) document.body.removeChild(m); };
 }
 
-/* ── Tutor ── */
+/* \u2500\u2500 Tutor \u2500\u2500 */
 document.addEventListener('click', function(e) {
     var btn = e.target.closest('.btn-tutor-assign,.btn-tutor-change,.btn-tutor-remove');
     if (!btn) return;
@@ -911,7 +925,7 @@ function openTutorModal(courseId,courseName,hasTutor){
         })
         .catch(function(){
             var msg=document.getElementById('tutorLoadingMsg');
-            msg.textContent='✗ Error al cargar docentes.'; msg.style.color='#dc3545';
+            msg.textContent='\u2717 Error al cargar docentes.'; msg.style.color='#dc3545';
         });
 }
 function closeTutorModal(){ document.getElementById('tutorModal').classList.remove('active'); }
@@ -924,7 +938,7 @@ function closeRemoveModal(){ document.getElementById('removeTutorModal').classLi
 document.getElementById('tutorModal').addEventListener('click',function(e){if(e.target===this)closeTutorModal();});
 document.getElementById('removeTutorModal').addEventListener('click',function(e){if(e.target===this)closeRemoveModal();});
 
-/* ── Estudiantes expandible ── */
+/* \u2500\u2500 Estudiantes expandible \u2500\u2500 */
 function toggleStudentsRow(courseId) {
     var row=document.getElementById('rowEst_'+courseId);
     var btn=document.getElementById('btnEst_'+courseId);
@@ -944,8 +958,10 @@ function filterInlineEnrolled(input,courseId){
     });
 }
 
-/* ── Matricular ── */
-var smAvailableStudents = <?= json_encode(array_values($availableStudents)) ?>;
+/* \u2500\u2500 Matricular \u2500\u2500 */
+var smAvailableStudents = JSON.parse(document.getElementById("_dataAvailable").textContent);
+var smRepresentatives   = JSON.parse(document.getElementById("_dataReps").textContent);
+var smRepsByStudent     = JSON.parse(document.getElementById("_dataRepsByStudent").textContent);
 function openEnrollModal(courseId,courseName){
     document.getElementById('emCourseId').value=courseId;
     document.getElementById('emCourseLabel').textContent=courseName;
@@ -955,7 +971,7 @@ function openEnrollModal(courseId,courseName){
     var html='';
     smAvailableStudents.forEach(function(s){
         var name=(s.last_name||'')+' '+(s.first_name||'');
-        var dni=s.dni?'<span style="color:#aaa;font-size:11px;">· '+s.dni+'</span>':'';
+        var dni=s.dni?'<span style="color:#aaa;font-size:11px;">\u00b7 '+s.dni+'</span>':'';
         html+='<div class="emItem" data-name="'+normalize(name)+'" '
             +'style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;margin-bottom:5px;cursor:pointer;" '
             +'onclick="emToggleCheck(this)">'
@@ -984,11 +1000,11 @@ function emUpdateCounter(){
     document.getElementById('emSubmit').disabled=(n===0);
 }
 
-/* ── Retirar estudiante ── */
+/* \u2500\u2500 Retirar estudiante \u2500\u2500 */
 function smConfirmUnenroll(studentId,name,courseId){
     document.getElementById('smUnenrollStudentId').value=studentId;
     document.getElementById('smUnenrollCourseId').value=courseId;
-    document.getElementById('smUnenrollMsg').innerHTML='¿Retirar a <strong>'+name+'</strong> del curso?';
+    document.getElementById('smUnenrollMsg').innerHTML='\u00bfRetirar a <strong>'+name+'</strong> del curso?';
     document.getElementById('smUnenrollModal').classList.add('active');
 }
 function closeSmUnenroll(){ document.getElementById('smUnenrollModal').classList.remove('active'); }
@@ -1135,7 +1151,7 @@ document.addEventListener('keydown',function(e){
 </div>
 
 <script>
-/* ══ Editar Año Lectivo ══ */
+/* \u2550\u2550 Editar A\u00f1o Lectivo \u2550\u2550 */
 function openEditSYModal(id, name, startDate, endDate, isActive) {
     document.getElementById('formEditSY').action = '?action=edit_school_year&id=' + id;
     document.getElementById('editSYName').value  = name;
@@ -1148,29 +1164,29 @@ function openEditSYModal(id, name, startDate, endDate, isActive) {
 function closeEditSYModal() { document.getElementById('modalEditSY').classList.remove('active'); }
 document.getElementById('modalEditSY').addEventListener('click', function(e){ if(e.target===this) closeEditSYModal(); });
 
-/* ══ Editar Curso ══ */
+/* \u2550\u2550 Editar Curso \u2550\u2550 */
 const editGradeLevels = {
-    inicial: ['Inicial 1 (0-3 años)','Inicial 2 (3-5 años)'],
-    egb: ['1.º EGB - Preparatoria','2.º EGB','3.º EGB','4.º EGB','5.º EGB','6.º EGB','7.º EGB','8.º EGB','9.º EGB','10.º EGB'],
-    bgu: ['1.º BGU','2.º BGU','3.º BGU'],
-    bt:  ['1.º BT','2.º BT','3.º BT']
+    inicial: ['Inicial 1 (0-3 a\u00f1os)','Inicial 2 (3-5 a\u00f1os)'],
+    egb: ['1.\u00ba EGB - Preparatoria','2.\u00ba EGB','3.\u00ba EGB','4.\u00ba EGB','5.\u00ba EGB','6.\u00ba EGB','7.\u00ba EGB','8.\u00ba EGB','9.\u00ba EGB','10.\u00ba EGB'],
+    bgu: ['1.\u00ba BGU','2.\u00ba BGU','3.\u00ba BGU'],
+    bt:  ['1.\u00ba BT','2.\u00ba BT','3.\u00ba BT']
 };
-const editEgbNocturna = ['8.º EGB','9.º EGB','10.º EGB'];
+const editEgbNocturna = ['8.\u00ba EGB','9.\u00ba EGB','10.\u00ba EGB'];
 const editCarrerasMap = {
-    'Informática': ['Aplicaciones Informáticas','Programación de Software','Soporte Técnico','Sistemas Microinformáticos y Redes'],
-    'Administración': ['Asistencia Administrativa','Gestión Empresarial'],
-    'Contabilidad': ['Contabilidad','Ventas e Información Comercial'],
-    'Comercialización y Ventas': ['Ventas e Información Comercial','Marketing'],
-    'Servicios Hoteleros': ['Hotelería','Hospitalidad'],
-    'Turismo': ['Turismo','Guía Turístico'],
-    'Electromecánica Automotriz': ['Electromecánica Automotriz','Mecánica Automotriz'],
-    'Instalaciones Eléctricas': ['Electricidad','Instalaciones Eléctricas'],
-    'Electrónica de Consumo': ['Electrónica','Mantenimiento Electrónico'],
-    'Atención Integral en Salud': ['Atención en Enfermería','Auxiliar de Salud'],
-    'Producción Agropecuaria': ['Producción Agropecuaria','Agroindustria'],
+    'Inform\u00e1tica': ['Aplicaciones Inform\u00e1ticas','Programaci\u00f3n de Software','Soporte T\u00e9cnico','Sistemas Microinform\u00e1ticos y Redes'],
+    'Administraci\u00f3n': ['Asistencia Administrativa','Gesti\u00f3n Empresarial'],
+    'Contabilidad': ['Contabilidad','Ventas e Informaci\u00f3n Comercial'],
+    'Comercializaci\u00f3n y Ventas': ['Ventas e Informaci\u00f3n Comercial','Marketing'],
+    'Servicios Hoteleros': ['Hoteler\u00eda','Hospitalidad'],
+    'Turismo': ['Turismo','Gu\u00eda Tur\u00edstico'],
+    'Electromec\u00e1nica Automotriz': ['Electromec\u00e1nica Automotriz','Mec\u00e1nica Automotriz'],
+    'Instalaciones El\u00e9ctricas': ['Electricidad','Instalaciones El\u00e9ctricas'],
+    'Electr\u00f3nica de Consumo': ['Electr\u00f3nica','Mantenimiento Electr\u00f3nico'],
+    'Atenci\u00f3n Integral en Salud': ['Atenci\u00f3n en Enfermer\u00eda','Auxiliar de Salud'],
+    'Producci\u00f3n Agropecuaria': ['Producci\u00f3n Agropecuaria','Agroindustria'],
     'Redes y Telecomunicaciones': ['Redes','Telecomunicaciones'],
-    'Diseño Gráfico': ['Diseño Gráfico','Multimedia'],
-    'Servicios de Belleza': ['Peluquería','Cosmetología']
+    'Dise\u00f1o Gr\u00e1fico': ['Dise\u00f1o Gr\u00e1fico','Multimedia'],
+    'Servicios de Belleza': ['Peluquer\u00eda','Cosmetolog\u00eda']
 };
 
 function editDetectType(grade) {
@@ -1355,7 +1371,7 @@ document.addEventListener('keydown', function(e){
 </div>
 
 <script>
-/* ── Asignaturas expandible ── */
+/* \u2500\u2500 Asignaturas expandible \u2500\u2500 */
 function toggleSubjectsRow(courseId) {
     var row = document.getElementById('rowSub_' + courseId);
     var btn = document.getElementById('btnSub_' + courseId);
@@ -1377,7 +1393,7 @@ function filterSubjects(input, courseId) {
     });
 }
 
-/* ── Modal agregar asignatura ── */
+/* \u2500\u2500 Modal agregar asignatura \u2500\u2500 */
 function openAddSubjectModal(courseId, courseName) {
     document.getElementById('formAddSubject').action = '?action=course_subjects&course_id=' + courseId;
     document.getElementById('addSubjectCourseName').textContent = courseName;
@@ -1391,7 +1407,7 @@ function closeAddSubjectModal() {
 }
 document.getElementById('modalAddSubject').addEventListener('click', function(e){ if(e.target===this) closeAddSubjectModal(); });
 
-/* ── Modal docente ── */
+/* \u2500\u2500 Modal docente \u2500\u2500 */
 function abrirModalDocente(subjectId, subjectName, assignmentId, teacherId, courseId) {
     document.getElementById('modalDocenteSubjectId').value  = subjectId;
     document.getElementById('modalDocenteCourseId').value   = courseId;
@@ -1406,7 +1422,7 @@ function cerrarModalDocente() {
 }
 document.getElementById('modalDocente').addEventListener('click', function(e){ if(e.target===this) cerrarModalDocente(); });
 
-/* ── Confirmar quitar asignatura ── */
+/* \u2500\u2500 Confirmar quitar asignatura \u2500\u2500 */
 function confirmRemoveSubject(event, nombre) {
     event.preventDefault();
     showConfirmModal(
@@ -1425,7 +1441,7 @@ document.addEventListener('keydown', function(e){
 
 
 <script>
-/* ── Auto-reabrir panel tras POST ── */
+/* \u2500\u2500 Auto-reabrir panel tras POST \u2500\u2500 */
 (function(){
     var openStudents = <?= isset($_GET['open_students']) ? (int)$_GET['open_students'] : 'null' ?>;
     var openSubjects = <?= isset($_GET['open_subjects']) ? (int)$_GET['open_subjects'] : 'null' ?>;
@@ -1443,5 +1459,118 @@ document.addEventListener('keydown', function(e){
     }
 })();
 </script>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: REPRESENTANTES DEL ESTUDIANTE
+══════════════════════════════════════════════════════ -->
+<div id="modalRep" class="modal-overlay" onclick="if(event.target===this)closeRepModal()">
+    <div class="modal-box" style="max-width:560px;">
+        <div class="modal-header">
+            <div>
+                <h3 style="color:#17a2b8;">&#128106; Representantes</h3>
+                <p id="repModalStudentName" style="color:#888;font-size:12px;"></p>
+            </div>
+            <button class="modal-close" onclick="closeRepModal()">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+
+            <!-- Lista de representantes actuales -->
+            <div id="repCurrentList" style="margin-bottom:18px;"></div>
+
+            <!-- Formulario nueva asignacion -->
+            <div style="border-top:1px solid #f0f0f0;padding-top:16px;">
+                <p style="font-size:13px;font-weight:600;color:#333;margin-bottom:12px;">&#10133; Asignar representante</p>
+                <form method="POST" action="?action=assign_rep_from_academic" id="formAssignRep">
+                    <input type="hidden" name="student_id" id="repStudentId">
+                    <input type="hidden" name="course_id"  id="repCourseId">
+                    <div class="mf-row">
+                        <div>
+                            <label class="mf-label">Representante *</label>
+                            <select name="representative_id" id="repSelect" required class="mf-input">
+                                <option value="">Seleccionar...</option>
+                                <?php foreach($representatives ?? [] as $rep): ?>
+                                    <option value="<?= $rep['id'] ?>">
+                                        <?= htmlspecialchars($rep['last_name'].' '.$rep['first_name']) ?>
+                                        <?= $rep['dni'] ? ' ('.$rep['dni'].')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mf-label">Parentesco *</label>
+                            <select name="relationship" id="repRelationship" required class="mf-input">
+                                <option value="">Seleccionar...</option>
+                                <?php foreach(['Padre','Madre','Tutor Legal','Abuelo/a','Tío/a','Hermano/a','Otro'] as $rel): ?>
+                                    <option value="<?= $rel ?>"><?= $rel ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal;font-size:13px;">
+                            <input type="checkbox" name="is_primary" value="1"
+                                   style="width:16px;height:16px;accent-color:#17a2b8;">
+                            <span>
+                                <strong>Representante Principal</strong>
+                                <span style="color:#888;font-size:11px;display:block;">Recibe notificaciones prioritarias</span>
+                            </span>
+                        </label>
+                    </div>
+                    <button type="submit"
+                            style="width:100%;padding:9px;background:#17a2b8;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin:0;">
+                        &#10003; Asignar Representante
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" onclick="closeRepModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openRepModal(studentId, studentName, courseId) {
+    document.getElementById('repStudentId').value = studentId;
+    document.getElementById('repCourseId').value  = courseId;
+    document.getElementById('repModalStudentName').textContent = studentName;
+    document.getElementById('repSelect').value = '';
+    document.getElementById('repRelationship').value = '';
+
+    var reps = smRepsByStudent[String(studentId)] || [];
+    var html = '';
+    if (reps.length === 0) {
+        html = '<p style="color:#aaa;font-size:13px;text-align:center;padding:12px 0;">Sin representantes asignados.</p>';
+    } else {
+        html = '<p style="font-size:13px;font-weight:600;color:#333;margin-bottom:10px;">Representantes actuales:</p>';
+        reps.forEach(function(r) {
+            var badge = r.is_primary
+                ? '<span style="background:#17a2b8;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">Principal</span>'
+                : '<span style="background:#e9ecef;color:#555;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;">Secundario</span>';
+            var removeUrl = '?action=remove_rep_from_academic&rep_id=' + r.id
+                          + '&student_id=' + studentId + '&course_id=' + courseId;
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;'
+                  + 'padding:9px 12px;border:1px solid #e0e0e0;border-radius:7px;margin-bottom:7px;background:#fafafa;">'
+                  + '<div>'
+                  + '<span style="font-size:13px;font-weight:600;">&#128100; ' + r.last_name + ' ' + r.first_name + '</span>'
+                  + badge
+                  + '<br><span style="font-size:11px;color:#888;">' + r.relationship + '</span>'
+                  + '</div>'
+                  + '<a href="' + removeUrl + '" onclick="return confirm('Quitar representante?')"'
+                  + ' style="padding:4px 10px;font-size:12px;background:#dc3545;color:white;border-radius:4px;text-decoration:none;">Quitar</a>'
+                  + '</div>';
+        });
+    }
+    document.getElementById('repCurrentList').innerHTML = html;
+    document.getElementById('modalRep').classList.add('active');
+}
+function closeRepModal() {
+    document.getElementById('modalRep').classList.remove('active');
+}
+document.getElementById('modalRep').addEventListener('click', function(e){ if(e.target===this) closeRepModal(); });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeRepModal(); });
+</script>
+
 </body>
 </html>

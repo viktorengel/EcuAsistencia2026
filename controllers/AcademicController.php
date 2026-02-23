@@ -46,10 +46,21 @@ class AcademicController {
         $activeYear        = $this->schoolYearModel->getActive();
         $availableStudents = $activeYear ? $this->userModel->getStudentsNotEnrolled($activeYear['id']) : [];
         $enrollmentsByCourse = [];
-        $subjectsByCourse = [];
+        $subjectsByCourse    = [];
         foreach ($courses as $c) {
             $enrollmentsByCourse[$c['id']] = $this->courseModel->getEnrolledStudents($c['id']);
             $subjectsByCourse[$c['id']]    = $this->getSubjectsByCourse($c['id']);
+        }
+
+        // Representantes por estudiante
+        require_once BASE_PATH . '/models/Representative.php';
+        $repModel = new Representative($this->db);
+        $representatives = $this->userModel->getByRole('representante');
+        $repsByStudent = [];
+        foreach ($enrollmentsByCourse as $courseId => $students) {
+            foreach ($students as $st) {
+                $repsByStudent[$st['id']] = $repModel->getRepresentativesByStudent($st['id']);
+            }
         }
 
         include BASE_PATH . '/views/academic/index.php';

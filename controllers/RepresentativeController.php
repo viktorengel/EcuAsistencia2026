@@ -119,4 +119,42 @@ class RepresentativeController {
         header('Location: ?action=manage_representatives&error=1');
         exit;
     }
+
+    // ── Asignar representante desde vista académica ───────────────────────
+    public function assignFromAcademic() {
+        if (!Security::hasRole('autoridad')) { die('Acceso denegado'); }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=academic'); exit; }
+
+        $repId        = (int)$_POST['representative_id'];
+        $studentId    = (int)$_POST['student_id'];
+        $courseId     = (int)$_POST['course_id'];
+        $relationship = Security::sanitize($_POST['relationship']);
+        $isPrimary    = isset($_POST['is_primary']) ? 1 : 0;
+
+        $result = $this->representativeModel->assignStudent($repId, $studentId, $relationship, $isPrimary);
+
+        if ($result === true) {
+            header('Location: ?action=academic&open_students=' . $courseId . '&rep_assigned=1');
+        } else {
+            header('Location: ?action=academic&open_students=' . $courseId . '&rep_error=' . urlencode($result['error']));
+        }
+        exit;
+    }
+
+    // ── Quitar representante desde vista académica ────────────────────────
+    public function removeFromAcademic() {
+        if (!Security::hasRole('autoridad')) { die('Acceso denegado'); }
+
+        $repId     = (int)($_GET['rep_id']     ?? 0);
+        $studentId = (int)($_GET['student_id'] ?? 0);
+        $courseId  = (int)($_GET['course_id']  ?? 0);
+
+        if ($repId && $studentId) {
+            $this->representativeModel->removeStudent($repId, $studentId);
+        }
+
+        header('Location: ?action=academic&open_students=' . $courseId . '&rep_removed=1');
+        exit;
+    }
+
 }

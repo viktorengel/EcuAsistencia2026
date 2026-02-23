@@ -512,6 +512,18 @@ switch ($action) {
         $controller->removeRelation();
         break;
 
+    case 'assign_rep_from_academic':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $controller = new RepresentativeController();
+        $controller->assignFromAcademic();
+        break;
+
+    case 'remove_rep_from_academic':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $controller = new RepresentativeController();
+        $controller->removeFromAcademic();
+        break;
+
     case 'toggle_primary_representative':
         require_once BASE_PATH . '/controllers/RepresentativeController.php';
         $controller = new RepresentativeController();
