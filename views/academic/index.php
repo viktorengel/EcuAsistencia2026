@@ -335,26 +335,31 @@
                             <?php if(!empty($enrollmentsByCourse[$course['id']])): ?>
                             <input type="text" placeholder="🔍 Buscar estudiante..." oninput="filterInlineEnrolled(this, <?= $course['id'] ?>)"
                                 style="width:100%;max-width:320px;padding:7px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:10px;">
-                            <table id="tblEst_<?= $course['id'] ?>" style="width:100%;border-collapse:collapse;font-size:13px;">
+                            <table id="tblEst_<?= $course['id'] ?>" style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;">
+                                <colgroup>
+                                    <col style="width:32px;">
+                                    <col style="width:110px;">
+                                    <col style="width:auto;">
+                                    <col style="width:220px;">
+                                </colgroup>
                                 <thead>
                                     <tr style="background:#e8eaf6;">
-                                        <th style="padding:7px 10px;text-align:left;width:36px;">#</th>
-                                        <th style="padding:7px 10px;text-align:left;">Apellidos y Nombres</th>
+                                        <th style="padding:7px 10px;text-align:left;">#</th>
                                         <th style="padding:7px 10px;text-align:left;">Cédula</th>
-                                        <th style="padding:7px 10px;text-align:center;width:160px;">Acciones</th>
+                                        <th style="padding:7px 10px;text-align:left;">Apellidos y Nombres</th>
+                                        <th style="padding:7px 10px;text-align:center;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php $ni=1; foreach($enrollmentsByCourse[$course['id']] as $est): ?>
                                     <tr data-course="<?= $course['id'] ?>" data-name="<?= strtolower($est['last_name'].' '.$est['first_name']) ?>" style="border-bottom:1px solid #e8eaf6;">
                                         <td style="padding:7px 10px;"><?= $ni++ ?></td>
-                                        <td style="padding:7px 10px;"><strong><?= htmlspecialchars($est['last_name'].' '.$est['first_name']) ?></strong></td>
                                         <td style="padding:7px 10px;"><?= $est['dni'] ?? '-' ?></td>
-                                        <td style="padding:7px 10px;text-align:center;">
-                                            <td style="padding:7px 10px;text-align:center;">
+                                        <td style="padding:7px 10px;"><strong><?= htmlspecialchars($est['last_name'].' '.$est['first_name']) ?></strong></td>
+                                        <td style="padding:7px 10px;text-align:center;white-space:nowrap;">
                                             <button onclick="openRepModal(<?= $est['id'] ?>, '<?= htmlspecialchars($est['last_name'].' '.$est['first_name'], ENT_QUOTES) ?>', <?= $course['id'] ?>)"
                                                     style="padding:3px 9px;font-size:12px;background:#17a2b8;color:#fff;border:none;border-radius:4px;cursor:pointer;margin:0;">
-                                                👨‍👩‍👦 Representantes
+                                                👪 Representantes
                                             </button>
                                             <button onclick="smConfirmUnenroll(<?= $est['id'] ?>, '<?= addslashes($est['last_name'].' '.$est['first_name']) ?>', <?= $course['id'] ?>)"
                                                     style="padding:3px 9px;font-size:12px;background:#dc3545;color:#fff;border:none;border-radius:4px;cursor:pointer;margin:0;">
