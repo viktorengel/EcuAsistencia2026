@@ -292,7 +292,8 @@
                     </td>
                     <td style="white-space:nowrap;">
                         <button class="action-btn" style="background:#6f42c1;color:white;"
-                                onclick="location.href='?action=course_subjects&course_id=<?= $course['id'] ?>'">
+                                id="btnSub_<?= $course['id'] ?>"
+                                onclick="toggleSubjectsRow(<?= $course['id'] ?>)">
                             📚 Asignaturas
                         </button>
                         <button class="action-btn" style="background:#007bff;color:white;"
@@ -361,6 +362,90 @@
                         </div>
                     </td>
                 </tr>
+                    <!-- Fila expandible ASIGNATURAS -->
+                    <tr id="rowSub_<?= $course['id'] ?>" style="display:none;background:#fffde7;">
+                        <td colspan="5" style="padding:0;border-bottom:2px solid #6f42c1;">
+                            <div class="sp-inner">
+                                <div class="sp-header">
+                                    <span style="font-weight:700;font-size:14px;color:#4a148c;">
+                                        📚 <?= htmlspecialchars($course['name']) ?>
+                                        &nbsp;<span style="background:#ede7f6;color:#4a148c;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:700;">
+                                            <?= count($subjectsByCourse[$course['id']] ?? []) ?> asignatura(s)
+                                        </span>
+                                    </span>
+                                    <button onclick="openAddSubjectModal(<?= $course['id'] ?>, '<?= htmlspecialchars(addslashes($course['name']), ENT_QUOTES) ?>')"
+                                            style="padding:6px 14px;font-size:12px;background:#6f42c1;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;margin:0;">
+                                        ➕ Agregar asignatura
+                                    </button>
+                                </div>
+                                <?php if(!empty($subjectsByCourse[$course['id']])): ?>
+                                <input type="text" placeholder="🔍 Buscar asignatura..."
+                                    oninput="filterSubjects(this, <?= $course['id'] ?>)"
+                                    style="width:100%;max-width:320px;padding:7px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:10px;">
+                                <table id="tblSub_<?= $course['id'] ?>" style="width:100%;border-collapse:collapse;font-size:13px;">
+                                    <thead>
+                                        <tr style="background:#ede7f6;">
+                                            <th style="padding:7px 10px;text-align:left;width:36px;">#</th>
+                                            <th style="padding:7px 10px;text-align:left;">Asignatura</th>
+                                            <th style="padding:7px 10px;text-align:left;">Código</th>
+                                            <th style="padding:7px 10px;text-align:center;width:80px;">Hrs/sem</th>
+                                            <th style="padding:7px 10px;text-align:left;">Docente</th>
+                                            <th style="padding:7px 10px;text-align:center;width:130px;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php $si=1; foreach($subjectsByCourse[$course['id']] as $sub): ?>
+                                    <tr data-subname="<?= strtolower($sub['name']) ?>" style="border-bottom:1px solid #ede7f6;">
+                                        <td style="padding:7px 10px;"><?= $si++ ?></td>
+                                        <td style="padding:7px 10px;"><strong><?= htmlspecialchars($sub['name']) ?></strong></td>
+                                        <td style="padding:7px 10px;"><?= $sub['code'] ? htmlspecialchars($sub['code']) : '<span style="color:#bbb;">&#x2014;</span>' ?></td>
+                                        <td style="padding:7px 10px;text-align:center;">
+                                            <form method="POST" action="?action=set_subject_hours&course_id=<?= $course['id'] ?>" style="display:inline-flex;align-items:center;gap:4px;">
+                                                <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
+                                                <input type="number" name="hours_per_week" value="<?= (int)($sub['hours_per_week'] ?? 1) ?>"
+                                                       min="1" max="20" style="width:50px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center;">
+                                                <button type="submit" style="padding:3px 7px;background:#007bff;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin:0;">&#10003;</button>
+                                            </form>
+                                        </td>
+                                        <td style="padding:7px 10px;">
+                                            <?php if(!empty($sub['teacher_name'])): ?>
+                                                <span style="color:#2e7d32;font-size:13px;">&#128100; <?= htmlspecialchars($sub['teacher_name']) ?></span>
+                                            <?php else: ?>
+                                                <span style="color:#bbb;font-style:italic;font-size:12px;">Sin docente</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td style="padding:7px 10px;text-align:center;white-space:nowrap;">
+                                            <button onclick="abrirModalDocente(<?= $sub['id'] ?>, '<?= htmlspecialchars(addslashes($sub['name'])) ?>', <?= $sub['assignment_id'] ?? 'null' ?>, <?= $sub['teacher_id'] ?? 'null' ?>, <?= $course['id'] ?>)"
+                                                    style="padding:3px 8px;font-size:12px;background:#e65100;color:white;border:none;border-radius:4px;cursor:pointer;margin:0;"
+                                                    title="<?= empty($sub['teacher_name']) ? 'Asignar docente' : 'Cambiar docente' ?>">
+                                                <?= empty($sub['teacher_name']) ? '&#128100;' : '&#128260;&#128100;' ?>
+                                            </button>
+                                            <?php if(!empty($sub['teacher_name'])): ?>
+                                            <form method="POST" action="?action=unassign_subject_teacher" style="display:inline;">
+                                                <input type="hidden" name="assignment_id" value="<?= $sub['assignment_id'] ?>">
+                                                <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
+                                                <button type="submit"
+                                                        onclick="return confirm('Quitar docente de esta asignatura?')"
+                                                        style="padding:3px 8px;font-size:12px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;margin:0;">&#10006;</button>
+                                            </form>
+                                            <?php endif; ?>
+                                            <form method="POST" action="?action=remove_course_subject" style="display:inline;"
+                                                  onsubmit="return confirmRemoveSubject(event, '<?= htmlspecialchars(addslashes($sub['name'])) ?>')">
+                                                <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
+                                                <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
+                                                <button type="submit" style="padding:3px 8px;font-size:12px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;margin:0;">&#128465;</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                                <?php else: ?>
+                                <div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">&#128235; Este curso aun no tiene asignaturas asignadas.</div>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
@@ -845,8 +930,10 @@ function toggleStudentsRow(courseId) {
     var btn=document.getElementById('btnEst_'+courseId);
     if (!row) return;
     var isOpen = row.style.display!=='none';
-    document.querySelectorAll('[id^="rowEst_"]').forEach(function(r){r.style.display='none';});
+    // Cerrar todos (estudiantes Y asignaturas)
+    document.querySelectorAll('[id^="rowEst_"],[id^="rowSub_"]').forEach(function(r){r.style.display='none';});
     document.querySelectorAll('[id^="btnEst_"]').forEach(function(b){b.style.background='#007bff';});
+    document.querySelectorAll('[id^="btnSub_"]').forEach(function(b){b.style.background='#6f42c1';});
     if (!isOpen){ row.style.display=''; btn.style.background='#0056b3'; }
 }
 function normalize(str){ return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
@@ -1195,5 +1282,166 @@ document.addEventListener('keydown', function(e){
 });
 </script>
 
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: AGREGAR ASIGNATURA
+══════════════════════════════════════════════════════ -->
+<div id="modalAddSubject" class="modal-overlay" onclick="if(event.target===this)closeAddSubjectModal()">
+    <div class="modal-box" style="max-width:480px;">
+        <div class="modal-header">
+            <div>
+                <h3>📚 Agregar Asignatura</h3>
+                <p id="addSubjectCourseName" style="color:#888;font-size:12px;"></p>
+            </div>
+            <button class="modal-close" onclick="closeAddSubjectModal()">&#x2715;</button>
+        </div>
+        <form method="POST" id="formAddSubject">
+            <div class="modal-body">
+                <div class="mf-group">
+                    <label class="mf-label">Nombre de la Asignatura *</label>
+                    <input type="text" name="new_subject_name" id="addSubjectName" class="mf-input"
+                           required placeholder="Ej: Matematicas, Lenguaje...">
+                </div>
+                <div class="mf-group" style="margin-bottom:0;">
+                    <label class="mf-label">Codigo <span style="color:#aaa;font-weight:400;">(opcional)</span></label>
+                    <input type="text" name="new_subject_code" id="addSubjectCode" class="mf-input"
+                           placeholder="Ej: MAT, LEN...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeAddSubjectModal()">Cancelar</button>
+                <button type="submit" class="btn-submit" style="background:linear-gradient(135deg,#6f42c1,#5a32a3);">&#10133; Agregar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: ASIGNAR DOCENTE A ASIGNATURA
+══════════════════════════════════════════════════════ -->
+<div id="modalDocente" class="modal-overlay" onclick="if(event.target===this)cerrarModalDocente()">
+    <div class="modal-box" style="max-width:420px;">
+        <div class="modal-header">
+            <div>
+                <h3 style="color:#e65100;">&#128100; Asignar Docente</h3>
+                <p id="modalDocenteSubject" style="color:#888;font-size:12px;"></p>
+            </div>
+            <button class="modal-close" onclick="cerrarModalDocente()">&#x2715;</button>
+        </div>
+        <form method="POST" action="?action=assign_subject_teacher" id="formDocente">
+            <div class="modal-body">
+                <input type="hidden" name="course_id"     id="modalDocenteCourseId">
+                <input type="hidden" name="subject_id"    id="modalDocenteSubjectId">
+                <input type="hidden" name="assignment_id" id="modalDocenteAssignId">
+                <div class="mf-group" style="margin-bottom:0;">
+                    <label class="mf-label">Seleccionar Docente *</label>
+                    <select name="teacher_id" id="modalDocenteSelect" required class="mf-input">
+                        <option value="">Seleccionar docente...</option>
+                        <?php foreach($teachers as $t): ?>
+                            <option value="<?= $t['id'] ?>">
+                                <?= htmlspecialchars($t['last_name'].' '.$t['first_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="cerrarModalDocente()">Cancelar</button>
+                <button type="submit" class="btn-submit" style="background:#e65100;">&#10003; Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+/* ── Asignaturas expandible ── */
+function toggleSubjectsRow(courseId) {
+    var row = document.getElementById('rowSub_' + courseId);
+    var btn = document.getElementById('btnSub_' + courseId);
+    if (!row) return;
+    var isOpen = row.style.display !== 'none';
+    // Cerrar todos (asignaturas Y estudiantes)
+    document.querySelectorAll('[id^="rowSub_"],[id^="rowEst_"]').forEach(function(r){ r.style.display='none'; });
+    document.querySelectorAll('[id^="btnSub_"]').forEach(function(b){ b.style.background='#6f42c1'; });
+    document.querySelectorAll('[id^="btnEst_"]').forEach(function(b){ b.style.background='#007bff'; });
+    if (!isOpen) {
+        row.style.display = '';
+        btn.style.background = '#4a0e8f';
+    }
+}
+function filterSubjects(input, courseId) {
+    var q = normalize(input.value);
+    document.querySelectorAll('#tblSub_' + courseId + ' tbody tr').forEach(function(tr){
+        tr.style.display = normalize(tr.dataset.subname || '').includes(q) ? '' : 'none';
+    });
+}
+
+/* ── Modal agregar asignatura ── */
+function openAddSubjectModal(courseId, courseName) {
+    document.getElementById('formAddSubject').action = '?action=course_subjects&course_id=' + courseId;
+    document.getElementById('addSubjectCourseName').textContent = courseName;
+    document.getElementById('addSubjectName').value = '';
+    document.getElementById('addSubjectCode').value = '';
+    document.getElementById('modalAddSubject').classList.add('active');
+    setTimeout(function(){ document.getElementById('addSubjectName').focus(); }, 150);
+}
+function closeAddSubjectModal() {
+    document.getElementById('modalAddSubject').classList.remove('active');
+}
+document.getElementById('modalAddSubject').addEventListener('click', function(e){ if(e.target===this) closeAddSubjectModal(); });
+
+/* ── Modal docente ── */
+function abrirModalDocente(subjectId, subjectName, assignmentId, teacherId, courseId) {
+    document.getElementById('modalDocenteSubjectId').value  = subjectId;
+    document.getElementById('modalDocenteCourseId').value   = courseId;
+    document.getElementById('modalDocenteAssignId').value   = assignmentId || '';
+    document.getElementById('modalDocenteSubject').textContent = subjectName;
+    var sel = document.getElementById('modalDocenteSelect');
+    sel.value = teacherId || '';
+    document.getElementById('modalDocente').classList.add('active');
+}
+function cerrarModalDocente() {
+    document.getElementById('modalDocente').classList.remove('active');
+}
+document.getElementById('modalDocente').addEventListener('click', function(e){ if(e.target===this) cerrarModalDocente(); });
+
+/* ── Confirmar quitar asignatura ── */
+function confirmRemoveSubject(event, nombre) {
+    event.preventDefault();
+    showConfirmModal(
+        'Quitar asignatura', '#dc3545',
+        'Quitar <strong>' + nombre + '</strong> de este curso?',
+        '', 'Si, Quitar', event.target
+    );
+    return false;
+}
+
+/* ESC para nuevos modales */
+document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') { closeAddSubjectModal(); cerrarModalDocente(); }
+});
+</script>
+
+
+<script>
+/* ── Auto-reabrir panel tras POST ── */
+(function(){
+    var openStudents = <?= isset($_GET['open_students']) ? (int)$_GET['open_students'] : 'null' ?>;
+    var openSubjects = <?= isset($_GET['open_subjects']) ? (int)$_GET['open_subjects'] : 'null' ?>;
+    if (openStudents) {
+        var row = document.getElementById('rowEst_' + openStudents);
+        var btn = document.getElementById('btnEst_' + openStudents);
+        if (row) { row.style.display = ''; }
+        if (btn) { btn.style.background = '#0056b3'; }
+    }
+    if (openSubjects) {
+        var row = document.getElementById('rowSub_' + openSubjects);
+        var btn = document.getElementById('btnSub_' + openSubjects);
+        if (row) { row.style.display = ''; }
+        if (btn) { btn.style.background = '#4a0e8f'; }
+    }
+})();
+</script>
 </body>
 </html>

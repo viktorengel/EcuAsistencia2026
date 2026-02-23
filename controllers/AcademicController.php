@@ -46,8 +46,10 @@ class AcademicController {
         $activeYear        = $this->schoolYearModel->getActive();
         $availableStudents = $activeYear ? $this->userModel->getStudentsNotEnrolled($activeYear['id']) : [];
         $enrollmentsByCourse = [];
+        $subjectsByCourse = [];
         foreach ($courses as $c) {
             $enrollmentsByCourse[$c['id']] = $this->courseModel->getEnrolledStudents($c['id']);
+            $subjectsByCourse[$c['id']]    = $this->getSubjectsByCourse($c['id']);
         }
 
         include BASE_PATH . '/views/academic/index.php';
@@ -297,7 +299,7 @@ class AcademicController {
                 }
                 $this->linkSubjectToCourse($courseId, $sid);
             }
-            header('Location: ?action=course_subjects&course_id='.$courseId.'&added=1'); exit;
+            header('Location: ?action=academic&open_subjects='.$courseId.'&added=1'); exit;
         }
 
         $subjects  = $this->getSubjectsByCourse($courseId);
@@ -336,7 +338,7 @@ class AcademicController {
                     ->execute([':tid'=>$teacherId,':cid'=>$courseId,':sid'=>$subjectId,':yid'=>$activeYear['id']]);
             }
         }
-        header('Location: ?action=course_subjects&course_id='.$courseId.'&assigned=1'); exit;
+        header('Location: ?action=academic&open_subjects='.$courseId.'&assigned=1'); exit;
     }
 
     // ── Quitar docente de una asignatura ──────────────────────────────────
@@ -346,7 +348,7 @@ class AcademicController {
         $courseId = (int)$_POST['course_id'];
         $pdo = $this->db->connect();
         $pdo->prepare("DELETE FROM teacher_assignments WHERE id=:id AND is_tutor=0")->execute([':id'=>$assignId]);
-        header('Location: ?action=course_subjects&course_id='.$courseId.'&unassigned=1'); exit;
+        header('Location: ?action=academic&open_subjects='.$courseId.'&unassigned=1'); exit;
     }
 
     // ── Editar asignatura desde el curso ──────────────────────────────────
@@ -377,7 +379,7 @@ class AcademicController {
             header('Location: ?action=course_subjects&course_id='.$courseId.'&error=has_teacher'); exit;
         }
         $pdo->prepare("DELETE FROM course_subjects WHERE course_id=:cid AND subject_id=:sid")->execute([':cid'=>$courseId,':sid'=>$subjectId]);
-        header('Location: ?action=course_subjects&course_id='.$courseId.'&removed=1'); exit;
+        header('Location: ?action=academic&open_subjects='.$courseId.'&removed=1'); exit;
     }
 
     // ============================================
@@ -465,7 +467,8 @@ class AcademicController {
                 }
             }
 
-            header('Location: ?action=' . $redirectTo . '&course_id=' . $courseId . '&enrolled=' . $enrolled . '&errors=' . $errors);
+            $openParam = ($redirectTo === 'academic') ? '&open_students=' . $courseId : '&course_id=' . $courseId;
+            header('Location: ?action=' . $redirectTo . $openParam . '&enrolled=' . $enrolled . '&errors=' . $errors);
             exit;
         }
 
@@ -494,7 +497,8 @@ class AcademicController {
             $redirectTo = $_POST['redirect_to'] ?? 'enroll_students';
             $activeYear = $this->schoolYearModel->getActive();
 
-            $base = '?action=' . $redirectTo . '&course_id=' . $courseId;
+            $courseParam = ($redirectTo === 'academic') ? 'open_students=' . $courseId : 'course_id=' . $courseId;
+            $base = '?action=' . $redirectTo . '&' . $courseParam;
 
             if (!$activeYear) {
                 header('Location: ' . $base . '&error=no_active_year');
