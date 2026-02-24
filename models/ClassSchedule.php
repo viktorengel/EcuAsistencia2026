@@ -8,40 +8,50 @@ class ClassSchedule {
 
     public function create($data) {
         // Verificar si ya existe una clase en ese horario
-        $checkSql = "SELECT s.name as subject_name, 
-                     COALESCE(CONCAT(u.last_name, ' ', u.first_name), 'Sin docente') as teacher_name
+        $checksql = 'SELECT s.name as subject_name,
+                            COALESCE(CONCAT(u.last_name, " ", u.first_name), "Sin docente") as teacher_name
                      FROM class_schedule cs
                      INNER JOIN subjects s ON cs.subject_id = s.id
                      LEFT JOIN users u ON cs.teacher_id = u.id
-                     WHERE cs.course_id = :course_id 
-                     AND cs.day_of_week = :day_of_week 
-                     AND cs.period_number = :period_number
-                     AND cs.school_year_id = :school_year_id";
-        
-        $checkStmt = $this->db->prepare($checkSql);
+                     WHERE cs.course_id = :course_id
+                       AND cs.day_of_week = :day_of_week
+                       AND cs.period_number = :period_number
+                       AND cs.school_year_id = :school_year_id';
+
+        $checkStmt = $this->db->prepare($checksql);
         $checkStmt->execute([
-            ':course_id' => $data[':course_id'],
-            ':day_of_week' => $data[':day_of_week'],
-            ':period_number' => $data[':period_number'],
-            ':school_year_id' => $data[':school_year_id']
+            'course_id' => $data['course_id'],
+            'day_of_week' => $data['day_of_week'],
+            'period_number' => $data['period_number'],
+            'school_year_id' => $data['school_year_id']
         ]);
-        
+
         $existing = $checkStmt->fetch();
-        
+
         if ($existing) {
             return [
                 'success' => false,
                 'message' => 'Ya existe ' . $existing['subject_name'] . ' con ' . $existing['teacher_name'] . ' en este horario'
             ];
         }
-        
-        $sql = "INSERT INTO class_schedule 
-                (course_id, subject_id, teacher_id, school_year_id, day_of_week, period_number) 
-                VALUES (:course_id, :subject_id, :teacher_id, :school_year_id, :day_of_week, :period_number)";
-        
+
+        // SOLUCIÓN: Si teacher_id está vacío, usar NULL
+        $teacherId = !empty($data['teacher_id']) ? $data['teacher_id'] : null;
+
+        $sql = 'INSERT INTO class_schedule
+                (course_id, subject_id, teacher_id, school_year_id, day_of_week, period_number)
+                VALUES (:course_id, :subject_id, :teacher_id, :school_year_id, :day_of_week, :period_number)';
+
         $stmt = $this->db->prepare($sql);
-        $result = $stmt->execute($data);
-        
+        $result = $stmt->execute([
+            'course_id' => $data['course_id'],
+            'subject_id' => $data['subject_id'],
+            'teacher_id' => $teacherId,
+            'school_year_id' => $data['school_year_id'],
+            'day_of_week' => $data['day_of_week'],
+            'period_number' => $data['period_number']
+        ]);
+
         return [
             'success' => $result,
             'message' => 'Clase agregada correctamente'
@@ -49,44 +59,62 @@ class ClassSchedule {
     }
 
     public function getByCourse($courseId, $schoolYearId) {
-        $sql = "SELECT cs.*, 
-                s.name as subject_name,
-                COALESCE(CONCAT(u.last_name, ' ', u.first_name), 'Sin docente') as teacher_name
+        $sql = 'SELECT cs.*,
+                    s.name as subject_name,
+                    -- Siempre obtener el docente actual de teacher_assignments
+                    COALESCE(
+                        (SELECT CONCAT(u2.last_name, " ", u2.first_name)
+                            FROM teacher_assignments ta2
+                            INNER JOIN users u2 ON ta2.teacher_id = u2.id
+                            WHERE ta2.course_id = cs.course_id 
+                            AND ta2.subject_id = cs.subject_id
+                            AND ta2.school_year_id = cs.school_year_id
+                            AND ta2.is_tutor = 0
+                            LIMIT 1),
+                        "Sin docente"
+                    ) as teacher_name,
+                    -- Traer también el ID del docente actual
+                    (SELECT teacher_id
+                        FROM teacher_assignments ta3
+                        WHERE ta3.course_id = cs.course_id 
+                        AND ta3.subject_id = cs.subject_id
+                        AND ta3.school_year_id = cs.school_year_id
+                        AND ta3.is_tutor = 0
+                        LIMIT 1) as current_teacher_id
                 FROM class_schedule cs
                 INNER JOIN subjects s ON cs.subject_id = s.id
-                LEFT JOIN users u ON cs.teacher_id = u.id
-                WHERE cs.course_id = :course_id 
+                WHERE cs.course_id = :course_id
                 AND cs.school_year_id = :school_year_id
-                ORDER BY cs.day_of_week, cs.period_number";
-        
+                ORDER BY cs.day_of_week, cs.period_number';
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':course_id' => $courseId,
-            ':school_year_id' => $schoolYearId
+            'course_id' => $courseId,
+            'school_year_id' => $schoolYearId
         ]);
         return $stmt->fetchAll();
     }
 
     public function getTeacherScheduleToday($teacherId, $schoolYearId) {
         $dayName = $this->getCurrentDayName();
-        
-        $sql = "SELECT cs.*, 
-                c.name as course_name,
-                c.grade_level,
-                s.name as subject_name
+
+        $sql = 'SELECT cs.*,
+                       c.name as course_name,
+                       c.grade_level,
+                       s.name as subject_name
                 FROM class_schedule cs
                 INNER JOIN courses c ON cs.course_id = c.id
                 INNER JOIN subjects s ON cs.subject_id = s.id
-                WHERE cs.teacher_id = :teacher_id 
-                AND cs.school_year_id = :school_year_id
-                AND cs.day_of_week = :day_of_week
-                ORDER BY cs.period_number";
-        
+                WHERE cs.teacher_id = :teacher_id
+                  AND cs.school_year_id = :school_year_id
+                  AND cs.day_of_week = :day_of_week
+                ORDER BY cs.period_number';
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':teacher_id' => $teacherId,
-            ':school_year_id' => $schoolYearId,
-            ':day_of_week' => $dayName
+            'teacher_id' => $teacherId,
+            'school_year_id' => $schoolYearId,
+            'day_of_week' => $dayName
         ]);
         return $stmt->fetchAll();
     }
@@ -94,7 +122,7 @@ class ClassSchedule {
     public function delete($id) {
         $sql = "DELETE FROM class_schedule WHERE id = :id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':id' => $id]);
+        return $stmt->execute(['id' => $id]);
     }
 
     private function getCurrentDayName() {
@@ -102,7 +130,7 @@ class ClassSchedule {
         $tz = new DateTimeZone('America/Guayaquil');
         $now = new DateTime('now', $tz);
         $dayNumber = (int)$now->format('N'); // 1=Lunes, 7=Domingo
-        
+
         $days = [
             1 => 'lunes',
             2 => 'martes',
@@ -111,7 +139,7 @@ class ClassSchedule {
             5 => 'viernes',
             6 => 'sabado'
         ];
-        
+
         return $days[$dayNumber] ?? 'lunes';
     }
 }

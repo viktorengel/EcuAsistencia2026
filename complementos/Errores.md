@@ -17,3 +17,15 @@ ALTER TABLE course_subjects
 ADD COLUMN hours_per_week INT NOT NULL DEFAULT 1;
 ALTER TABLE institutions 
 ADD COLUMN working_days_list VARCHAR(100) DEFAULT '["lunes","martes","miercoles","jueves","viernes"]';
+ALTER TABLE `class_schedule` 
+MODIFY COLUMN `teacher_id` INT NULL;
+-- Actualizar todos los horarios con el docente actual de teacher_assignments
+UPDATE class_schedule cs
+INNER JOIN teacher_assignments ta 
+    ON cs.course_id = ta.course_id 
+    AND cs.subject_id = ta.subject_id 
+    AND cs.school_year_id = ta.school_year_id
+    AND ta.is_tutor = 0
+SET cs.teacher_id = ta.teacher_id
+WHERE cs.teacher_id != ta.teacher_id 
+   OR cs.teacher_id IS NULL;

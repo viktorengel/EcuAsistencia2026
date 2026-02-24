@@ -633,26 +633,30 @@ function confirmAsgn() {
 
 // ── Save ──────────────────────────────────────────────────────────
 function saveClass(cell, s) {
-    const sid  = String(s.subject_id);
+    const sid = String(s.subject_id);
     const subj = subjects.find(x => String(x.subject_id) === sid) || {};
-    const hrs  = parseInt(subj.hours_per_week) || 1;
+    const hrs = parseInt(subj.hours_per_week) || 1;
     const done = parseInt(ASSIGNED[sid]) || 0;
+    
+    // Si no tiene docente, igual se puede asignar (pero se mostrará como "Sin docente")
     if (done >= hrs) {
         toast('⚠️ ' + s.subject_name + ' ya tiene todas sus horas asignadas (' + hrs + '/' + hrs + ').', 'err');
         return;
     }
-    // Update local counter immediately
+    
+    // Actualizar local counter inmediatamente
     ASSIGNED[sid] = done + 1;
-    // Hide chip when hours are exhausted
+    
+    // Marcar chip full si alcanzó el límite
     if (ASSIGNED[sid] >= hrs) {
         document.querySelectorAll('.chip').forEach(c => {
             if (String(c.dataset.subjectId) === sid) {
                 c.classList.add('full');
                 c.draggable = false;
-                c.style.display = 'none';
             }
         });
     }
+    
     document.getElementById('sf_sub').value = s.subject_id;
     document.getElementById('sf_tch').value = s.teacher_id || '';
     document.getElementById('sf_day').value = cell.dataset.day;
