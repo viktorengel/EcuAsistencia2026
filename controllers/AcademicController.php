@@ -383,13 +383,20 @@ class AcademicController {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=academic'); exit; }
         $courseId  = (int)$_POST['course_id'];
         $subjectId = (int)$_POST['subject_id'];
-        $pdo  = $this->db->connect();
-        $stmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM teacher_assignments WHERE course_id=:cid AND subject_id=:sid");
-        $stmt->execute([':cid'=>$courseId,':sid'=>$subjectId]);
-        if ($stmt->fetch()['cnt'] > 0) {
-            header('Location: ?action=course_subjects&course_id='.$courseId.'&error=has_teacher'); exit;
-        }
-        $pdo->prepare("DELETE FROM course_subjects WHERE course_id=:cid AND subject_id=:sid")->execute([':cid'=>$courseId,':sid'=>$subjectId]);
+        $pdo = $this->db->connect();
+
+        // Eliminar del horario primero (class_schedule)
+        $pdo->prepare("DELETE FROM class_schedule WHERE course_id=:cid AND subject_id=:sid")
+            ->execute([':cid'=>$courseId, ':sid'=>$subjectId]);
+
+        // Eliminar asignación docente si existe
+        $pdo->prepare("DELETE FROM teacher_assignments WHERE course_id=:cid AND subject_id=:sid")
+            ->execute([':cid'=>$courseId, ':sid'=>$subjectId]);
+
+        // Eliminar de course_subjects
+        $pdo->prepare("DELETE FROM course_subjects WHERE course_id=:cid AND subject_id=:sid")
+            ->execute([':cid'=>$courseId, ':sid'=>$subjectId]);
+
         header('Location: ?action=academic&open_subjects='.$courseId.'&removed=1'); exit;
     }
 

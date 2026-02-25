@@ -24,6 +24,18 @@
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; font-size: 14px; }
         th { background: #f8f9fa; font-weight: bold; }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+        /* ── Toast ── */
+        #ac-toast{
+            position:fixed;top:16px;right:16px;z-index:99999;
+            padding:11px 20px;border-radius:9px;font-size:13px;font-weight:600;
+            box-shadow:0 4px 20px rgba(0,0,0,.2);
+            opacity:0;transform:translateY(-6px);transition:all .22s;
+            pointer-events:none;max-width:380px;line-height:1.4;
+        }
+        #ac-toast.show{opacity:1;transform:translateY(0);}
+        #ac-toast.ok  {background:#0d3b2e;color:#06d6a0;}
+        #ac-toast.err {background:#3b0d18;color:#ef476f;}
+        #ac-toast.inf {background:#1a2035;color:#fff;}
         h2 { margin-bottom: 20px; color: #333; }
 
         /* ── Modal base ── */
@@ -125,49 +137,7 @@
         </div>
     </div>
 
-    <!-- ── Mensajes ── -->
-    <?php if(isset($_GET['course_success'])): ?>
-        <div class="success">✓ Curso creado correctamente.
-            <?php if(isset($_GET['subjects_loaded']) && (int)$_GET['subjects_loaded'] > 0): ?>
-                Se pre-cargaron <strong><?= (int)$_GET['subjects_loaded'] ?> asignaturas</strong> según la malla curricular.
-            <?php elseif(isset($_GET['subjects_loaded'])): ?>
-                Las asignaturas de este nivel ya estaban registradas.
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
-    <?php if(isset($_GET['course_updated'])): ?><div class="success">✓ Curso actualizado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['course_deleted'])): ?><div class="success">✓ Curso eliminado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['subject_success'])): ?><div class="success">✓ Asignatura creada correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['subject_updated'])): ?><div class="success">✓ Asignatura actualizada correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['subject_deleted'])): ?><div class="success">✓ Asignatura eliminada correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['sy_created'])): ?><div class="success">✓ Año lectivo creado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['sy_updated'])): ?><div class="success">✓ Año lectivo actualizado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['sy_deleted'])): ?><div class="success">✓ Año lectivo eliminado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['sy_activated'])): ?><div class="success">✓ Año lectivo activado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['sy_deactivated'])): ?><div class="success">✓ Año lectivo desactivado correctamente</div><?php endif; ?>
-
-    <?php if(isset($_GET['hours_updated'])): ?><div class="success">&#10003; Horas actualizadas. El horario fue ajustado autom&#225;ticamente.</div><?php endif; ?>
-    <?php if(isset($_GET['rep_assigned'])): ?><div class="success">&#10003; Representante asignado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['rep_removed'])): ?><div class="success">&#10003; Representante eliminado correctamente</div><?php endif; ?>
-    <?php if(isset($_GET['rep_error'])): ?><div class="error">&#10007; <?= htmlspecialchars($_GET['rep_error']) ?></div><?php endif; ?>
-
-    <?php if(isset($_GET['error'])): ?>
-        <?php $errMap = [
-            'no_active_year'       => 'No hay un año lectivo activo',
-            'course_not_found'     => 'Curso no encontrado',
-            'course_has_students'  => 'No se puede eliminar el curso porque tiene estudiantes matriculados',
-            'course_has_assignments'=> 'No se puede eliminar el curso porque tiene asignaciones docentes',
-            'course_duplicate'     => 'Ya existe un curso con ese nivel, paralelo y jornada en el año lectivo activo. Elige un paralelo diferente.',
-            'subject_not_found'    => 'Asignatura no encontrada',
-            'subject_has_assignments'=> 'No se puede eliminar la asignatura porque tiene asignaciones docentes',
-            'cannot_delete_active' => 'No se puede eliminar el año lectivo activo',
-            'has_courses'          => 'No se puede eliminar el año lectivo porque tiene cursos asociados',
-            'year_not_found'       => 'Año lectivo no encontrado',
-        ]; ?>
-        <?php if(isset($errMap[$_GET['error']])): ?>
-            <div class="error">✗ <?= $errMap[$_GET['error']] ?></div>
-        <?php endif; ?>
-    <?php endif; ?>
+    <!-- Mensajes via toast JS -->
 
 
     <!-- ══════════════════════════════════════
@@ -440,11 +410,11 @@
                                                 <?= empty($sub['teacher_name']) ? '&#128100;' : '&#128260;&#128100;' ?>
                                             </button>
                                             <?php if(!empty($sub['teacher_name'])): ?>
-                                            <form method="POST" action="?action=unassign_subject_teacher" style="display:inline;">
+                                            <form method="POST" action="?action=unassign_subject_teacher" style="display:inline;"
+                                                  onsubmit="return confirmQuitarDocente(event, '<?= htmlspecialchars(addslashes($sub['name'])) ?>')">
                                                 <input type="hidden" name="assignment_id" value="<?= $sub['assignment_id'] ?>">
                                                 <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
                                                 <button type="submit"
-                                                        onclick="return confirm('Quitar docente de esta asignatura?')"
                                                         style="padding:3px 8px;font-size:12px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;margin:0;">&#10006;</button>
                                             </form>
                                             <?php endif; ?>
@@ -1444,6 +1414,16 @@ function confirmRemoveSubject(event, nombre) {
     return false;
 }
 
+function confirmQuitarDocente(event, nombre) {
+    event.preventDefault();
+    showConfirmModal(
+        'Quitar Docente', '#6c757d',
+        'Quitar el docente asignado a <strong>' + nombre + '</strong>?',
+        '', 'Sí, Quitar', event.target
+    );
+    return false;
+}
+
 /* ESC para nuevos modales */
 document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') { closeAddSubjectModal(); cerrarModalDocente(); }
@@ -1636,5 +1616,79 @@ document.addEventListener('keydown', function(e) {
     </div>
 </div>
 
+<div id="ac-toast"></div>
+
+<script>
+/* ── Toast académica ─────────────────────── */
+function acToast(msg, type, dur){
+    var t = document.getElementById('ac-toast');
+    t.innerHTML = msg;
+    t.className = 'show ' + (type||'ok');
+    clearTimeout(t._t);
+    t._t = setTimeout(function(){ t.className=''; }, dur||4000);
+}
+(function(){
+    var p = new URLSearchParams(location.search);
+    // Mensajes ok
+    var ok = {
+        'course_success' : function(){
+            var msg = '✓ Curso creado correctamente';
+            if(p.get('subjects_loaded')>0) msg += ' — Se pre-cargaron <strong>'+p.get('subjects_loaded')+'</strong> asignaturas';
+            else if(p.get('subjects_loaded')!==null) msg += ' — Asignaturas ya estaban registradas';
+            return msg;
+        },
+        'course_updated'    : '✓ Curso actualizado correctamente',
+        'course_deleted'    : '✓ Curso eliminado correctamente',
+        'subject_success'   : '✓ Asignatura creada correctamente',
+        'subject_updated'   : '✓ Asignatura actualizada correctamente',
+        'subject_deleted'   : '✓ Asignatura eliminada correctamente',
+        'removed'           : '✓ Asignatura quitada del curso',
+        'sy_created'        : '✓ Año lectivo creado correctamente',
+        'sy_updated'        : '✓ Año lectivo actualizado correctamente',
+        'sy_deleted'        : '✓ Año lectivo eliminado correctamente',
+        'sy_activated'      : '✓ Año lectivo activado correctamente',
+        'sy_deactivated'    : 'Año lectivo desactivado',
+        'hours_updated'     : '✓ Horas actualizadas — el horario fue ajustado automáticamente',
+        'rep_assigned'      : '✓ Representante asignado correctamente',
+        'rep_removed'       : '✓ Representante eliminado correctamente',
+    };
+    var errMap = {
+        'no_active_year'         : 'No hay un año lectivo activo',
+        'course_not_found'       : 'Curso no encontrado',
+        'course_has_students'    : 'No se puede eliminar: el curso tiene estudiantes matriculados',
+        'course_has_assignments' : 'No se puede eliminar: el curso tiene asignaciones docentes',
+        'course_duplicate'       : 'Ya existe un curso con ese nivel, paralelo y jornada',
+        'subject_not_found'      : 'Asignatura no encontrada',
+        'subject_has_assignments': 'No se puede eliminar: la asignatura tiene asignaciones docentes',
+        'cannot_delete_active'   : 'No se puede eliminar el año lectivo activo',
+        'has_courses'            : 'No se puede eliminar: el año lectivo tiene cursos asociados',
+        'year_not_found'         : 'Año lectivo no encontrado',
+    };
+    var fired = false;
+    for(var k in ok){
+        if(p.get(k)!==null){
+            var msg = typeof ok[k]==='function' ? ok[k]() : ok[k];
+            var type = k==='sy_deactivated' ? 'inf' : 'ok';
+            acToast(msg, type);
+            fired = true; break;
+        }
+    }
+    if(!fired && p.get('rep_error')){
+        acToast('✗ ' + p.get('rep_error'), 'err'); fired = true;
+    }
+    if(!fired && p.get('error')){
+        var em = errMap[p.get('error')] || ('✗ ' + p.get('error'));
+        acToast('✗ ' + em, 'err'); fired = true;
+    }
+    if(fired){
+        var u = new URL(location.href);
+        ['course_success','course_updated','course_deleted','subject_success','subject_updated',
+         'subject_deleted','removed','sy_created','sy_updated','sy_deleted','sy_activated',
+         'sy_deactivated','hours_updated','rep_assigned','rep_removed','rep_error',
+         'error','subjects_loaded'].forEach(function(k){ u.searchParams.delete(k); });
+        history.replaceState(null,'',u);
+    }
+})();
+</script>
 </body>
 </html>
