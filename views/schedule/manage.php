@@ -307,7 +307,7 @@ foreach($schedule as $cls) {
             <h1>Horario — <?= htmlspecialchars($course['name']) ?></h1>
             <p><?= htmlspecialchars($course['grade_level']) ?> · Paralelo <?= htmlspecialchars($course['parallel']) ?> · <?= ucfirst($course['shift_name']) ?> · <?= $maxHours ?> horas/día</p>
         </div>
-        <a href="?action=academic" class="back">← Volver</a>
+        <a href="?action=schedules" class="back">← Volver</a>
     </div>
 
     <div class="layout">
@@ -370,7 +370,11 @@ foreach($schedule as $cls) {
                                 ondrop="drp(event)"
                                 onclick="cellClick(this)">
                                 <?php if($cls): ?>
-                                <div class="cc" data-subject-id="<?= $cls['subject_id'] ?>">
+                                <div class="cc" data-subject-id="<?= $cls['subject_id'] ?>"
+                                     draggable="true"
+                                     ondragstart="cardDragStart(event, <?= $cls['id'] ?>, '<?= htmlspecialchars(addslashes($cls['subject_name'])) ?>')"
+                                     ondragend="cardDragEnd(event)"
+                                     style="cursor:grab;">
                                     <button class="x" onclick="openDel(event,<?= $cls['id'] ?>,'<?= htmlspecialchars(addslashes($cls['subject_name'])) ?>','<?= $dayLabels[$day] ?? ucfirst($day) ?>',<?= $p ?>)">×</button>
                                     <span class="s"><?= htmlspecialchars($cls['subject_name']) ?></span>
                                     <span class="t">👤 <?= htmlspecialchars($cls['teacher_name'] ?? 'Sin docente') ?></span>
@@ -465,82 +469,6 @@ fetch('?action=get_course_subjects_schedule&course_id=' + CID)
     .then(r => r.json())
     .then(data => {
         subjects = data;
-        
-        // 🔥 NUEVO: Calcular total de horas y verificar sobreasignación
-        let totalHorasAsignadas = 0;
-        subjects.forEach(s => {
-            totalHorasAsignadas += parseInt(s.hours_per_week) || 1;
-        });
-        
-        // Obtener horas disponibles del curso (debes definir estas variables)
-        const horasDisponibles = <?= $this->courseModel->getTotalWeeklyHoursAvailable($course['id']) ?>;
-        const horasPorDia = <?= $this->courseModel->getMaxHoursPerDay($course['id']) ?>;
-        const diasLaborables = <?= $this->courseModel->getWorkingDaysCount() ?>;
-        
-        // 🔥 NUEVO: Mostrar advertencia si hay sobreasignación
-        const sp = document.querySelector('.sp');
-        
-        // Eliminar advertencia anterior si existe
-        const oldWarning = document.getElementById('hours-warning');
-        if (oldWarning) oldWarning.remove();
-        
-        if (totalHorasAsignadas > horasDisponibles) {
-            const warning = document.createElement('div');
-            warning.id = 'hours-warning';
-            warning.style.margin = '10px 0 15px 0';
-            warning.style.padding = '12px 16px';
-            warning.style.background = '#f8d7da';
-            warning.style.color = '#721c24';
-            warning.style.border = '1px solid #f5c6cb';
-            warning.style.borderRadius = '8px';
-            warning.style.fontSize = '14px';
-            warning.style.fontWeight = '500';
-            warning.innerHTML = `
-                ⚠️ <strong>Advertencia de sobreasignación:</strong><br>
-                Las materias tienen asignadas <strong>${totalHorasAsignadas} horas</strong> semanales,<br>
-                pero el horario solo tiene <strong>${horasDisponibles} horas disponibles</strong><br>
-                <small style="display:block;margin-top:8px;color:#856404;background:#fff3cd;padding:8px;border-radius:4px;">
-                📊 ${horasPorDia} horas/día × ${diasLaborables} días = ${horasDisponibles} horas totales
-                </small>
-            `;
-            
-            // Insertar al inicio del panel de materias
-            sp.insertBefore(warning, sp.firstChild);
-        } else if (totalHorasAsignadas === horasDisponibles) {
-            const info = document.createElement('div');
-            info.id = 'hours-warning';
-            info.style.margin = '10px 0 15px 0';
-            info.style.padding = '12px 16px';
-            info.style.background = '#d4edda';
-            info.style.color = '#155724';
-            info.style.border = '1px solid #c3e6cb';
-            info.style.borderRadius = '8px';
-            info.style.fontSize = '14px';
-            info.innerHTML = `
-                ✅ <strong>Horario completo:</strong><br>
-                Has asignado exactamente <strong>${totalHorasAsignadas} de ${horasDisponibles} horas</strong> disponibles.<br>
-                <small style="display:block;margin-top:4px;">${horasPorDia} horas/día × ${diasLaborables} días</small>
-            `;
-            sp.insertBefore(info, sp.firstChild);
-        } else {
-            const info = document.createElement('div');
-            info.id = 'hours-warning';
-            info.style.margin = '10px 0 15px 0';
-            info.style.padding = '12px 16px';
-            info.style.background = '#fff3cd';
-            info.style.color = '#856404';
-            info.style.border = '1px solid #ffeeba';
-            info.style.borderRadius = '8px';
-            info.style.fontSize = '14px';
-            info.innerHTML = `
-                ℹ️ <strong>Horas disponibles:</strong><br>
-                Has asignado <strong>${totalHorasAsignadas} de ${horasDisponibles} horas</strong>.<br>
-                Te quedan <strong>${horasDisponibles - totalHorasAsignadas} horas</strong> por distribuir.<br>
-                <small style="display:block;margin-top:4px;">${horasPorDia} horas/día × ${diasLaborables} días</small>
-            `;
-            sp.insertBefore(info, sp.firstChild);
-        }
-
         subjects.forEach((s,i) => cmap[s.subject_id] = i % PAL.length);
 
         const list = document.getElementById('chipsList');
@@ -630,6 +558,22 @@ function buildLegend() {
     });
 }
 
+// ── Drag desde ficha del grid ────────────────────────────────────
+let dragCardSid  = null; // schedule id de la ficha que se arrastra
+let dragCardName = null;
+
+function cardDragStart(e, sid, name) {
+    dragCardSid  = sid;
+    dragCardName = name;
+    dragSub      = null; // aseguramos que no interfiera el drag de chips
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.4';
+}
+function cardDragEnd(e) {
+    e.currentTarget.style.opacity = '';
+    dragCardSid = null; dragCardName = null;
+}
+
 // ── Drag & drop ───────────────────────────────────────────────────
 function dov(e) { e.preventDefault(); e.currentTarget.classList.add('over'); }
 function dlv(e) { e.currentTarget.classList.remove('over'); }
@@ -637,15 +581,30 @@ function drp(e) {
     e.preventDefault();
     const cell = e.currentTarget;
     cell.classList.remove('over');
+
+    // Drag de ficha del grid
+    if (dragCardSid !== null) {
+        const targetSid = cell.dataset.sid ? parseInt(cell.dataset.sid) : null;
+        if (targetSid === dragCardSid) return; // misma celda
+        if (targetSid) {
+            // Intercambiar
+            swapClasses(dragCardSid, targetSid);
+        } else {
+            // Mover a celda vacía: borrar + recrear en nueva posición
+            moveClass(dragCardSid, cell.dataset.day, cell.dataset.period);
+        }
+        return;
+    }
+
+    // Drag de chip (asignatura nueva)
     if (!dragSub) return;
-    if (cell.dataset.sid) { toast('Esta hora ya está ocupada.','err'); return; }
+    if (cell.dataset.sid) { toast('Celda ocupada. Arrastra una ficha del horario para intercambiar.','err'); return; }
     saveClass(cell, dragSub);
 }
 
 // ── Cell click ────────────────────────────────────────────────────
 function cellClick(cell) {
     if (cell.dataset.sid) return; // occupied
-    // If mobile subject pre-selected, assign directly
     if (selSub) {
         saveClass(cell, selSub);
         document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected-mobile'));
@@ -653,6 +612,45 @@ function cellClick(cell) {
         return;
     }
     openAsgn(cell);
+}
+
+// ── Swap dos fichas ───────────────────────────────────────────────
+function swapClasses(sidA, sidB) {
+    const fd = new FormData();
+    fd.append('sid_a',     sidA);
+    fd.append('sid_b',     sidB);
+    fd.append('course_id', CID);
+    fetch('?action=swap_schedule_class', { method:'POST', body:fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                toast('✓ Clases intercambiadas','ok');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                toast('✗ ' + (data.message||'Error al intercambiar'),'err');
+            }
+        })
+        .catch(() => toast('✗ Error de conexión','err'));
+}
+
+// ── Mover ficha a celda vacía ─────────────────────────────────────
+function moveClass(sid, day, period) {
+    const fd = new FormData();
+    fd.append('schedule_id', sid);
+    fd.append('day_of_week',   day);
+    fd.append('period_number', period);
+    fd.append('course_id',     CID);
+    fetch('?action=move_schedule_class', { method:'POST', body:fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                toast('✓ Clase movida','ok');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                toast('✗ ' + (data.message||'Error al mover'),'err');
+            }
+        })
+        .catch(() => toast('✗ Error de conexión','err'));
 }
 
 // ── Assign modal ──────────────────────────────────────────────────
@@ -709,30 +707,26 @@ function confirmAsgn() {
 
 // ── Save ──────────────────────────────────────────────────────────
 function saveClass(cell, s) {
-    const sid = String(s.subject_id);
+    const sid  = String(s.subject_id);
     const subj = subjects.find(x => String(x.subject_id) === sid) || {};
-    const hrs = parseInt(subj.hours_per_week) || 1;
+    const hrs  = parseInt(subj.hours_per_week) || 1;
     const done = parseInt(ASSIGNED[sid]) || 0;
-    
-    // Si no tiene docente, igual se puede asignar (pero se mostrará como "Sin docente")
     if (done >= hrs) {
         toast('⚠️ ' + s.subject_name + ' ya tiene todas sus horas asignadas (' + hrs + '/' + hrs + ').', 'err');
         return;
     }
-    
-    // Actualizar local counter inmediatamente
+    // Update local counter immediately
     ASSIGNED[sid] = done + 1;
-    
-    // Marcar chip full si alcanzó el límite
+    // Hide chip when hours are exhausted
     if (ASSIGNED[sid] >= hrs) {
         document.querySelectorAll('.chip').forEach(c => {
             if (String(c.dataset.subjectId) === sid) {
                 c.classList.add('full');
                 c.draggable = false;
+                c.style.display = 'none';
             }
         });
     }
-    
     document.getElementById('sf_sub').value = s.subject_id;
     document.getElementById('sf_tch').value = s.teacher_id || '';
     document.getElementById('sf_day').value = cell.dataset.day;

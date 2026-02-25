@@ -350,6 +350,18 @@ switch ($action) {
         $controller = new ScheduleController();
         $controller->deleteClass();
         break;
+
+    case 'swap_schedule_class':
+        require_once BASE_PATH . '/controllers/ScheduleController.php';
+        $controller = new ScheduleController();
+        $controller->swapClass();
+        break;
+
+    case 'move_schedule_class':
+        require_once BASE_PATH . '/controllers/ScheduleController.php';
+        $controller = new ScheduleController();
+        $controller->moveClass();
+        break;
         
     case 'get_schedule_info':
         require_once BASE_PATH . '/controllers/AttendanceController.php';

@@ -196,4 +196,66 @@ class ScheduleController {
         echo json_encode($result);
         exit;
     }
+
+    public function swapClass() {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
+
+        $sidA     = (int)($_POST['sid_a']     ?? 0);
+        $sidB     = (int)($_POST['sid_b']     ?? 0);
+        $courseId = (int)($_POST['course_id'] ?? 0);
+
+        if (!$sidA || !$sidB || !$courseId) { echo json_encode(['success'=>false,'message'=>'Datos incompletos']); exit; }
+
+        try {
+            $pdo = (new Database())->connect();
+            $stmt = $pdo->prepare("SELECT id, day_of_week, period_number FROM class_schedule WHERE id IN (:a,:b) AND course_id = :cid");
+            $stmt->execute([':a'=>$sidA,':b'=>$sidB,':cid'=>$courseId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (count($rows) !== 2) { echo json_encode(['success'=>false,'message'=>'Registros no encontrados']); exit; }
+
+            $a = $rows[0]['id'] == $sidA ? $rows[0] : $rows[1];
+            $b = $rows[0]['id'] == $sidB ? $rows[0] : $rows[1];
+
+            $upd = $pdo->prepare("UPDATE class_schedule SET day_of_week=:day, period_number=:per WHERE id=:id");
+            $upd->execute([':day'=>$b['day_of_week'],':per'=>$b['period_number'],':id'=>$sidA]);
+            $upd->execute([':day'=>$a['day_of_week'],':per'=>$a['period_number'],':id'=>$sidB]);
+
+            echo json_encode(['success'=>true]);
+        } catch (Exception $e) {
+            echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        }
+        exit;
+    }
+
+    // Mover una clase a una celda vacía
+    public function moveClass() {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
+
+        $sid      = (int)($_POST['schedule_id']  ?? 0);
+        $day      = $_POST['day_of_week']         ?? '';
+        $period   = (int)($_POST['period_number'] ?? 0);
+        $courseId = (int)($_POST['course_id']     ?? 0);
+
+        if (!$sid || !$day || !$period || !$courseId) { echo json_encode(['success'=>false,'message'=>'Datos incompletos']); exit; }
+
+        try {
+            $pdo = (new Database())->connect();
+
+            // Verificar que la celda destino esté vacía
+            $check = $pdo->prepare("SELECT id FROM class_schedule WHERE course_id=:cid AND day_of_week=:day AND period_number=:per");
+            $check->execute([':cid'=>$courseId,':day'=>$day,':per'=>$period]);
+            if ($check->fetch()) { echo json_encode(['success'=>false,'message'=>'La celda destino ya está ocupada']); exit; }
+
+            // Verificar que la escuela activa coincida
+            $upd = $pdo->prepare("UPDATE class_schedule SET day_of_week=:day, period_number=:per WHERE id=:id AND course_id=:cid");
+            $upd->execute([':day'=>$day,':per'=>$period,':id'=>$sid,':cid'=>$courseId]);
+
+            echo json_encode(['success'=>true]);
+        } catch (Exception $e) {
+            echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        }
+        exit;
+    }
 }
