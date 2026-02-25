@@ -65,16 +65,40 @@
         </p>
     </div>
 
-    <?php if (isset($_GET['added'])):      ?><div class="alert alert-success">✓ Asignatura agregada correctamente.</div><?php endif; ?>
-    <?php if (isset($_GET['updated'])):    ?><div class="alert alert-success">✓ Asignatura actualizada.</div><?php endif; ?>
-    <?php if (isset($_GET['removed'])):    ?><div class="alert alert-success">✓ Asignatura quitada del curso.</div><?php endif; ?>
-    <?php if (isset($_GET['assigned'])):   ?><div class="alert alert-success">✓ Docente asignado correctamente.</div><?php endif; ?>
-    <?php if (isset($_GET['unassigned'])): ?><div class="alert alert-success">✓ Docente removido.</div><?php endif; ?>
-    <?php if (isset($_GET['error']) && $_GET['error'] === 'has_teacher'): ?>
-        <div class="alert alert-error">✗ No se puede quitar: esta asignatura tiene un docente asignado.</div>
+    <!-- Sistema de Toast -->
+    <div id="toast-container" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+
+    <!-- Mensajes convertidos a Toast (ocultos pero ejecutan showToast) -->
+    <?php if (isset($_GET['added'])): ?>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('➕ Asignatura agregada correctamente', 'success'); });</script>
     <?php endif; ?>
+    
+    <?php if (isset($_GET['updated'])): ?>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('✓ Horas de asignatura actualizadas', 'success'); });</script>
+    <?php endif; ?>
+    
+    <?php if (isset($_GET['removed'])): ?>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('🗑️ Asignatura quitada del curso', 'warning'); });</script>
+    <?php endif; ?>
+    
+    <?php if (isset($_GET['assigned'])): ?>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('👨‍🏫 Docente asignado correctamente', 'success'); });</script>
+    <?php endif; ?>
+    
+    <?php if (isset($_GET['unassigned'])): ?>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('👤 Docente removido', 'info'); });</script>
+    <?php endif; ?>
+    
+    <?php if (isset($_GET['error']) && $_GET['error'] === 'has_teacher'): ?>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('❌ No se puede quitar: esta asignatura tiene un docente asignado', 'error'); });</script>
+    <?php endif; ?>
+    
     <?php if (isset($_GET['assign_error'])): ?>
-        <div class="alert alert-error">✗ <?= htmlspecialchars($_GET['assign_error']) ?></div>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('❌ <?= htmlspecialchars(addslashes($_GET['assign_error'])) ?>', 'error'); });</script>
+    <?php endif; ?>
+    
+    <?php if (isset($_GET['error']) && $_GET['error'] == 'hours_exceeded'): ?>
+        <script>document.addEventListener('DOMContentLoaded', function() { showToast('⚠️ <?= htmlspecialchars(addslashes(urldecode($_GET['msg'] ?? 'Error al asignar horas'))) ?>', 'error'); });</script>
     <?php endif; ?>
 
     <div class="card">
@@ -86,6 +110,9 @@
         <?php if (empty($subjects)): ?>
             <div class="empty-msg">📭 Este curso aún no tiene asignaturas asignadas.</div>
         <?php else: ?>
+        <div class="table-info" style="padding:10px 0;">
+            <div id="total-hours-indicator" style="padding:10px;border-radius:6px;font-weight:bold;"></div>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -196,7 +223,67 @@
     </div>
 </div>
 
+<!-- Sistema de Toast Script -->
 <script>
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    
+    // Configurar estilos según tipo
+    const styles = {
+        success: { bg: '#d4edda', color: '#155724', border: '#c3e6cb', icon: '✅' },
+        error: { bg: '#f8d7da', color: '#721c24', border: '#f5c6cb', icon: '❌' },
+        warning: { bg: '#fff3cd', color: '#856404', border: '#ffeeba', icon: '⚠️' },
+        info: { bg: '#d1ecf1', color: '#0c5460', border: '#bee5eb', icon: 'ℹ️' }
+    };
+    
+    const s = styles[type] || styles.success;
+    
+    toast.style.cssText = `
+        min-width: 300px;
+        max-width: 400px;
+        background: ${s.bg};
+        color: ${s.color};
+        border: 1px solid ${s.border};
+        border-left: 5px solid ${s.color};
+        border-radius: 8px;
+        padding: 14px 18px;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        pointer-events: all;
+        opacity: 0;
+        transform: translateX(40px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    `;
+    
+    toast.innerHTML = `
+        <span style="font-size:18px;">${s.icon}</span>
+        <span style="flex:1;">${message}</span>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:${s.color};font-size:16px;cursor:pointer;opacity:0.6;padding:0;">✕</button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Animar entrada
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Auto-eliminar después de 4 segundos
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(40px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
 function abrirModal(subjectId, subjectName, assignmentId, teacherId) {
     document.getElementById('modalSubjectId').value      = subjectId;
     document.getElementById('modalSubjectLabel').textContent = '📖 ' + subjectName;
@@ -206,12 +293,15 @@ function abrirModal(subjectId, subjectName, assignmentId, teacherId) {
     sel.value = teacherId ?? '';
     document.getElementById('modalAsignar').classList.add('active');
 }
+
 function cerrarModal() {
     document.getElementById('modalAsignar').classList.remove('active');
 }
+
 document.getElementById('modalAsignar').addEventListener('click', function(e) {
     if (e.target === this) cerrarModal();
 });
+
 function confirmRemove(event, nombre) {
     event.preventDefault();
     const m = document.createElement('div');
@@ -229,6 +319,81 @@ function confirmRemove(event, nombre) {
     document.getElementById('bC').onclick = () => document.body.removeChild(m);
     return false;
 }
+
+// Después de cargar la página, calcular y mostrar el total de horas
+document.addEventListener('DOMContentLoaded', function() {
+    calcularTotalHoras();
+});
+
+function calcularTotalHoras() {
+    let total = 0;
+    const horasDisponibles = <?= $this->courseModel->getTotalWeeklyHoursAvailable($course['id']) ?>;
+    const horasPorDia = <?= $this->courseModel->getMaxHoursPerDay($course['id']) ?>;
+    const diasLaborables = <?= $this->courseModel->getWorkingDaysCount() ?>;
+    
+    document.querySelectorAll('input[name="hours_per_week"]').forEach(function(input) {
+        total += parseInt(input.value) || 0;
+    });
+    
+    // Crear o actualizar el indicador de total
+    let indicator = document.getElementById('total-hours-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'total-hours-indicator';
+        indicator.style.marginTop = '10px';
+        indicator.style.padding = '10px';
+        indicator.style.borderRadius = '6px';
+        indicator.style.fontWeight = 'bold';
+        
+        const tableInfo = document.querySelector('.table-info');
+        if (tableInfo) {
+            tableInfo.appendChild(indicator);
+        }
+    }
+    
+    indicator.textContent = `Total horas asignadas: ${total} de ${horasDisponibles} disponibles ` +
+                           `(${horasPorDia} horas/día × ${diasLaborables} días)`;
+    
+    if (total > horasDisponibles) {
+        indicator.style.backgroundColor = '#f8d7da';
+        indicator.style.color = '#721c24';
+        indicator.style.border = '1px solid #f5c6cb';
+    } else if (total === horasDisponibles) {
+        indicator.style.backgroundColor = '#d4edda';
+        indicator.style.color = '#155724';
+        indicator.style.border = '1px solid #c3e6cb';
+    } else {
+        indicator.style.backgroundColor = '#fff3cd';
+        indicator.style.color = '#856404';
+        indicator.style.border = '1px solid #ffeeba';
+    }
+}
+
+// Modificar el evento de cambio de horas
+document.querySelectorAll('input[name="hours_per_week"]').forEach(function(input) {
+    input.addEventListener('change', function() {
+        const form = this.closest('form');
+        const maxHorasDisponibles = <?= $this->courseModel->getTotalWeeklyHoursAvailable($course['id']) ?>;
+        let totalActual = 0;
+        
+        document.querySelectorAll('input[name="hours_per_week"]').forEach(function(inp) {
+            if (inp !== input) {
+                totalActual += parseInt(inp.value) || 0;
+            }
+        });
+        
+        const nuevasHoras = parseInt(this.value) || 0;
+        const maxPermitido = maxHorasDisponibles - totalActual;
+        
+        if (nuevasHoras > maxPermitido) {
+            showToast('⚠️ No puedes asignar ' + nuevasHoras + ' horas. Te quedan solo ' + maxPermitido + ' horas disponibles.', 'warning');
+            this.value = maxPermitido;
+        }
+        
+        calcularTotalHoras();
+    });
+});
 </script>
+
 </body>
 </html>

@@ -465,6 +465,82 @@ fetch('?action=get_course_subjects_schedule&course_id=' + CID)
     .then(r => r.json())
     .then(data => {
         subjects = data;
+        
+        // 🔥 NUEVO: Calcular total de horas y verificar sobreasignación
+        let totalHorasAsignadas = 0;
+        subjects.forEach(s => {
+            totalHorasAsignadas += parseInt(s.hours_per_week) || 1;
+        });
+        
+        // Obtener horas disponibles del curso (debes definir estas variables)
+        const horasDisponibles = <?= $this->courseModel->getTotalWeeklyHoursAvailable($course['id']) ?>;
+        const horasPorDia = <?= $this->courseModel->getMaxHoursPerDay($course['id']) ?>;
+        const diasLaborables = <?= $this->courseModel->getWorkingDaysCount() ?>;
+        
+        // 🔥 NUEVO: Mostrar advertencia si hay sobreasignación
+        const sp = document.querySelector('.sp');
+        
+        // Eliminar advertencia anterior si existe
+        const oldWarning = document.getElementById('hours-warning');
+        if (oldWarning) oldWarning.remove();
+        
+        if (totalHorasAsignadas > horasDisponibles) {
+            const warning = document.createElement('div');
+            warning.id = 'hours-warning';
+            warning.style.margin = '10px 0 15px 0';
+            warning.style.padding = '12px 16px';
+            warning.style.background = '#f8d7da';
+            warning.style.color = '#721c24';
+            warning.style.border = '1px solid #f5c6cb';
+            warning.style.borderRadius = '8px';
+            warning.style.fontSize = '14px';
+            warning.style.fontWeight = '500';
+            warning.innerHTML = `
+                ⚠️ <strong>Advertencia de sobreasignación:</strong><br>
+                Las materias tienen asignadas <strong>${totalHorasAsignadas} horas</strong> semanales,<br>
+                pero el horario solo tiene <strong>${horasDisponibles} horas disponibles</strong><br>
+                <small style="display:block;margin-top:8px;color:#856404;background:#fff3cd;padding:8px;border-radius:4px;">
+                📊 ${horasPorDia} horas/día × ${diasLaborables} días = ${horasDisponibles} horas totales
+                </small>
+            `;
+            
+            // Insertar al inicio del panel de materias
+            sp.insertBefore(warning, sp.firstChild);
+        } else if (totalHorasAsignadas === horasDisponibles) {
+            const info = document.createElement('div');
+            info.id = 'hours-warning';
+            info.style.margin = '10px 0 15px 0';
+            info.style.padding = '12px 16px';
+            info.style.background = '#d4edda';
+            info.style.color = '#155724';
+            info.style.border = '1px solid #c3e6cb';
+            info.style.borderRadius = '8px';
+            info.style.fontSize = '14px';
+            info.innerHTML = `
+                ✅ <strong>Horario completo:</strong><br>
+                Has asignado exactamente <strong>${totalHorasAsignadas} de ${horasDisponibles} horas</strong> disponibles.<br>
+                <small style="display:block;margin-top:4px;">${horasPorDia} horas/día × ${diasLaborables} días</small>
+            `;
+            sp.insertBefore(info, sp.firstChild);
+        } else {
+            const info = document.createElement('div');
+            info.id = 'hours-warning';
+            info.style.margin = '10px 0 15px 0';
+            info.style.padding = '12px 16px';
+            info.style.background = '#fff3cd';
+            info.style.color = '#856404';
+            info.style.border = '1px solid #ffeeba';
+            info.style.borderRadius = '8px';
+            info.style.fontSize = '14px';
+            info.innerHTML = `
+                ℹ️ <strong>Horas disponibles:</strong><br>
+                Has asignado <strong>${totalHorasAsignadas} de ${horasDisponibles} horas</strong>.<br>
+                Te quedan <strong>${horasDisponibles - totalHorasAsignadas} horas</strong> por distribuir.<br>
+                <small style="display:block;margin-top:4px;">${horasPorDia} horas/día × ${diasLaborables} días</small>
+            `;
+            sp.insertBefore(info, sp.firstChild);
+        }
+
         subjects.forEach((s,i) => cmap[s.subject_id] = i % PAL.length);
 
         const list = document.getElementById('chipsList');

@@ -780,51 +780,39 @@ class AcademicController {
         }
     }
 
+    // En controllers/AcademicController.php, modifica el método setSubjectHours:
+
     public function setSubjectHours() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ?action=academic'); exit;
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            header('Location: ?action=academic'); 
+            exit;
         }
-        $courseId  = (int)($_GET['course_id'] ?? $_POST['course_id'] ?? 0);
+        
+        $courseId = (int)($_GET['course_id'] ?? $_POST['course_id'] ?? 0);
         $subjectId = (int)$_POST['subject_id'];
-        $hours     = max(1, min(20, (int)$_POST['hours_per_week']));
-        $openPanel = $_POST['open_panel'] ?? 'subjects'; // subjects | students
-
-        $pdo = $this->db->connect();
-
-        // Cuantas horas ya asignadas en el horario
-        $stmtCount = $pdo->prepare(
-            "SELECT COUNT(*) FROM class_schedule
-              WHERE course_id = :cid AND subject_id = :sid"
-        );
-        $stmtCount->execute([':cid' => $courseId, ':sid' => $subjectId]);
-        $assigned = (int)$stmtCount->fetchColumn();
-
-        // Si bajaron las horas por debajo de lo asignado, eliminar las sobrantes
-        if ($assigned > $hours) {
-            $toDelete = $assigned - $hours;
-            // Eliminar las ultimas entradas (ORDER BY id DESC para quitar las mas recientes)
-            $stmtIds = $pdo->prepare(
-                "SELECT id FROM class_schedule
-                  WHERE course_id = :cid AND subject_id = :sid
-                  ORDER BY id DESC LIMIT :lim"
-            );
-            $stmtIds->bindValue(':cid', $courseId, PDO::PARAM_INT);
-            $stmtIds->bindValue(':sid', $subjectId, PDO::PARAM_INT);
-            $stmtIds->bindValue(':lim', $toDelete,  PDO::PARAM_INT);
-            $stmtIds->execute();
-            $ids = $stmtIds->fetchAll(PDO::FETCH_COLUMN);
-            if ($ids) {
-                $placeholders = implode(',', array_fill(0, count($ids), '?'));
-                $pdo->prepare("DELETE FROM class_schedule WHERE id IN ($placeholders)")
-                    ->execute($ids);
-            }
+        $hours = max(1, min(20, (int)$_POST['hours_per_week']));
+        
+        // VALIDACIÓN: Verificar que no se exceda el total de horas disponibles
+        $validation = $this->courseModel->canAssignHours($courseId, $subjectId, $hours);
+        
+        if (!$validation['allowed']) {
+            $message = "No se pueden asignar {$hours} horas. ";
+            $message .= "Total disponible: {$validation['available']} horas semanales. ";
+            $message .= "Actualmente tienes asignadas {$validation['currentTotal']} horas. ";
+            $message .= "Te quedan {$validation['remaining']} horas disponibles.";
+            
+            header('Location: ?action=course_subjects&course_id=' . $courseId . 
+                '&error=hours_exceeded&msg=' . urlencode($message));
+            exit;
         }
-
-        // Actualizar horas en course_subjects
-        $pdo->prepare("UPDATE course_subjects SET hours_per_week = :h WHERE course_id = :cid AND subject_id = :sid")
+        
+        // Si pasa la validación, actualizar
+        $pdo = $this->db->connect();
+        $pdo->prepare('UPDATE course_subjects SET hours_per_week = :h 
+                    WHERE course_id = :cid AND subject_id = :sid')
             ->execute([':h' => $hours, ':cid' => $courseId, ':sid' => $subjectId]);
-
-        header('Location: ?action=academic&open_subjects=' . $courseId . '&hours_updated=1');
+        
+        header('Location: ?action=course_subjects&course_id=' . $courseId . '&updated=1');
         exit;
     }
 }

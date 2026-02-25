@@ -139,4 +139,97 @@ class Course {
         $stmt->execute([':institution_id' => $_SESSION['institution_id']]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Obtiene el máximo de horas por día según el tipo de curso
+     */
+    public function getMaxHoursPerDay($courseId) {
+        $sql = "SELECT grade_level FROM courses WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $courseId]);
+        $course = $stmt->fetch();
+        
+        if (!$course) return 7; // Valor por defecto
+        
+        $gradeLevel = $course['grade_level'];
+        
+        // Determinar si es técnico (BT) para 8 horas, si no 7 horas
+        if (strpos($gradeLevel, 'BT') !== false || strpos($gradeLevel, 'Técnico') !== false) {
+            return 8; // Bachillerato Técnico: 8 horas
+        }
+        
+        return 7; // Educación regular: 7 horas
+    }
+
+    /**
+     * Calcula las horas totales disponibles en la semana
+     */
+    public function getTotalWeeklyHoursAvailable($courseId) {
+        $hoursPerDay = $this->getMaxHoursPerDay($courseId);
+        $workingDays = $this->getWorkingDaysCount(); // Necesitamos este método
+        return $hoursPerDay * $workingDays;
+    }
+
+    /**
+     * Obtiene la cantidad de días laborables configurados
+     */
+    public function getWorkingDaysCount() {
+        // Por defecto 5 días (lunes a viernes)
+        $defaultDays = 5;
+        
+        if (empty($_SESSION['institution_id'])) return $defaultDays;
+        
+        $sql = "SELECT working_days_list FROM institutions WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $_SESSION['institution_id']]);
+        $institution = $stmt->fetch();
+        
+        if (empty($institution['working_days_list'])) return $defaultDays;
+        
+        $days = json_decode($institution['working_days_list'], true);
+        return is_array($days) ? count($days) : $defaultDays;
+    }
+
+    /**
+     * Calcula la suma total de horas asignadas a todas las materias del curso
+     */
+    public function getTotalAssignedHours($courseId) {
+        $sql = "SELECT SUM(cs.hours_per_week) as total
+                FROM course_subjects cs
+                WHERE cs.course_id = :course_id";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['course_id' => $courseId]);
+        $result = $stmt->fetch();
+        
+        return (int)($result['total'] ?? 0);
+    }
+
+    /**
+     * Verifica si se puede asignar una cantidad de horas a una materia
+     */
+    public function canAssignHours($courseId, $subjectId, $newHours) {
+        $totalAvailable = $this->getTotalWeeklyHoursAvailable($courseId);
+        $currentTotal = $this->getTotalAssignedHours($courseId);
+        
+        // Obtener horas actuales de esta materia específica
+        $sql = "SELECT hours_per_week FROM course_subjects 
+                WHERE course_id = :course_id AND subject_id = :subject_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['course_id' => $courseId, 'subject_id' => $subjectId]);
+        $current = $stmt->fetch();
+        
+        $currentSubjectHours = $current ? (int)$current['hours_per_week'] : 0;
+        
+        // Calcular nuevo total restando lo que ya tenía esta materia
+        $newTotal = ($currentTotal - $currentSubjectHours) + $newHours;
+        
+        return [
+            'allowed' => $newTotal <= $totalAvailable,
+            'currentTotal' => $currentTotal,
+            'newTotal' => $newTotal,
+            'available' => $totalAvailable,
+            'remaining' => $totalAvailable - ($currentTotal - $currentSubjectHours)
+        ];
+    }
 }
