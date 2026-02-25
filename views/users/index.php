@@ -103,6 +103,19 @@
         .role-chip .chip-dot { width:8px; height:8px; border-radius:50%; background:#ccc; flex-shrink:0; }
         .role-chip.checked .chip-dot { background:#3949ab; }
 
+        /* ── Toast ── */
+        #um-toast{
+            position:fixed;top:16px;right:16px;z-index:99999;
+            padding:11px 20px;border-radius:9px;font-size:13px;font-weight:600;
+            box-shadow:0 4px 20px rgba(0,0,0,.2);
+            opacity:0;transform:translateY(-6px);transition:all .22s;
+            pointer-events:none;max-width:340px;
+        }
+        #um-toast.show{opacity:1;transform:translateY(0);}
+        #um-toast.ok  {background:#0d3b2e;color:#06d6a0;}
+        #um-toast.err {background:#3b0d18;color:#ef476f;}
+        #um-toast.inf {background:#1a2035;color:#fff;}
+
         /* No results */
         #noResults { display:none; text-align:center; padding:30px; color:#aaa; font-size:14px; }
     </style>
@@ -135,17 +148,7 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
     </div>
 
     <div class="card">
-        <!-- Mensajes -->
-        <?php if(isset($_GET['created'])):   ?><div class="success">✓ Usuario creado correctamente</div><?php endif; ?>
-        <?php if(isset($_GET['updated'])):   ?><div class="success">✓ Usuario actualizado correctamente</div><?php endif; ?>
-        <?php if(isset($_GET['deleted'])):   ?><div class="success">✓ Usuario eliminado correctamente</div><?php endif; ?>
-        <?php if(isset($_GET['deactivated'])): ?><div class="info">ℹ️ Usuario desactivado (tiene registros de asistencia)</div><?php endif; ?>
-        <?php if(isset($_GET['success'])):   ?><div class="success">✓ Rol asignado correctamente</div><?php endif; ?>
-        <?php if(isset($_GET['removed'])):   ?><div class="success">✓ Rol eliminado correctamente</div><?php endif; ?>
-        <?php if(isset($_GET['error']) && $_GET['error']==='has_assignments'): ?><div class="error">✗ No se puede eliminar el rol docente porque tiene asignaciones activas.</div><?php endif; ?>
-        <?php if(isset($_GET['error']) && $_GET['error']==='not_found'):      ?><div class="error">✗ Usuario no encontrado</div><?php endif; ?>
-        <?php if(isset($_GET['error']) && $_GET['error']==='self_delete'):    ?><div class="error">✗ No puedes eliminar tu propia cuenta</div><?php endif; ?>
-        <?php if(isset($_GET['error']) && $_GET['error']==='delete_failed'):  ?><div class="error">✗ Error al eliminar el usuario</div><?php endif; ?>
+        <!-- Toast mensajes (se dispara via JS abajo) -->
 
         <!-- Header + Crear -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -215,7 +218,27 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
                     <td><?= $counter++ ?></td>
                     <td><strong><?= htmlspecialchars($user['last_name'].' '.$user['first_name']) ?></strong></td>
                     <td style="color:#555;"><?= htmlspecialchars($user['email']) ?></td>
-                    <td><?= htmlspecialchars($user['dni'] ?? '—') ?></td>
+                    <td>
+                        <?php
+                        $dniRaw = $user['dni'] ?? '';
+                        if($dniRaw === '') {
+                            echo '—';
+                        } elseif(ctype_digit($dniRaw) && strlen($dniRaw) === 10) {
+                            $prov = (int)substr($dniRaw,0,2);
+                            $tercer = (int)$dniRaw[2];
+                            $coef=[2,1,2,1,2,1,2,1,2]; $suma=0;
+                            for($i=0;$i<9;$i++){ $r=(int)$dniRaw[$i]*$coef[$i]; $suma+=$r>=10?$r-9:$r; }
+                            $res=$suma%10; $dv=$res===0?0:10-$res;
+                            $cedulaOk = ($prov>=1 && $prov<=24 && $tercer<6 && $dv===(int)$dniRaw[9]);
+                            $icon = $cedulaOk
+                                ? '<span title="Cédula verificada" style="color:#28a745;font-size:12px;margin-left:5px;vertical-align:middle;cursor:default;">✓</span>'
+                                : '<span title="Cédula no verificada" style="color:#e0a800;font-size:12px;margin-left:5px;vertical-align:middle;cursor:help;">⚠</span>';
+                            echo '<span style="display:inline-flex;align-items:center;gap:0;white-space:nowrap;">'.htmlspecialchars($dniRaw).$icon.'</span>';
+                        } else {
+                            echo htmlspecialchars($dniRaw);
+                        }
+                        ?>
+                    </td>
                     <td>
                         <?php if($user['roles']):
                             $db2=new Database();
@@ -246,7 +269,7 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
                     </td>
                     <td class="action-buttons">
                         <button onclick="openEditModal(<?= $user['id'] ?>)" class="btn-warning btn-sm">✏️ Editar</button>
-                        <form method="POST" action="?action=delete_user" style="display:inline;" onsubmit="return confirmDelete(event,'<?= htmlspecialchars(addslashes($user['last_name'].' '.$user['first_name'])) ?>')">
+                        <form method="POST" action="?action=delete_user<?= $currentFilter?'&filter_role='.$currentFilter:'' ?>" style="display:inline;" onsubmit="return confirmDelete(event,'<?= htmlspecialchars(addslashes($user['last_name'].' '.$user['first_name'])) ?>',this)">
                             <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
                             <button type="submit" class="btn-danger btn-sm">🗑️</button>
                         </form>
@@ -257,6 +280,28 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
             </tbody>
         </table>
         <div id="noResults">😕 Sin resultados para esa búsqueda</div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="um-toast"></div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: CONFIRMAR ACCIÓN
+══════════════════════════════════════════ -->
+<div id="modalConfirm" class="modal-overlay">
+    <div class="modal-box" style="max-width:420px;">
+        <div class="modal-header">
+            <div><h3 id="confirmTitle" style="color:#c62828;"></h3></div>
+            <button class="modal-close" id="confirmCancelBtn">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmBody" style="color:#555;font-size:14px;line-height:1.6;"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" id="confirmCancelBtn2" onclick="document.getElementById('modalConfirm').classList.remove('active');_pendingForm=null;">Cancelar</button>
+            <button type="button" id="confirmOkBtn" class="btn-submit"></button>
+        </div>
     </div>
 </div>
 
@@ -324,44 +369,29 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
                                value="<?= htmlspecialchars($modalCreateData['last_name'] ?? '') ?>">
                     </div>
                 </div>
-                <!-- Toggle extranjero -->
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-                    <span style="font-size:12px;font-weight:600;color:#555;">Documento de Identidad</span>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#555;font-weight:normal;">
-                        <input type="checkbox" name="es_extranjero" id="c_es_extranjero" value="1"
-                               onchange="toggleDocCreate()"
-                               <?= !empty($modalCreateData['es_extranjero']) ? 'checked' : '' ?>
-                               style="width:15px;height:15px;accent-color:#1a237e;">
-                        Extranjero (Pasaporte)
-                    </label>
-                </div>
                 <div class="mf-row">
-                    <!-- Cédula Ecuador -->
-                    <div id="c_cedula_row" style="display:<?= !empty($modalCreateData['es_extranjero']) ? 'none' : 'block' ?>;">
-                        <label class="mf-label">Cédula de Identidad</label>
+                    <div>
+                        <label class="mf-label">Cédula / Pasaporte</label>
                         <div style="position:relative;">
-                            <input type="text" name="dni" id="c_cedula" class="mf-input" maxlength="10"
-                                   inputmode="numeric" placeholder="0000000000"
-                                   oninput="this.value=this.value.replace(/\D/g,''); validateCedulaCreate()"
-                                   value="<?= htmlspecialchars(!empty($modalCreateData['es_extranjero']) ? '' : ($modalCreateData['dni'] ?? '')) ?>">
+                            <input type="text" name="dni" id="c_cedula" class="mf-input" maxlength="20"
+                                   placeholder="Cédula (10 dígitos) o Pasaporte"
+                                   oninput="this.value=this.value.toUpperCase(); autoDetectDocCreate()"
+                                   value="<?= htmlspecialchars($modalCreateData['dni'] ?? ($modalCreateData['passport'] ?? '')) ?>">
                             <span id="c_icon_cedula" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;"></span>
                         </div>
-                        <div id="c_err_cedula" class="mf-hint" style="color:#999;">10 dígitos — validación algoritmo Ecuador</div>
-                    </div>
-                    <!-- Pasaporte -->
-                    <div id="c_passport_row" style="display:<?= !empty($modalCreateData['es_extranjero']) ? 'block' : 'none' ?>;">
-                        <label class="mf-label">Número de Pasaporte</label>
-                        <input type="text" name="passport" id="c_passport" class="mf-input" maxlength="20"
-                               placeholder="Ej: AB123456"
-                               value="<?= htmlspecialchars(!empty($modalCreateData['es_extranjero']) ? ($modalCreateData['passport'] ?? '') : '') ?>">
-                        <div class="mf-hint">Alfanumérico, hasta 20 caracteres</div>
+                        <div id="c_err_cedula" class="mf-hint" style="color:#999;">Cédula: 10 dígitos · Pasaporte: mayúsculas+números, máx 12 car.</div>
                     </div>
                     <div>
                         <label class="mf-label">Teléfono</label>
-                        <input type="text" name="phone" class="mf-input" maxlength="15"
-                               placeholder="09XXXXXXXX"
-                               value="<?= htmlspecialchars($modalCreateData['phone'] ?? '') ?>">
-                        <div class="mf-hint">Celular: 09XXXXXXXX · Fijo: 0XXXXXXXX</div>
+                        <div style="position:relative;">
+                            <input type="text" name="phone" id="c_phone" class="mf-input" maxlength="10"
+                                   placeholder="09XXXXXXXX o 02XXXXXXX"
+                                   inputmode="tel"
+                                   oninput="this.value=this.value.replace(/[^\d]/g,''); validatePhone('c_phone','c_icon_phone','c_err_phone')"
+                                   value="<?= htmlspecialchars($modalCreateData['phone'] ?? '') ?>">
+                            <span id="c_icon_phone" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;"></span>
+                        </div>
+                        <div id="c_err_phone" class="mf-hint" style="color:#999;">Celular: 10 dígitos (09...) · Fijo: 9 dígitos (02-07...)</div>
                     </div>
                 </div>
 
@@ -451,38 +481,27 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
                                value="<?= htmlspecialchars($modalEditData['last_name'] ?? '') ?>">
                     </div>
                 </div>
-                <!-- Toggle extranjero editar -->
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-                    <span style="font-size:12px;font-weight:600;color:#555;">Documento de Identidad</span>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#555;font-weight:normal;">
-                        <input type="checkbox" name="es_extranjero" id="e_es_extranjero" value="1"
-                               onchange="toggleDocEdit()"
-                               style="width:15px;height:15px;accent-color:#e65100;">
-                        Extranjero (Pasaporte)
-                    </label>
-                </div>
                 <div class="mf-row">
-                    <div id="e_cedula_row">
-                        <label class="mf-label">Cédula de Identidad</label>
+                    <div>
+                        <label class="mf-label">Cédula / Pasaporte</label>
                         <div style="position:relative;">
-                            <input type="text" name="dni" id="editDni" class="mf-input" maxlength="10"
-                                   inputmode="numeric" placeholder="0000000000"
-                                   oninput="this.value=this.value.replace(/\D/g,''); validateCedulaEdit()">
+                            <input type="text" name="dni" id="editDni" class="mf-input" maxlength="20"
+                                   placeholder="Cédula (10 dígitos) o Pasaporte"
+                                   oninput="this.value=this.value.toUpperCase(); autoDetectDocEdit()">
                             <span id="e_icon_cedula" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;"></span>
                         </div>
-                        <div id="e_err_cedula" class="mf-hint" style="color:#999;">10 dígitos — validación algoritmo Ecuador</div>
-                    </div>
-                    <div id="e_passport_row" style="display:none;">
-                        <label class="mf-label">Número de Pasaporte</label>
-                        <input type="text" name="passport" id="editPassport" class="mf-input" maxlength="20"
-                               placeholder="Ej: AB123456">
-                        <div class="mf-hint">Alfanumérico, hasta 20 caracteres</div>
+                        <div id="e_err_cedula" class="mf-hint" style="color:#999;">Cédula: 10 dígitos · Pasaporte: mayúsculas+números, máx 12 car.</div>
                     </div>
                     <div>
                         <label class="mf-label">Teléfono</label>
-                        <input type="text" name="phone" id="editPhone" class="mf-input" maxlength="15"
-                               placeholder="09XXXXXXXX"
-                               value="<?= htmlspecialchars($modalEditData['phone'] ?? '') ?>">
+                        <div style="position:relative;">
+                            <input type="text" name="phone" id="editPhone" class="mf-input" maxlength="10"
+                                   placeholder="09XXXXXXXX o 02XXXXXXX"
+                                   inputmode="tel"
+                                   oninput="this.value=this.value.replace(/[^\d]/g,''); validatePhone('editPhone','e_icon_phone','e_err_phone')">
+                            <span id="e_icon_phone" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;"></span>
+                        </div>
+                        <div id="e_err_phone" class="mf-hint" style="color:#999;">Celular: 10 dígitos (09...) · Fijo: 9 dígitos (02-07...)</div>
                     </div>
                 </div>
             </form>
@@ -512,6 +531,51 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
 
 <script>
 var usersData = JSON.parse(document.getElementById('_usersData').textContent);
+
+/* ── Toast ──────────────────────────────────────────────── */
+function umToast(msg, type, duration){
+    var t = document.getElementById('um-toast');
+    t.textContent = msg;
+    t.className = 'show ' + (type||'ok');
+    clearTimeout(t._t);
+    t._t = setTimeout(function(){ t.className=''; }, duration||3800);
+}
+(function(){
+    var p = new URLSearchParams(location.search);
+    var msgs = {
+        'created':     ['✓ Usuario creado correctamente',      'ok'],
+        'updated':     ['✓ Usuario actualizado correctamente', 'ok'],
+        'deleted':     ['✓ Usuario eliminado correctamente',   'ok'],
+        'deactivated': ['ℹ Usuario desactivado (tiene registros de asistencia)', 'inf'],
+        'success':     ['✓ Rol asignado correctamente',        'ok'],
+        'removed':     ['✓ Rol eliminado correctamente',       'ok'],
+    };
+    // dni_warn se muestra junto al ok, secuencial
+    if(p.get('dni_warn')){
+        setTimeout(function(){ umToast('⚠ Cédula guardada pero no pasa la validación — verifícala luego', 'inf', 6000); }, 200);
+        var u2 = new URL(location.href); u2.searchParams.delete('dni_warn');
+        history.replaceState(null,'',u2);
+    }
+    var errMsgs = {
+        'has_assignments': '✗ No se puede eliminar el rol docente: tiene asignaciones activas',
+        'not_found':       '✗ Usuario no encontrado',
+        'self_delete':     '✗ No puedes eliminar tu propia cuenta',
+        'delete_failed':   '✗ Error al eliminar el usuario',
+    };
+    var fired = false;
+    for(var k in msgs){
+        if(p.get(k)!==null){ umToast(msgs[k][0], msgs[k][1]); fired=true; break; }
+    }
+    if(!fired && p.get('error')){
+        var em = errMsgs[p.get('error')] || ('✗ ' + p.get('error'));
+        umToast(em, 'err'); fired=true;
+    }
+    if(fired){
+        var u = new URL(location.href);
+        ['created','updated','deleted','deactivated','success','removed','error'].forEach(function(k){ u.searchParams.delete(k); });
+        history.replaceState(null,'',u);
+    }
+})();
 
 /* ── Buscador ────────────────────────────────────────────── */
 function normalize(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
@@ -545,24 +609,14 @@ function openEditModal(userId){
     document.getElementById('editEmail').value     = u.email;
     document.getElementById('editFirstName').value = u.first_name;
     document.getElementById('editLastName').value  = u.last_name;
-    // Detectar si es extranjero (dni no numérico o mas de 10 chars)
     var dni = u.dni || '';
-    var esExt = dni !== '' && !/^\d{10}$/.test(dni);
-    var extChk = document.getElementById('e_es_extranjero');
-    extChk.checked = esExt;
-    document.getElementById('e_cedula_row').style.display   = esExt ? 'none' : '';
-    document.getElementById('e_passport_row').style.display = esExt ? '' : 'none';
-    if(esExt){
-        document.getElementById('editDni').value     = '';
-        document.getElementById('editPassport').value = dni;
-        setCedulaState('e_icon_cedula','e_err_cedula','','','#999');
-    } else {
-        document.getElementById('editDni').value      = dni;
-        document.getElementById('editPassport').value = '';
-        if(dni) validateCedulaEdit();
-        else setCedulaState('e_icon_cedula','e_err_cedula','','10 dígitos — validación algoritmo Ecuador','#999');
-    }
-    document.getElementById('editPhone').value = u.phone || '';
+    document.getElementById('editDni').value   = dni;
+    var ph = u.phone || '';
+    document.getElementById('editPhone').value = ph;
+    if(ph) validatePhone('editPhone','e_icon_phone','e_err_phone');
+    else { document.getElementById('e_icon_phone').textContent=''; document.getElementById('e_err_phone').textContent='Celular: 10 dígitos (09...) · Fijo: 9 dígitos (02-07...)'; document.getElementById('e_err_phone').style.color='#999'; }
+    if(dni) autoDetectDoc(dni, 'e_icon_cedula', 'e_err_cedula');
+    else setDocState('e_icon_cedula','e_err_cedula','','Cédula: 10 dígitos · Pasaporte: mayúsculas+números, máx 12 car.','#999');
     document.getElementById('editModalSubtitle').textContent = u.last_name + ', ' + u.first_name;
     document.getElementById('ep_password').value  = '';
     document.getElementById('ep_confirm').value   = '';
@@ -572,7 +626,7 @@ function openEditModal(userId){
 function closeEditModal(){ document.getElementById('modalEdit').classList.remove('active'); }
 
 /* ── Cerrar con ESC / clic fuera ─────────────────────────── */
-document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeCreateModal(); closeEditModal(); }});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeCreateModal(); closeEditModal(); document.getElementById('modalConfirm').classList.remove('active'); _pendingForm=null; }});
 document.getElementById('modalCreate').addEventListener('click', function(e){ if(e.target===this) closeCreateModal(); });
 document.getElementById('modalEdit').addEventListener('click',   function(e){ if(e.target===this) closeEditModal(); });
 
@@ -593,63 +647,123 @@ function toggleChip(label){
     label.classList.toggle('checked', cb.checked);
 }
 
-/* ── Confirm Delete ──────────────────────────────────────── */
-function confirmDelete(event, userName){
+/* ── Confirm Delete / Remove Role (modal propio) ─────────── */
+var _pendingForm = null;
+
+function confirmDelete(event, userName, form){
     event.preventDefault();
-    if(!confirm('¿Eliminar a ' + userName + '?\n\nSi tiene asistencias registradas se desactivará en lugar de eliminarse.')) return false;
-    event.target.submit();
+    _pendingForm = form;
+    document.getElementById('confirmTitle').textContent  = '🗑️ Eliminar Usuario';
+    document.getElementById('confirmBody').innerHTML     =
+        '¿Eliminar a <strong>' + userName + '</strong>?<br><br>' +
+        '<span style="font-size:12px;color:#888;">Si tiene asistencias registradas se desactivará en lugar de eliminarse.</span>';
+    document.getElementById('confirmOkBtn').className    = 'btn-submit';
+    document.getElementById('confirmOkBtn').style.background = 'linear-gradient(135deg,#c62828,#e53935)';
+    document.getElementById('confirmOkBtn').textContent  = 'Sí, eliminar';
+    document.getElementById('modalConfirm').classList.add('active');
     return false;
 }
 function confirmRemoveRole(event, roleName, userName){
     event.preventDefault();
-    if(!confirm('¿Quitar el rol ' + roleName + ' a ' + userName + '?')) return false;
-    event.target.submit();
+    _pendingForm = event.target;
+    document.getElementById('confirmTitle').textContent  = 'Quitar Rol';
+    document.getElementById('confirmBody').innerHTML     =
+        '¿Quitar el rol <strong>' + roleName + '</strong> a <strong>' + userName + '</strong>?';
+    document.getElementById('confirmOkBtn').className    = 'btn-submit';
+    document.getElementById('confirmOkBtn').style.background = 'linear-gradient(135deg,#c62828,#e53935)';
+    document.getElementById('confirmOkBtn').textContent  = 'Sí, quitar';
+    document.getElementById('modalConfirm').classList.add('active');
     return false;
 }
+document.getElementById('confirmOkBtn').addEventListener('click', function(){
+    document.getElementById('modalConfirm').classList.remove('active');
+    if(_pendingForm){ _pendingForm.submit(); _pendingForm = null; }
+});
+document.getElementById('confirmCancelBtn').addEventListener('click', function(){
+    document.getElementById('modalConfirm').classList.remove('active');
+    _pendingForm = null;
+});
+document.getElementById('modalConfirm').addEventListener('click', function(e){
+    if(e.target === this){ this.classList.remove('active'); _pendingForm = null; }
+});
 
 /* ── Validación cédula Ecuador ───────────────────────────── */
 function validarCedula(c){
-    if(!/^\d{10}$/.test(c)) return false;
-    var p=parseInt(c.substring(0,2)); if(p<1||p>24) return false;
+    if(!/^\d{10}$/.test(c)) return {ok:false, msg:'Debe tener 10 dígitos'};
+    var p=parseInt(c.substring(0,2));
+    if(p<1||p>24) return {ok:false, msg:'Provincia inválida (primeros 2 dígitos: 01-24)'};
+    if(parseInt(c[2])>=6) return {ok:false, msg:'Tercer dígito debe ser menor a 6'};
     var coef=[2,1,2,1,2,1,2,1,2], suma=0;
     for(var i=0;i<9;i++){ var r=parseInt(c[i])*coef[i]; suma+=r>=10?r-9:r; }
     var res=suma%10, dv=res===0?0:10-res;
-    return dv===parseInt(c[9]);
+    if(dv!==parseInt(c[9])) return {ok:false, msg:'Dígito verificador inválido'};
+    return {ok:true};
 }
-function setCedulaState(iconId, errId, icon, msg, color){
+function setDocState(iconId, errId, icon, msg, color){
     document.getElementById(iconId).textContent = icon;
     var err = document.getElementById(errId);
     err.textContent = msg; err.style.color = color;
 }
-function validateCedulaCreate(){
-    var v = document.getElementById('c_cedula').value.trim();
-    if(v==='') return setCedulaState('c_icon_cedula','c_err_cedula','','10 dígitos — validación algoritmo Ecuador','#999');
-    if(v.length<10) return setCedulaState('c_icon_cedula','c_err_cedula','',''+v.length+'/10 dígitos','#999');
-    if(validarCedula(v)) setCedulaState('c_icon_cedula','c_err_cedula','✅','Cédula válida','#28a745');
-    else                 setCedulaState('c_icon_cedula','c_err_cedula','❌','Cédula inválida — verifica los dígitos','#dc3545');
+function autoDetectDoc(val, iconId, errId){
+    var v = val.trim();
+    if(v === '') return setDocState(iconId, errId, '', 'Cédula: 10 dígitos · Pasaporte: mayúsculas+números, máx 12 car.', '#999');
+    var soloNumeros = /^\d+$/.test(v);
+    if(soloNumeros){
+        if(v.length < 10) return setDocState(iconId, errId, '', v.length+'/10 dígitos', '#999');
+        var res = validarCedula(v);
+        if(res.ok) setDocState(iconId, errId, '✅', 'Cédula ecuatoriana válida', '#28a745');
+        else       setDocState(iconId, errId, '❌', res.msg, '#dc3545');
+    } else {
+        // Pasaporte: letras mayusculas + numeros, sin espacios, max 12
+        if(/\s/.test(v)){
+            setDocState(iconId, errId, '❌', 'Pasaporte: sin espacios', '#dc3545');
+        } else if(v.length < 4){
+            setDocState(iconId, errId, '', 'Pasaporte: mínimo 4 caracteres', '#999');
+        } else if(v.length > 12){
+            setDocState(iconId, errId, '❌', 'Pasaporte: máximo 12 caracteres', '#dc3545');
+        } else if(!/^[A-Z0-9]+$/.test(v)){
+            setDocState(iconId, errId, '❌', 'Pasaporte: solo letras mayúsculas y números', '#dc3545');
+        } else {
+            setDocState(iconId, errId, '🌐', 'Pasaporte válido', '#1a237e');
+        }
+    }
 }
-function validateCedulaEdit(){
-    var v = document.getElementById('editDni').value.trim();
-    if(v==='') return setCedulaState('e_icon_cedula','e_err_cedula','','10 dígitos — validación algoritmo Ecuador','#999');
-    if(v.length<10) return setCedulaState('e_icon_cedula','e_err_cedula','',''+v.length+'/10 dígitos','#999');
-    if(validarCedula(v)) setCedulaState('e_icon_cedula','e_err_cedula','✅','Cédula válida','#28a745');
-    else                 setCedulaState('e_icon_cedula','e_err_cedula','❌','Cédula inválida — verifica los dígitos','#dc3545');
+/* ── Validación teléfono Ecuador ─────────────────────────── */
+function validatePhone(inputId, iconId, errId){
+    var v = document.getElementById(inputId).value.trim();
+    var icon = document.getElementById(iconId);
+    var err  = document.getElementById(errId);
+    if(v === ''){
+        icon.textContent = ''; err.textContent = 'Celular: 10 dígitos (09...) · Fijo: 9 dígitos (02-07...)'; err.style.color='#999'; return;
+    }
+    // Celular: empieza en 09, exactamente 10 digitos
+    if(/^09\d{8}$/.test(v)){
+        icon.textContent='✅'; err.textContent='Celular válido'; err.style.color='#28a745'; return;
+    }
+    // Fijo: empieza en 0[2-7], exactamente 9 digitos
+    if(/^0[2-7]\d{7}$/.test(v)){
+        icon.textContent='✅'; err.textContent='Teléfono fijo válido'; err.style.color='#28a745'; return;
+    }
+    // Feedback parcial mientras escribe
+    if(v.startsWith('09')){
+        icon.textContent=''; err.textContent=v.length+'/10 dígitos (celular)'; err.style.color='#999';
+    } else if(/^0[2-7]/.test(v)){
+        icon.textContent=''; err.textContent=v.length+'/9 dígitos (fijo)'; err.style.color='#999';
+    } else if(v.startsWith('0') && v.length===1){
+        icon.textContent=''; err.textContent='Celular: 09... · Fijo: 02-07...'; err.style.color='#999';
+    } else {
+        icon.textContent='❌'; err.textContent='Formato inválido. Celular: 09XXXXXXXX · Fijo: 02-07XXXXXXX'; err.style.color='#dc3545';
+    }
 }
 
-/* ── Toggle extranjero ────────────────────────────────────── */
-function toggleDocCreate(){
-    var ext = document.getElementById('c_es_extranjero').checked;
-    document.getElementById('c_cedula_row').style.display   = ext ? 'none' : '';
-    document.getElementById('c_passport_row').style.display = ext ? '' : 'none';
-    if(ext){ document.getElementById('c_cedula').value=''; setCedulaState('c_icon_cedula','c_err_cedula','','','#999'); }
-    else   { document.getElementById('c_passport').value=''; }
+function autoDetectDocCreate(){
+    var v = document.getElementById('c_cedula').value;
+    // Solo permitir dígitos si empieza con número; si hay letras, permitir alfanumérico
+    autoDetectDoc(v, 'c_icon_cedula', 'c_err_cedula');
 }
-function toggleDocEdit(){
-    var ext = document.getElementById('e_es_extranjero').checked;
-    document.getElementById('e_cedula_row').style.display   = ext ? 'none' : '';
-    document.getElementById('e_passport_row').style.display = ext ? '' : 'none';
-    if(ext){ document.getElementById('editDni').value=''; setCedulaState('e_icon_cedula','e_err_cedula','','','#999'); }
-    else   { document.getElementById('editPassport').value=''; }
+function autoDetectDocEdit(){
+    var v = document.getElementById('editDni').value;
+    autoDetectDoc(v, 'e_icon_cedula', 'e_err_cedula');
 }
 
 /* ── Reabrir modal si hubo error ─────────────────────────── */

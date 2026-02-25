@@ -317,4 +317,11 @@ class User {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':id' => $userId]);
     }
+
+    public function findByDni(string $dni, int $excludeId = 0) {
+        $sql = "SELECT id FROM users WHERE dni = :dni AND id != :exclude AND is_active = 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':dni' => $dni, ':exclude' => $excludeId]);
+        return $stmt->fetch();
+    }
 }

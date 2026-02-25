@@ -289,18 +289,21 @@ class UserController {
             if ($result['count'] > 0) {
                 // Soft delete - desactivar en lugar de eliminar
                 if ($this->userModel->deactivate($userId)) {
-                    header('Location: ?action=users&deactivated=1');
+                    $f = !empty($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '';
+                    header('Location: ?action=users&deactivated=1'.$f);
                     exit;
                 }
             } else {
                 // Hard delete - eliminar completamente
                 if ($this->userModel->delete($userId)) {
-                    header('Location: ?action=users&deleted=1');
+                    $f = !empty($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '';
+                    header('Location: ?action=users&deleted=1'.$f);
                     exit;
                 }
             }
 
-            header('Location: ?action=users&error=delete_failed');
+            $f = !empty($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '';
+            header('Location: ?action=users&error=delete_failed'.$f);
             exit;
         }
     }
@@ -321,6 +324,41 @@ class UserController {
         return $digVer === (int)$cedula[9];
     }
 
+
+    private function validateDniInput(string $raw, int $excludeId = 0): array {
+        $raw = trim($raw);
+        if ($raw === '') return ['value' => null, 'error' => null, 'warning' => null];
+
+        $soloNumeros = ctype_digit($raw);
+        $warning = null;
+
+        if ($soloNumeros) {
+            // Cédula Ecuador — guarda siempre, pero avisa si es inválida
+            if (strlen($raw) !== 10) {
+                return ['value' => null, 'error' => 'La cédula debe tener exactamente 10 dígitos', 'warning' => null];
+            }
+            $dniValue = $raw;
+            if (!self::validarCedulaEcuador($raw)) {
+                $warning = 'cedula_invalida'; // se guarda pero con marca
+            }
+        } else {
+            // Pasaporte: formato estricto (esto sí bloquea, es formato puro)
+            $upper = strtoupper($raw);
+            if (!preg_match('/^[A-Z0-9]{4,12}$/', $upper)) {
+                return ['value' => null, 'error' => 'Pasaporte inválido: solo letras mayúsculas y números, entre 4 y 12 caracteres, sin espacios', 'warning' => null];
+            }
+            $dniValue = $upper;
+        }
+
+        // Unicidad — error duro, no se puede duplicar
+        if ($this->userModel->findByDni($dniValue, $excludeId)) {
+            $tipo = $soloNumeros ? 'cédula' : 'número de pasaporte';
+            return ['value' => null, 'error' => "Este $tipo ya está registrado en otro usuario", 'warning' => null];
+        }
+
+        return ['value' => $dniValue, 'error' => null, 'warning' => $warning];
+    }
+
     // ── Crear usuario desde modal ─────────────────────────────────────────
     public function createFromModal() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=users'); exit; }
@@ -335,16 +373,9 @@ class UserController {
         if ($this->userModel->findByUsername($_POST['username']))               $errors[] = "El usuario ya está registrado";
         if ($this->userModel->findByEmail($_POST['email']))                     $errors[] = "El email ya está registrado";
 
-        $dniValue = null;
-        if (!empty($_POST['dni'])) {
-            $d = preg_replace('/\D/', '', $_POST['dni']);
-            if (strlen($d) === 10) {
-                if (!self::validarCedulaEcuador($d)) $errors[] = "Cédula inválida";
-                else $dniValue = $d;
-            } else {
-                $dniValue = Security::sanitize($_POST['dni']);
-            }
-        }
+        $dniResult = $this->validateDniInput($_POST['dni'] ?? '');
+        if ($dniResult['error']) $errors[] = $dniResult['error'];
+        $dniValue = $dniResult['value'];
 
         $phoneValue = null;
         if (!empty($_POST['phone'])) {
@@ -357,7 +388,8 @@ class UserController {
             $_SESSION['modal_create_errors'] = $errors;
             $_SESSION['modal_create_data']   = $_POST;
             $_SESSION['open_modal']          = 'create';
-            header('Location: ?action=users'); exit;
+            $f = !empty($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '';
+            header('Location: ?action=users'.$f); exit;
         }
 
         $userData = [
@@ -373,16 +405,36 @@ class UserController {
 
         if ($this->userModel->create($userData)) {
             $newId = $this->userModel->db->lastInsertId();
+            $selectedRoles = [];
             if (!empty($_POST['roles'])) {
-                foreach ($_POST['roles'] as $rid) $this->userModel->assignRole($newId, (int)$rid);
+                foreach ($_POST['roles'] as $rid) {
+                    $this->userModel->assignRole($newId, (int)$rid);
+                    // Obtener nombre del rol
+                    $stmtR = $this->userModel->db->prepare("SELECT name FROM roles WHERE id = :id");
+                    $stmtR->execute([':id' => (int)$rid]);
+                    $rName = $stmtR->fetchColumn();
+                    if ($rName) $selectedRoles[] = $rName;
+                }
             }
-            header('Location: ?action=users&created=1'); exit;
+            // Mantener filtro activo: si el filtro actual coincide con algún rol asignado → mantenerlo
+            // Si no coincide → cambiar al primer rol asignado; si no hay roles → sin filtro
+            $currentFilter = $_GET['filter_role'] ?? '';
+            if ($currentFilter !== '' && in_array($currentFilter, $selectedRoles)) {
+                $filter = '&filter_role=' . $currentFilter;
+            } elseif (!empty($selectedRoles)) {
+                $filter = '&filter_role=' . $selectedRoles[0];
+            } else {
+                $filter = '';
+            }
+            $warnParam = ($dniResult['warning'] === 'cedula_invalida') ? '&dni_warn=1' : '';
+            header('Location: ?action=users&created=1' . $filter . $warnParam); exit;
         }
 
         $_SESSION['modal_create_errors'] = ['Error al crear el usuario'];
         $_SESSION['modal_create_data']   = $_POST;
         $_SESSION['open_modal']          = 'create';
-        header('Location: ?action=users'); exit;
+        $f = !empty($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '';
+        header('Location: ?action=users'.$f); exit;
     }
 
     // ── Editar usuario desde modal ────────────────────────────────────────
@@ -409,6 +461,10 @@ class UserController {
             if ($_POST['password'] !== $_POST['confirm_password']) $errors[] = "Las contraseñas no coinciden";
         }
 
+        $dniResult = $this->validateDniInput($_POST['dni'] ?? '', $userId);
+        if ($dniResult['error']) $errors[] = $dniResult['error'];
+        $dniValue = $dniResult['value'];
+
         if (!empty($errors)) {
             $_SESSION['modal_edit_errors'] = $errors;
             $_SESSION['modal_edit_data']   = array_merge($_POST, ['user_id' => $userId]);
@@ -422,13 +478,14 @@ class UserController {
             'email'      => Security::sanitize($_POST['email']),
             'first_name' => Security::sanitize($_POST['first_name']),
             'last_name'  => Security::sanitize($_POST['last_name']),
-            'dni'        => !empty($_POST['dni'])   ? Security::sanitize($_POST['dni'])   : null,
+            'dni'        => $dniValue,
             'phone'      => !empty($_POST['phone']) ? Security::sanitize($_POST['phone']) : null,
         ];
         if (!empty($_POST['password'])) $updateData['password'] = $_POST['password'];
 
         if ($this->userModel->update($updateData)) {
-            header('Location: ?action=users&updated=1'); exit;
+            $warnParam = ($dniResult['warning'] === 'cedula_invalida') ? '&dni_warn=1' : '';
+            header('Location: ?action=users&updated=1' . $warnParam); exit;
         }
 
         $_SESSION['modal_edit_errors'] = ['Error al actualizar el usuario'];
