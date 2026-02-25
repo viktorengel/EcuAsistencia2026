@@ -43,6 +43,22 @@
         .modal-box select { width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px; margin-bottom:18px; }
         .modal-btns { display:flex; gap:10px; justify-content:flex-end; }
         .modal-btns button { padding:8px 18px; border:none; border-radius:4px; cursor:pointer; font-size:14px; }
+        .modal-box input:focus {
+            outline: none;
+            border-color: #28a745 !important;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+        .btn-add {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-add:hover {
+            background: #218838;
+        }
     </style>
 </head>
 <body>
@@ -68,7 +84,7 @@
     <!-- Sistema de Toast -->
     <div id="toast-container" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
 
-    <!-- Mensajes convertidos a Toast (ocultos pero ejecutan showToast) -->
+    <!-- Mensajes convertidos a Toast -->
     <?php if (isset($_GET['added'])): ?>
         <script>document.addEventListener('DOMContentLoaded', function() { showToast('➕ Asignatura agregada correctamente', 'success'); });</script>
     <?php endif; ?>
@@ -102,10 +118,15 @@
     <?php endif; ?>
 
     <div class="card">
-        <h3 style="margin-bottom:16px; color:#333;">
-            Asignaturas y Docentes
-            <span class="badge-count"><?= count($subjects) ?></span>
-        </h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="color:#333; margin:0;">
+                Asignaturas y Docentes
+                <span class="badge-count"><?= count($subjects) ?></span>
+            </h3>
+            <button onclick="abrirModalAgregar()" class="btn btn-add" style="padding:10px 20px; font-size:14px;">
+                ➕ Agregar asignatura
+            </button>
+        </div>
 
         <?php if (empty($subjects)): ?>
             <div class="empty-msg">📭 Este curso aún no tiene asignaturas asignadas.</div>
@@ -177,50 +198,63 @@
         <?php endif; ?>
     </div>
 
-    <div class="card">
-        <h3 style="margin-bottom:16px; color:#333;">➕ Agregar asignatura a este curso</h3>
-        <form method="POST" action="?action=course_subjects&course_id=<?= $course['id'] ?>">
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Nombre *</label>
-                    <input type="text" name="new_subject_name" placeholder="Ej: Emprendimiento" required>
+    <!-- Modal: Agregar Asignatura -->
+    <div class="modal-overlay" id="modalAgregarAsignatura">
+        <div class="modal-box" style="max-width:500px;">
+            <h3 style="color:#28a745; margin-bottom:16px;">➕ Agregar nueva asignatura</h3>
+            <form method="POST" action="?action=course_subjects&course_id=<?= $course['id'] ?>" id="formAgregarAsignatura">
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:13px; font-weight:bold; color:#555; display:block; margin-bottom:6px;">Nombre de la asignatura *</label>
+                    <input type="text" name="new_subject_name" id="new_subject_name" class="form-control" 
+                        placeholder="Ej: Emprendimiento" required 
+                        style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:6px; font-size:14px;">
                 </div>
-                <div class="form-group" style="max-width:160px;">
-                    <label>Código <span style="font-weight:normal;color:#999;">(opcional)</span></label>
-                    <input type="text" name="new_subject_code" placeholder="Ej: EMP">
+                
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:13px; font-weight:bold; color:#555; display:block; margin-bottom:6px;">
+                        Código <span style="font-weight:normal; color:#999;">(opcional)</span>
+                    </label>
+                    <input type="text" name="new_subject_code" id="new_subject_code" class="form-control"
+                        placeholder="Ej: EMP" 
+                        style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:6px; font-size:14px;">
+                    <small style="color:#888; display:block; margin-top:4px;">Código corto para identificar la asignatura</small>
                 </div>
-                <button type="submit" class="btn btn-add">➕ Agregar</button>
-            </div>
-        </form>
+                
+                <div class="modal-btns" style="justify-content:flex-end; margin-top:24px;">
+                    <button type="button" onclick="cerrarModalAgregar()" style="background:#6c757d; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Cancelar</button>
+                    <button type="submit" style="background:#28a745; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;">✓ Agregar asignatura</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Asignar Docente -->
+    <div class="modal-overlay" id="modalAsignar">
+        <div class="modal-box">
+            <h3>👤 Asignar Docente</h3>
+            <p id="modalSubjectLabel" style="font-size:15px; color:#333; margin-bottom:14px;"></p>
+            <form method="POST" action="?action=assign_subject_teacher">
+                <input type="hidden" name="course_id"     value="<?= $course['id'] ?>">
+                <input type="hidden" name="subject_id"    id="modalSubjectId">
+                <input type="hidden" name="assignment_id" id="modalAssignmentId">
+                <label style="font-size:13px; font-weight:bold; color:#555; display:block; margin-bottom:6px;">Docente *</label>
+                <select name="teacher_id" id="modalTeacherSelect" required>
+                    <option value="">Seleccionar docente...</option>
+                    <?php foreach ($teachers as $t): ?>
+                        <option value="<?= $t['id'] ?>">
+                            <?= htmlspecialchars($t['last_name'] . ' ' . $t['first_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="modal-btns">
+                    <button type="button" onclick="cerrarModal()" style="background:#6c757d;color:white;">Cancelar</button>
+                    <button type="submit" style="background:#e65100;color:white;">✓ Guardar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <a href="?action=academic" class="btn btn-back">← Volver a Configuración Académica</a>
-</div>
-
-<!-- Modal: Asignar Docente -->
-<div class="modal-overlay" id="modalAsignar">
-    <div class="modal-box">
-        <h3>👤 Asignar Docente</h3>
-        <p id="modalSubjectLabel" style="font-size:15px; color:#333; margin-bottom:14px;"></p>
-        <form method="POST" action="?action=assign_subject_teacher">
-            <input type="hidden" name="course_id"     value="<?= $course['id'] ?>">
-            <input type="hidden" name="subject_id"    id="modalSubjectId">
-            <input type="hidden" name="assignment_id" id="modalAssignmentId">
-            <label style="font-size:13px; font-weight:bold; color:#555; display:block; margin-bottom:6px;">Docente *</label>
-            <select name="teacher_id" id="modalTeacherSelect" required>
-                <option value="">Seleccionar docente...</option>
-                <?php foreach ($teachers as $t): ?>
-                    <option value="<?= $t['id'] ?>">
-                        <?= htmlspecialchars($t['last_name'] . ' ' . $t['first_name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <div class="modal-btns">
-                <button type="button" onclick="cerrarModal()" style="background:#6c757d;color:white;">Cancelar</button>
-                <button type="submit" style="background:#e65100;color:white;">✓ Guardar</button>
-            </div>
-        </form>
-    </div>
 </div>
 
 <!-- Sistema de Toast Script -->
@@ -231,7 +265,6 @@ function showToast(message, type = 'success') {
     
     const toast = document.createElement('div');
     
-    // Configurar estilos según tipo
     const styles = {
         success: { bg: '#d4edda', color: '#155724', border: '#c3e6cb', icon: '✅' },
         error: { bg: '#f8d7da', color: '#721c24', border: '#f5c6cb', icon: '❌' },
@@ -270,13 +303,11 @@ function showToast(message, type = 'success') {
     
     container.appendChild(toast);
     
-    // Animar entrada
     setTimeout(() => {
         toast.style.opacity = '1';
         toast.style.transform = 'translateX(0)';
     }, 10);
     
-    // Auto-eliminar después de 4 segundos
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(40px)';
@@ -285,10 +316,9 @@ function showToast(message, type = 'success') {
 }
 
 function abrirModal(subjectId, subjectName, assignmentId, teacherId) {
-    document.getElementById('modalSubjectId').value      = subjectId;
+    document.getElementById('modalSubjectId').value = subjectId;
     document.getElementById('modalSubjectLabel').textContent = '📖 ' + subjectName;
-    document.getElementById('modalAssignmentId').value   = assignmentId ?? '';
-    // Pre-seleccionar docente actual si existe
+    document.getElementById('modalAssignmentId').value = assignmentId ?? '';
     const sel = document.getElementById('modalTeacherSelect');
     sel.value = teacherId ?? '';
     document.getElementById('modalAsignar').classList.add('active');
@@ -320,7 +350,6 @@ function confirmRemove(event, nombre) {
     return false;
 }
 
-// Después de cargar la página, calcular y mostrar el total de horas
 document.addEventListener('DOMContentLoaded', function() {
     calcularTotalHoras();
 });
@@ -335,7 +364,6 @@ function calcularTotalHoras() {
         total += parseInt(input.value) || 0;
     });
     
-    // Crear o actualizar el indicador de total
     let indicator = document.getElementById('total-hours-indicator');
     if (!indicator) {
         indicator = document.createElement('div');
@@ -369,10 +397,8 @@ function calcularTotalHoras() {
     }
 }
 
-// Modificar el evento de cambio de horas
 document.querySelectorAll('input[name="hours_per_week"]').forEach(function(input) {
     input.addEventListener('change', function() {
-        const form = this.closest('form');
         const maxHorasDisponibles = <?= $this->courseModel->getTotalWeeklyHoursAvailable($course['id']) ?>;
         let totalActual = 0;
         
@@ -392,6 +418,29 @@ document.querySelectorAll('input[name="hours_per_week"]').forEach(function(input
         
         calcularTotalHoras();
     });
+});
+
+function abrirModalAgregar() {
+    document.getElementById('modalAgregarAsignatura').classList.add('active');
+    document.getElementById('new_subject_name').focus();
+}
+
+function cerrarModalAgregar() {
+    document.getElementById('modalAgregarAsignatura').classList.remove('active');
+    document.getElementById('new_subject_name').value = '';
+    document.getElementById('new_subject_code').value = '';
+}
+
+document.getElementById('modalAgregarAsignatura').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalAgregar();
+});
+
+document.getElementById('formAgregarAsignatura').addEventListener('submit', function(e) {
+    const nombre = document.getElementById('new_subject_name').value.trim();
+    if (nombre === '') {
+        e.preventDefault();
+        showToast('❌ El nombre de la asignatura es obligatorio', 'error');
+    }
 });
 </script>
 
