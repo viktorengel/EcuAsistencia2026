@@ -282,33 +282,32 @@ class User {
     }
 
     public function delete($userId) {
-        // Primero eliminar roles
-        $sql = "DELETE FROM user_roles WHERE user_id = :user_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':user_id' => $userId]);
+        // 1. Eliminar roles
+        $this->db->prepare("DELETE FROM user_roles WHERE user_id = :uid")
+            ->execute([':uid' => $userId]);
 
-        // Eliminar representaciones (tanto como representante como estudiante)
-        $sql = "DELETE FROM representatives 
-                WHERE representative_id = :rep_id OR student_id = :stu_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':rep_id' => $userId,
-            ':stu_id' => $userId
-        ]);
+        // 2. Eliminar representaciones
+        $this->db->prepare("DELETE FROM representatives WHERE representative_id = :rid OR student_id = :sid")
+            ->execute([':rid' => $userId, ':sid' => $userId]);
 
-        // Eliminar de course_students
-        $sql = "DELETE FROM course_students WHERE student_id = :user_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':user_id' => $userId]);
+        // 3. Eliminar matrículas
+        $this->db->prepare("DELETE FROM course_students WHERE student_id = :uid")
+            ->execute([':uid' => $userId]);
 
-        // Eliminar asignaciones docentes
-        $sql = "DELETE FROM teacher_assignments WHERE teacher_id = :user_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':user_id' => $userId]);
+        // 4. Eliminar entradas del horario donde era el docente asignado
+        $this->db->prepare("DELETE FROM class_schedule WHERE teacher_id = :uid")
+            ->execute([':uid' => $userId]);
 
-        // Finalmente eliminar usuario
-        $sql = "DELETE FROM users WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
+        // 5. Eliminar asignaciones docentes
+        $this->db->prepare("DELETE FROM teacher_assignments WHERE teacher_id = :uid")
+            ->execute([':uid' => $userId]);
+
+        // 6. Eliminar asistencias registradas por o para este usuario
+        $this->db->prepare("DELETE FROM attendances WHERE student_id = :uid OR teacher_id = :uid2")
+            ->execute([':uid' => $userId, ':uid2' => $userId]);
+
+        // 7. Eliminar usuario
+        $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
         return $stmt->execute([':id' => $userId]);
     }
 
