@@ -89,11 +89,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
     transition: background 0.15s, color 0.15s; position: relative;
 }
 .ec-item__btn:hover, .ec-item:hover > .ec-item__btn { background: var(--nav-hover); color: #fff; }
-.ec-item__btn.active { color: #fff; }
-.ec-item__btn.active::after {
-    content: ''; position: absolute; bottom: 0; left: 8px; right: 8px;
-    height: 2px; background: #fff; border-radius: 2px 2px 0 0;
-}
+.ec-item__btn.active { color: #fff; background: rgba(255,255,255,0.15); border-radius: 6px; }
 .ec-item__icon  { font-size: 14px; line-height: 1; }
 .ec-item__caret { font-size: 9px; color: var(--nav-muted); margin-left: 1px; transition: transform 0.2s; }
 .ec-item:hover .ec-item__caret { transform: rotate(180deg); }
@@ -101,12 +97,20 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
 /* ── Dropdown desktop ───────────────────────── */
 .ec-dropdown {
     display: none; position: absolute;
-    top: calc(100% + 2px); left: 0; min-width: 210px;
+    top: 100%; left: 0; min-width: 210px;
     background: var(--nav-dd-bg); border: 1px solid var(--nav-border);
-    border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    border-radius: 0 0 10px 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     padding: 4px; z-index: 200;
+    /* Puente invisible para no perder hover al bajar el mouse */
+    margin-top: 0;
 }
 .ec-item:hover .ec-dropdown { display: block; }
+/* Puente invisible que cubre el espacio entre btn y dropdown */
+.ec-item__btn::before {
+    content: ''; position: absolute;
+    bottom: -8px; left: 0; right: 0; height: 8px;
+    background: transparent;
+}
 .ec-dropdown a {
     display: flex; align-items: center; gap: 9px; padding: 9px 12px;
     color: var(--nav-text); text-decoration: none; font-size: 13px;
