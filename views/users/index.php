@@ -236,7 +236,7 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
                             echo '<span style="display:inline-flex;align-items:center;gap:0;white-space:nowrap;">'.htmlspecialchars($dniRaw).$icon.'</span>';
                         } else {
                             // Pasaporte (alfanumérico)
-                            echo '<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">'.htmlspecialchars($dniRaw).' 🌐</span>';
+                            echo '<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">🌐 '.htmlspecialchars($dniRaw).'</span>';
                         }
                         ?>
                     </td>
@@ -561,6 +561,7 @@ function umToast(msg, type, duration){
         'has_assignments': '✗ No se puede eliminar el rol docente: tiene asignaciones activas',
         'not_found':       '✗ Usuario no encontrado',
         'self_delete':     '✗ No puedes eliminar tu propia cuenta',
+        'admin_protected': '✗ El usuario administrador no puede ser eliminado',
         'delete_failed':   '✗ Error al eliminar el usuario',
     };
     var fired = false;

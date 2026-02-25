@@ -280,6 +280,14 @@ class UserController {
                 exit;
             }
 
+            // No permitir eliminar al administrador del sistema
+            $roles = $this->userModel->getUserRoles($userId);
+            if (in_array('administrador', $roles)) {
+                $f = !empty($_GET['filter_role']) ? '&filter_role='.$_GET['filter_role'] : '';
+                header('Location: ?action=users&error=admin_protected'.$f);
+                exit;
+            }
+
             // Verificar si tiene asistencias registradas
             $db = new Database();
             $stmt = $db->connect()->prepare("SELECT COUNT(*) as count FROM attendances WHERE student_id = :user_id");
