@@ -307,7 +307,7 @@ foreach($schedule as $cls) {
             <h1>Horario — <?= htmlspecialchars($course['name']) ?></h1>
             <p><?= htmlspecialchars($course['grade_level']) ?> · Paralelo <?= htmlspecialchars($course['parallel']) ?> · <?= ucfirst($course['shift_name']) ?> · <?= $maxHours ?> horas/día</p>
         </div>
-        <a href="?action=schedules" class="back">← Volver</a>
+        <a href="?action=academic" class="back">← Volver</a>
     </div>
 
     <div class="layout">
