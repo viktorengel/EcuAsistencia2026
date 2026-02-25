@@ -306,6 +306,10 @@
                                 onclick="toggleStudentsRow(<?= $course['id'] ?>)">
                             👥 Estudiantes
                         </button>
+                        <a href="?action=manage_schedule&course_id=<?= $course['id'] ?>"
+                           class="action-btn" style="background:#17a2b8;color:white;text-decoration:none;display:inline-flex;align-items:center;">
+                            📅 Horario
+                        </a>
                         <button class="action-btn" style="background:#ffc107;color:#000;"
                                 onclick="openEditCourseModal(<?= $course['id'] ?>, '<?= htmlspecialchars(addslashes($course['name'])) ?>', '<?= htmlspecialchars(addslashes($course['grade_level'])) ?>', '<?= $course['parallel'] ?>', <?= $course['shift_id'] ?>)">
                             ✏️ Editar

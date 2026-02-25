@@ -235,7 +235,8 @@ unset($_SESSION['modal_create_data'], $_SESSION['modal_create_errors'],
                                 : '<span title="Cédula no verificada" style="color:#e0a800;font-size:12px;margin-left:5px;vertical-align:middle;cursor:help;">⚠</span>';
                             echo '<span style="display:inline-flex;align-items:center;gap:0;white-space:nowrap;">'.htmlspecialchars($dniRaw).$icon.'</span>';
                         } else {
-                            echo htmlspecialchars($dniRaw);
+                            // Pasaporte (alfanumérico)
+                            echo '<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">'.htmlspecialchars($dniRaw).' 🌐</span>';
                         }
                         ?>
                     </td>
