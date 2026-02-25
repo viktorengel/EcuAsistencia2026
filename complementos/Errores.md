@@ -29,3 +29,5 @@ INNER JOIN teacher_assignments ta
 SET cs.teacher_id = ta.teacher_id
 WHERE cs.teacher_id != ta.teacher_id 
    OR cs.teacher_id IS NULL;
+
+Total horas asignadas: 60 de 35 disponibles (7 horas/día × 5 días)

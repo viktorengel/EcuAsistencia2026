@@ -361,6 +361,32 @@
                                         &nbsp;<span style="background:#ede7f6;color:#4a148c;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:700;">
                                             <?= count($subjectsByCourse[$course['id']] ?? []) ?> asignatura(s)
                                         </span>
+                                        <?php
+                                        $totalAsig  = array_sum(array_column($subjectsByCourse[$course['id']] ?? [], 'hours_per_week'));
+                                        $maxHorasDia = (strpos($course['grade_level'],'BT')!==false) ? 8 : 7;
+                                        // Calcular días laborables desde sesión/institución (igual que Course.php)
+                                        $diasSem = 5; // default
+                                        try {
+                                            $dbTmp = new Database();
+                                            $stmtTmp = $dbTmp->connect()->prepare("SELECT working_days_list FROM institutions WHERE id = :id");
+                                            $stmtTmp->execute([':id' => $_SESSION['institution_id']]);
+                                            $instTmp = $stmtTmp->fetch();
+                                            if(!empty($instTmp['working_days_list'])){
+                                                $daysTmp = json_decode($instTmp['working_days_list'],true);
+                                                if(is_array($daysTmp) && count($daysTmp)) $diasSem = count($daysTmp);
+                                            }
+                                        } catch(Exception $e) { $diasSem = 5; }
+                                        $maxSem     = $maxHorasDia * $diasSem;
+                                        $horasColor = $totalAsig > $maxSem ? '#dc3545' : ($totalAsig === $maxSem ? '#28a745' : '#e0a800');
+                                        $horasIcon  = $totalAsig > $maxSem ? '⚠' : ($totalAsig === $maxSem ? '✓' : 'ℹ');
+                                        ?>
+                                        &nbsp;<span id="hrs-badge-<?= $course['id'] ?>"
+                                                    data-max="<?= $maxSem ?>"
+                                                    data-total="<?= $totalAsig ?>"
+                                                    style="background:#fff3cd;color:<?= $horasColor ?>;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid <?= $horasColor ?>;"
+                                                    title="<?= $maxHorasDia ?> horas/día × <?= $diasSem ?> días = <?= $maxSem ?> horas máximas">
+                                            <?= $horasIcon ?> <?= $totalAsig ?>/<?= $maxSem ?> hrs
+                                        </span>
                                     </span>
                                     <button onclick="openAddSubjectModal(<?= $course['id'] ?>, '<?= htmlspecialchars(addslashes($course['name']), ENT_QUOTES) ?>')"
                                             style="padding:6px 14px;font-size:12px;background:#6f42c1;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;margin:0;">
@@ -392,7 +418,11 @@
                                             <form method="POST" action="?action=set_subject_hours&course_id=<?= $course['id'] ?>" style="display:inline-flex;align-items:center;gap:4px;">
                                                 <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
                                                 <input type="number" name="hours_per_week" value="<?= (int)($sub['hours_per_week'] ?? 1) ?>"
-                                                       min="1" max="20" style="width:50px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center;">
+                                                       min="1" max="20"
+                                                       data-course-id="<?= $course['id'] ?>"
+                                                       data-original="<?= (int)($sub['hours_per_week'] ?? 1) ?>"
+                                                       oninput="updateHrsBadge(this)"
+                                                       style="width:50px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center;">
                                                 <button type="submit" style="padding:3px 7px;background:#007bff;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin:0;">&#10003;</button>
                                             </form>
                                         </td>
@@ -1298,7 +1328,8 @@ document.addEventListener('keydown', function(e){
                 <div class="mf-group">
                     <label class="mf-label">Nombre de la Asignatura *</label>
                     <input type="text" name="new_subject_name" id="addSubjectName" class="mf-input"
-                           required placeholder="Ej: Matematicas, Lenguaje...">
+                           required placeholder="Ej: Matematicas, Lenguaje..."
+                           oninput="autoGenerateCode(this.value)">
                 </div>
                 <div class="mf-group" style="margin-bottom:0;">
                     <label class="mf-label">Codigo <span style="color:#aaa;font-weight:400;">(opcional)</span></label>
@@ -1380,6 +1411,7 @@ function openAddSubjectModal(courseId, courseName) {
     document.getElementById('addSubjectCourseName').textContent = courseName;
     document.getElementById('addSubjectName').value = '';
     document.getElementById('addSubjectCode').value = '';
+    document.getElementById('addSubjectName').oninput = function(){ autoGenerateCode(this.value); };
     document.getElementById('modalAddSubject').classList.add('active');
     setTimeout(function(){ document.getElementById('addSubjectName').focus(); }, 150);
 }
@@ -1428,6 +1460,23 @@ function confirmQuitarDocente(event, nombre) {
 document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') { closeAddSubjectModal(); cerrarModalDocente(); }
 });
+
+/* Auto-generar código de asignatura */
+function autoGenerateCode(nombre) {
+    var SKIP = ['y','e','o','a','de','del','la','las','el','los','en','con','por','para','sin','al','un','una','unos','unas','que','se'];
+    var palabras = nombre.trim().normalize('NFD').replace(/̀-ͯ/g,'').split(/\s+/).filter(Boolean);
+    var significativas = palabras.filter(function(p){ return SKIP.indexOf(p.toLowerCase()) === -1; });
+    var code = '';
+    if (significativas.length === 0) {
+        code = '';
+    } else if (significativas.length === 1) {
+        code = significativas[0].replace(/[^a-zA-Z0-9]/g,'').substring(0, 3);
+    } else {
+        code = significativas.map(function(p){ return p.replace(/[^a-zA-Z0-9]/g,'').charAt(0); }).join('');
+    }
+    code = code.toUpperCase();
+    document.getElementById('addSubjectCode').value = code;
+}
 </script>
 
 
@@ -1663,6 +1712,8 @@ function acToast(msg, type, dur){
         'cannot_delete_active'   : 'No se puede eliminar el año lectivo activo',
         'has_courses'            : 'No se puede eliminar: el año lectivo tiene cursos asociados',
         'year_not_found'         : 'Año lectivo no encontrado',
+        'hours_exceeded'         : p.get('msg') || 'No se pueden asignar esas horas: supera el límite semanal',
+        'hours_full'             : '⚠ Horario lleno: ' + (p.get('available')||'') + ' horas semanales ya están distribuidas. No se puede agregar otra asignatura.',
     };
     var fired = false;
     for(var k in ok){
@@ -1685,10 +1736,41 @@ function acToast(msg, type, dur){
         ['course_success','course_updated','course_deleted','subject_success','subject_updated',
          'subject_deleted','removed','sy_created','sy_updated','sy_deleted','sy_activated',
          'sy_deactivated','hours_updated','rep_assigned','rep_removed','rep_error',
-         'error','subjects_loaded'].forEach(function(k){ u.searchParams.delete(k); });
+         'error','subjects_loaded','msg','available','assigned'].forEach(function(k){ u.searchParams.delete(k); });
         history.replaceState(null,'',u);
     }
 })();
+</script>
+<script>
+function updateHrsBadge(input) {
+    var courseId = input.dataset.courseId;
+    var original = parseInt(input.dataset.original) || 1;
+    var newVal   = parseInt(input.value) || 0;
+    var badge    = document.getElementById('hrs-badge-' + courseId);
+    if (!badge) return;
+
+    var max   = parseInt(badge.dataset.max);
+    var total = parseInt(badge.dataset.total);
+
+    // Recalcular: quitar el valor original de este input y sumar el nuevo
+    var newTotal = total - original + newVal;
+
+    var icon, color;
+    if (newTotal > max) {
+        icon = '⚠'; color = '#dc3545';
+    } else if (newTotal === max) {
+        icon = '✓'; color = '#28a745';
+    } else {
+        icon = 'ℹ'; color = '#e0a800';
+    }
+
+    badge.textContent = icon + ' ' + newTotal + '/' + max + ' hrs';
+    badge.style.color       = color;
+    badge.style.borderColor = color;
+
+    // Marcar el input visualmente si va a exceder
+    input.style.borderColor = newTotal > max ? '#dc3545' : '#ddd';
+}
 </script>
 </body>
 </html>
