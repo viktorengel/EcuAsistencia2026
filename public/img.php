@@ -37,6 +37,7 @@ $mimes = [
     'png'  => 'image/png',
     'gif'  => 'image/gif',
     'webp' => 'image/webp',
+    'pdf'  => 'application/pdf',
 ];
 
 if (!isset($mimes[$ext])) { http_response_code(403); exit; }
@@ -44,5 +45,8 @@ if (!isset($mimes[$ext])) { http_response_code(403); exit; }
 header('Content-Type: ' . $mimes[$ext]);
 header('Content-Length: ' . filesize($realFull));
 header('Cache-Control: public, max-age=86400');
+if ($ext === 'pdf') {
+    header('Content-Disposition: inline; filename="' . basename($realFull) . '"');
+}
 readfile($realFull);
 exit;

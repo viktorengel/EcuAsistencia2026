@@ -14,6 +14,7 @@ A:código nuevo
 4. Cuando era muy grande
 Te daba el archivo completo con comentario:
 ARCHIVO COMPLETO - Reemplaza TODO el archivo por:
+Verifica que no se eliminen caracteristicas anteriores
 5. SQL directo
 Para base de datos siempre te daba el comando listo para ejecutar en phpMyAdmin.
 6. Control de tokens al final

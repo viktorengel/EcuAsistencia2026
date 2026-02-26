@@ -30,20 +30,13 @@ SET cs.teacher_id = ta.teacher_id
 WHERE cs.teacher_id != ta.teacher_id 
    OR cs.teacher_id IS NULL;
 
-Total horas asignadas: 60 de 35 disponibles (7 horas/día × 5 días)
-
-No debe ser obligatorio el correo para crear un nuevo usuario por el administrador pero si debe ser obligatorio si el usuario se registra
-
 Corregir mensaje y fecha actualizar asistencia: 
 ⚠ Importante:
 Puede registrar asistencia de hoy o corregir registros anteriores hasta el
 27/02/2026
 
-Inspector no puede revisar Justificaciones pero si el docente y deberian poder justicar los 2
-Como tutor no puedo justificar las faltas, me aparece la notificación pero no puedo accerder a justificar
-
 Como representante no hay el menú para justificar pero si puede ver la asistencia
 
 Como inspector no tiene el menú para acceder a reportes y estadisticas y tambien mis justificaciones
 
-En el calendario deberia de lunes a viernes no sabado y domingo
+En el Login debe hacer un boton para registrarse como nuevo usuario y por defecto debe ir con el rol de representante

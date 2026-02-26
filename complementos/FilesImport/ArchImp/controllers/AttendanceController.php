@@ -262,28 +262,32 @@ class AttendanceController {
             $monthName   = $monthNames[$monthNum];
             $prevMonth   = date('Y-m', strtotime($month . '-01 -1 month'));
             $nextMonth   = date('Y-m', strtotime($month . '-01 +1 month'));
-            $firstDay    = date('w', strtotime($year . '-' . $monthNum . '-01'));
+            // 'N' devuelve 1=Lun ... 7=Dom. Calculamos offset para grilla Lun-Vie (0=Lun)
+            $firstDayN   = (int)date('N', strtotime($year . '-' . $monthNum . '-01'));
+            $firstDay    = ($firstDayN <= 5) ? $firstDayN - 1 : -1; // -1 = no mostrar días laborables si el 1 cae en fin de semana
             $daysInMonth = date('t', strtotime($year . '-' . $monthNum . '-01'));
 
             $calendarDays = [];
 
-            for ($i = 0; $i < $firstDay; $i++) {
+            // Espacios vacíos al inicio (offset Lunes=0, Martes=1... Viernes=4)
+            $firstDayN = (int)date('N', strtotime($year . '-' . $monthNum . '-01')); // 1=Lun,7=Dom
+            $offset    = ($firstDayN <= 5) ? $firstDayN - 1 : 5; // Si cae sáb/dom, llena la semana
+            for ($i = 0; $i < $offset; $i++) {
                 $calendarDays[] = ['day' => '', 'classes' => ''];
             }
 
             for ($day = 1; $day <= $daysInMonth; $day++) {
                 $date      = $year . '-' . $monthNum . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
-                $dayOfWeek = date('w', strtotime($date));
-                $classes   = [];
+                $dayOfWeek = (int)date('N', strtotime($date)); // 1=Lun ... 7=Dom
 
+                // Omitir sábado (6) y domingo (7)
+                if ($dayOfWeek >= 6) continue;
+
+                $classes    = [];
                 if ($date == date('Y-m-d')) $classes[] = 'today';
-                if ($dayOfWeek == 0 || $dayOfWeek == 6) $classes[] = 'weekend';
 
                 $attendance = $this->attendanceModel->getDayStats($courseId, $date);
-
-                if ($attendance && $attendance['total'] > 0) {
-                    $classes[] = 'has-attendance';
-                }
+                if ($attendance && $attendance['total'] > 0) $classes[] = 'has-attendance';
 
                 $calendarDays[] = [
                     'day'        => $day,

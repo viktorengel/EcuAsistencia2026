@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario de Asistencia - EcuAsist</title>
     <style>
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 16px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 16px; }
         .cal-header { text-align: center; font-size: 0.78rem; font-weight: 600; color: #555; padding: 8px; background: #f8f9fa; border-radius: 4px; }
         .cal-day { border: 1px solid #e0e0e0; padding: 8px; min-height: 70px; border-radius: 6px; background: #fff; position: relative; font-size: 0.82rem; }
         .cal-day.empty { background: #f8f9fa; border: none; }
@@ -74,7 +74,7 @@
     <!-- Calendario -->
     <div class="panel" style="padding:16px;">
         <div class="calendar-grid">
-            <?php foreach(['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as $d): ?>
+            <?php foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie'] as $d): ?>
                 <div class="cal-header"><?= $d ?></div>
             <?php endforeach; ?>
 
@@ -100,7 +100,6 @@
         <div style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;font-size:0.8rem;color:#666;">
             <span><span style="display:inline-block;width:12px;height:12px;background:#f0faf0;border:1px solid #28a745;border-radius:2px;"></span> Con asistencia</span>
             <span><span style="display:inline-block;width:12px;height:12px;background:#fff8e1;border:1px solid #ffc107;border-radius:2px;"></span> Hoy</span>
-            <span><span style="display:inline-block;width:12px;height:12px;background:#fafafa;border:1px solid #e0e0e0;border-radius:2px;"></span> Fin de semana</span>
         </div>
     </div>
 

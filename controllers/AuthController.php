@@ -58,6 +58,15 @@ class AuthController {
                 $_SESSION['roles']          = $this->userModel->getUserRoles($user['id']);
                 $_SESSION['is_superadmin']  = !empty($user['is_superadmin']);
 
+                // Verificar si el docente es tutor (para navbar)
+                $_SESSION['is_tutor'] = false;
+                if (in_array('docente', $_SESSION['roles'])) {
+                    require_once BASE_PATH . '/models/Attendance.php';
+                    $db = new Database();
+                    $attModel = new Attendance($db);
+                    $_SESSION['is_tutor'] = (bool)$attModel->getTutorCourseId($user['id']);
+                }
+
                 header('Location: ' . BASE_URL . '/?action=dashboard');
                 exit;
             } else {

@@ -95,14 +95,13 @@
                     <td style="font-size:13px;color:#666;"><?= htmlspecialchars($just['submitted_by_name']) ?></td>
                     <td style="font-size:12px;color:#999;"><?= date('d/m/Y H:i', strtotime($just['created_at'])) ?></td>
                     <td>
-                        <button class="btn btn-primary btn-sm"
-                            onclick="openReview(
-                                <?= $just['id'] ?>,
-                                <?= json_encode($just['reason'] ?? '') ?>,
-                                <?= json_encode($just['document_path'] ?? '') ?>,
-                                <?= json_encode($period) ?>,
-                                <?= $days ?>
-                            )">👁 Revisar</button>
+                        <button class="btn btn-primary btn-sm btn-review"
+                            data-id="<?= $just['id'] ?>"
+                            data-reason="<?= htmlspecialchars($just['reason'] ?? '', ENT_QUOTES) ?>"
+                            data-doc="<?= htmlspecialchars($just['document_path'] ?? '', ENT_QUOTES) ?>"
+                            data-period="<?= htmlspecialchars($period, ENT_QUOTES) ?>"
+                            data-days="<?= $days ?>"
+                            >👁 Revisar</button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -151,21 +150,33 @@
 </div>
 
 <script>
-function openReview(id, reason, docPath, period, days) {
-    document.getElementById('rv-id').value       = id;
-    document.getElementById('rv-period').textContent = period;
-    document.getElementById('rv-days').textContent   = days + ' día' + (days !== 1 ? 's' : '');
-    document.getElementById('rv-reason').textContent = reason || '(sin descripción)';
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-review').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id      = this.dataset.id;
+            var reason  = this.dataset.reason;
+            var docPath = this.dataset.doc;
+            var period  = this.dataset.period;
+            var days    = parseInt(this.dataset.days);
 
-    var docBlock = document.getElementById('rv-doc');
-    if (docPath) {
-        document.getElementById('rv-doc-link').href = '<?= BASE_URL ?>/' + docPath;
-        docBlock.style.display = 'block';
-    } else {
-        docBlock.style.display = 'none';
-    }
-    document.getElementById('modalReview').classList.add('on');
-}
+            document.getElementById('rv-id').value           = id;
+            document.getElementById('rv-period').textContent = period;
+            document.getElementById('rv-days').textContent   = days + ' día' + (days !== 1 ? 's' : '');
+            document.getElementById('rv-reason').textContent = reason || '(sin descripción)';
+
+            var docBlock = document.getElementById('rv-doc');
+            if (docPath) {
+                // docPath = 'uploads/justifications/archivo.ext' → quitar 'uploads/'
+                var filePart = docPath.replace(/^uploads\//, '');
+                document.getElementById('rv-doc-link').href = '<?= BASE_URL ?>/img.php?f=' + encodeURIComponent(filePart);
+                docBlock.style.display = 'block';
+            } else {
+                docBlock.style.display = 'none';
+            }
+            document.getElementById('modalReview').classList.add('on');
+        });
+    });
+});
 function openModal(id)  { document.getElementById(id).classList.add('on'); }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 document.querySelectorAll('.modal-overlay').forEach(function(m) {
