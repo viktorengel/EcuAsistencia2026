@@ -30,15 +30,22 @@ if(isset($_SESSION['user_id'])) {
                      color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
                      cursor: pointer; transition: opacity 0.2s; margin-top: 4px; }
         .btn-login:hover { opacity: 0.9; }
+        .btn-register { display: block; width: 100%; padding: 11px; margin-top: 10px;
+                        background: #fff; color: #667eea; border: 2px solid #667eea;
+                        border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+                        cursor: pointer; text-align: center; text-decoration: none;
+                        transition: all 0.2s; }
+        .btn-register:hover { background: #f0f2ff; }
         .alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 0.85rem; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-danger  { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .login-footer { text-align: center; margin-top: 20px; }
         .login-footer a { color: #667eea; text-decoration: none; font-size: 0.85rem; }
         .login-footer a:hover { text-decoration: underline; }
         .divider { border: none; border-top: 1px solid #f0f0f0; margin: 20px 0; }
-        .demo-hint { background: #f8f9fa; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #888; text-align: center; }
-        .demo-hint strong { color: #555; }
+        .divider-label { text-align: center; position: relative; margin: 20px 0; }
+        .divider-label::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #eee; }
+        .divider-label span { background: #fff; padding: 0 12px; color: #bbb; font-size: 0.8rem; position: relative; }
     </style>
 </head>
 <body>
@@ -54,7 +61,7 @@ if(isset($_SESSION['user_id'])) {
         <?php endif; ?>
 
         <?php if(isset($_GET['registered'])): ?>
-        <div class="alert alert-success">✓ Registro exitoso. Ahora puede iniciar sesión.</div>
+        <div class="alert alert-success">✓ Registro exitoso. Ya puedes iniciar sesión.</div>
         <?php endif; ?>
 
         <?php if(isset($_GET['reset'])): ?>
@@ -82,11 +89,10 @@ if(isset($_SESSION['user_id'])) {
             <a href="?action=forgot">¿Olvidó su contraseña?</a>
         </div>
 
-        <hr class="divider">
+        <div class="divider-label"><span>¿Eres representante?</span></div>
 
-        <div class="demo-hint">
-            ℹ️ Usuario de prueba: <strong>admin</strong> / <strong>password</strong>
-        </div>
+        <a href="?action=register" class="btn-register">👨‍👩‍👧‍👦 Registrarse como Representante</a>
+
     </div>
 </body>
 </html>

@@ -606,6 +606,31 @@ switch ($action) {
         (new TutorController())->ajax();
         break;
 
+
+    case 'search_students_json':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->searchStudentsJson();
+        break;
+
+    case 'request_link':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->requestLink();
+        break;
+
+    case 'link_requests':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->linkRequests();
+        break;
+
+    case 'review_link_request':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->reviewLinkRequest();
+        break;
+
     default:
         header('Location: ?action=login');
 }

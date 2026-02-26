@@ -12,25 +12,50 @@ class AuthController {
     }
 
     public function register() {
+        if (!isset($_SESSION['csrf_token'])) Security::generateToken();
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Security::validateToken($_POST['csrf_token'] ?? '')) {
                 die('Token inválido');
             }
 
+            $password        = $_POST['password']        ?? '';
+            $passwordConfirm = $_POST['password_confirm'] ?? '';
+
+            if (strlen($password) < 6) {
+                $error = 'La contraseña debe tener al menos 6 caracteres.';
+                include BASE_PATH . '/views/auth/register.php';
+                return;
+            }
+
+            if ($password !== $passwordConfirm) {
+                $error = 'Las contraseñas no coinciden.';
+                include BASE_PATH . '/views/auth/register.php';
+                return;
+            }
+
             $data = [
                 'institution_id' => 1,
-                'username' => Security::sanitize($_POST['username']),
-                'email' => Security::sanitize($_POST['email']),
-                'password' => $_POST['password'],
+                'username'   => Security::sanitize($_POST['username']),
+                'email'      => Security::sanitize($_POST['email']),
+                'password'   => $password,
                 'first_name' => Security::sanitize($_POST['first_name']),
-                'last_name' => Security::sanitize($_POST['last_name']),
-                'dni' => Security::sanitize($_POST['dni'] ?? ''),
-                'phone' => Security::sanitize($_POST['phone'] ?? '')
+                'last_name'  => Security::sanitize($_POST['last_name']),
+                'dni'        => Security::sanitize($_POST['dni']   ?? ''),
+                'phone'      => Security::sanitize($_POST['phone'] ?? '')
             ];
 
             if ($this->userModel->create($data)) {
+                // Obtener el ID del usuario recién creado
+                $newUser = $this->userModel->findByEmailOrUsername($data['username']);
+                if ($newUser) {
+                    // Asignar rol representante (id=5)
+                    $this->userModel->assignRole($newUser['id'], 5);
+                }
                 header('Location: ' . BASE_URL . '/?action=login&registered=1');
                 exit;
+            } else {
+                $error = 'No se pudo crear la cuenta. El usuario, correo o cédula ya existe.';
             }
         }
 

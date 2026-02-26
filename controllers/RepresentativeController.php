@@ -69,7 +69,19 @@ class RepresentativeController {
         }
 
         $children = $this->representativeModel->getStudentsByRepresentative($_SESSION['user_id']);
-        
+
+        // Solicitudes pendientes y rechazadas del representante
+        $db   = new Database();
+        $stmt = $db->connect()->prepare(
+            "SELECT lr.*, CONCAT(u.last_name,' ',u.first_name) as student_name
+              FROM link_requests lr
+              INNER JOIN users u ON lr.student_id = u.id
+              WHERE lr.representative_id = :rid AND lr.status IN ('pendiente','rechazado')
+              ORDER BY lr.created_at DESC"
+        );
+        $stmt->execute([':rid' => $_SESSION['user_id']]);
+        $myRequests = $stmt->fetchAll();
+
         include BASE_PATH . '/views/representatives/my_children.php';
     }
 
@@ -154,6 +166,154 @@ class RepresentativeController {
         }
 
         header('Location: ?action=academic&open_students=' . $courseId . '&rep_removed=1');
+        exit;
+    }
+
+
+    // ── Buscar estudiantes (JSON para autocomplete) ───────────────────────
+    public function searchStudentsJson() {
+        if (!Security::hasRole('representante')) { http_response_code(403); echo '[]'; exit; }
+        $q = Security::sanitize($_GET['q'] ?? '');
+        if (strlen($q) < 2) { echo '[]'; exit; }
+
+        $db   = new Database();
+        $stmt = $db->connect()->prepare(
+            "SELECT u.id, u.first_name, u.last_name, u.dni,
+                     c.name as course_name
+              FROM users u
+              INNER JOIN user_roles ur ON u.id = ur.user_id
+              INNER JOIN roles r ON ur.role_id = r.id AND r.name = 'estudiante'
+              LEFT JOIN course_students cs ON u.id = cs.student_id
+              LEFT JOIN courses c ON cs.course_id = c.id
+              WHERE u.is_active = 1
+                AND (u.last_name LIKE :q OR u.first_name LIKE :q OR u.dni LIKE :q)
+              ORDER BY u.last_name, u.first_name
+              LIMIT 10"
+        );
+        $stmt->execute([':q' => '%' . $q . '%']);
+        header('Content-Type: application/json');
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+
+    // ── Solicitar vinculación ─────────────────────────────────────────────
+    public function requestLink() {
+        if (!Security::hasRole('representante')) die('Acceso denegado');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=my_children'); exit; }
+        if (!Security::validateToken($_POST['csrf_token'] ?? '')) die('Token inválido');
+
+        $studentId    = (int)$_POST['student_id'];
+        $relationship = Security::sanitize($_POST['relationship']);
+        $message      = Security::sanitize($_POST['message'] ?? '');
+        $repId        = $_SESSION['user_id'];
+
+        if (!$studentId || !$relationship) {
+            header('Location: ?action=my_children');
+            exit;
+        }
+
+        $db   = new Database();
+        $pdo  = $db->connect();
+
+        // Verificar que no ya sea representante de ese estudiante
+        $check = $pdo->prepare("SELECT COUNT(*) FROM representatives WHERE representative_id = :rid AND student_id = :sid");
+        $check->execute([':rid' => $repId, ':sid' => $studentId]);
+        if ($check->fetchColumn() > 0) {
+            header('Location: ?action=my_children&request_exists=1');
+            exit;
+        }
+
+        // Verificar que no haya solicitud pendiente ya
+        $check2 = $pdo->prepare("SELECT COUNT(*) FROM link_requests WHERE representative_id = :rid AND student_id = :sid AND status = 'pendiente'");
+        $check2->execute([':rid' => $repId, ':sid' => $studentId]);
+        if ($check2->fetchColumn() > 0) {
+            header('Location: ?action=my_children&request_exists=1');
+            exit;
+        }
+
+        // Insertar solicitud (reemplaza rechazada previa si existe)
+        $stmt = $pdo->prepare(
+            "INSERT INTO link_requests (representative_id, student_id, relationship, message, status)
+              VALUES (:rid, :sid, :rel, :msg, 'pendiente')
+              ON DUPLICATE KEY UPDATE relationship = :rel, message = :msg, status = 'pendiente', reviewed_by = NULL, reviewed_at = NULL, review_notes = NULL"
+        );
+        $stmt->execute([':rid' => $repId, ':sid' => $studentId, ':rel' => $relationship, ':msg' => $message]);
+
+        header('Location: ?action=my_children&request_sent=1');
+        exit;
+    }
+
+    // ── Panel de solicitudes (autoridad/inspector) ────────────────────────
+    public function linkRequests() {
+        if (!Security::hasRole(['autoridad', 'inspector'])) die('Acceso denegado');
+
+        $filter = $_GET['filter'] ?? 'pendiente';
+        $db     = new Database();
+        $pdo    = $db->connect();
+
+        $stmt = $pdo->prepare(
+            "SELECT lr.*,
+                     CONCAT(rep.last_name,' ',rep.first_name) as rep_name, rep.dni as rep_dni,
+                     CONCAT(stu.last_name,' ',stu.first_name) as student_name, stu.dni as student_dni,
+                     CONCAT(rev.last_name,' ',rev.first_name) as reviewer_name
+              FROM link_requests lr
+              INNER JOIN users rep ON lr.representative_id = rep.id
+              INNER JOIN users stu ON lr.student_id        = stu.id
+              LEFT  JOIN users rev ON lr.reviewed_by       = rev.id
+              WHERE lr.status = :status
+              ORDER BY lr.created_at DESC"
+        );
+        $stmt->execute([':status' => $filter]);
+        $requests = $stmt->fetchAll();
+
+        $countStmt = $pdo->query("SELECT COUNT(*) FROM link_requests WHERE status = 'pendiente'");
+        $pendingCount = $countStmt->fetchColumn();
+
+        include BASE_PATH . '/views/representatives/link_requests.php';
+    }
+
+    // ── Revisar solicitud (aprobar / rechazar) ────────────────────────────
+    public function reviewLinkRequest() {
+        if (!Security::hasRole(['autoridad', 'inspector'])) die('Acceso denegado');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=link_requests'); exit; }
+        if (!Security::validateToken($_POST['csrf_token'] ?? '')) die('Token inválido');
+
+        $requestId   = (int)$_POST['request_id'];
+        $decision    = $_POST['decision'] === 'aprobado' ? 'aprobado' : 'rechazado';
+        $reviewNotes = Security::sanitize($_POST['review_notes'] ?? '');
+        $reviewerId  = $_SESSION['user_id'];
+
+        $db  = new Database();
+        $pdo = $db->connect();
+
+        // Obtener datos de la solicitud
+        $stmt = $pdo->prepare("SELECT * FROM link_requests WHERE id = :id");
+        $stmt->execute([':id' => $requestId]);
+        $req = $stmt->fetch();
+
+        if (!$req) { header('Location: ?action=link_requests'); exit; }
+
+        // Actualizar estado
+        $upd = $pdo->prepare(
+            "UPDATE link_requests SET status = :status, reviewed_by = :rev, reviewed_at = NOW(), review_notes = :notes WHERE id = :id"
+        );
+        $upd->execute([':status' => $decision, ':rev' => $reviewerId, ':notes' => $reviewNotes, ':id' => $requestId]);
+
+        // Si aprobado, crear la vinculación
+        if ($decision === 'aprobado') {
+            $ins = $pdo->prepare(
+                "INSERT IGNORE INTO representatives (representative_id, student_id, relationship, is_primary)
+                  VALUES (:rid, :sid, :rel, 0)"
+            );
+            $ins->execute([
+                ':rid' => $req['representative_id'],
+                ':sid' => $req['student_id'],
+                ':rel' => $req['relationship']
+            ]);
+            header('Location: ?action=link_requests&filter=pendiente&approved=1');
+        } else {
+            header('Location: ?action=link_requests&filter=pendiente&rejected=1');
+        }
         exit;
     }
 
