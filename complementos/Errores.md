@@ -26,5 +26,3 @@ En el Login debe hacer un boton para registrarse como nuevo usuario y por defect
 
 Revisar la campana que no se activa si se envia una justificacion
 
-Las faltas justificadas deben mostrase tambien en la estadistica
-Mejorar las estadisticas en la asistencia sale el % y luego la Cantidad y en Ausencia primero la cantidad y luego el % 
