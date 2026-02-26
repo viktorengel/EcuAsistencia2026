@@ -1,0 +1,454 @@
+<?php Security::requireLogin(); ?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Representantes - EcuAsist</title>
+    <style>
+        .rep-block { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:16px; margin-bottom:12px; }
+        .rep-block-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .rep-name { font-size:0.95rem; font-weight:700; }
+        .rep-email { font-size:0.8rem; color:#888; }
+        #toast-container {
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 99999 !important;
+            display: flex !important;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            min-width: 300px;
+            max-width: 420px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: all;
+            opacity: 0;
+            transform: translateX(40px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast.hide { opacity: 0; transform: translateX(40px); }
+        .toast-success { background: #d4edda; border-left: 5px solid #28a745; color: #155724; }
+        .toast-danger  { background: #f8d7da; border-left: 5px solid #dc3545; color: #721c24; }
+        .toast-close {
+            margin-left: auto; background: none; border: none;
+            cursor: pointer; font-size: 1rem; color: inherit;
+            opacity: 0.6; padding: 0; line-height: 1;
+        }
+        .toast-close:hover { opacity: 1; }
+        .btn-toggle-primary {
+            font-size:0.75rem; padding:3px 10px; border-radius:6px; cursor:pointer; border:none;
+            transition: background 0.2s; text-decoration: none; display: inline-block;
+        }
+        .btn-toggle-on  { background:#007bff; color:#fff; }
+        .btn-toggle-off { background:#e9ecef; color:#555; }
+        .btn-toggle-on:hover  { background:#0056d2; }
+        .btn-toggle-off:hover { background:#dee2e6; }
+        .actions-cell { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    </style>
+</head>
+<body>
+
+<?php include BASE_PATH . '/views/partials/navbar.php'; ?>
+
+<div class="breadcrumb">
+    <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
+    Gestión de Representantes
+</div>
+
+<div class="container">
+
+    <?php
+    $toastMsg  = '';
+    $toastType = 'success';
+    if (!empty($errorMsg))            { $toastMsg = '✗ ' . $errorMsg; $toastType = 'danger'; }
+    elseif (isset($_GET['success']))  { $toastMsg = '✓ Relación asignada correctamente'; }
+    elseif (isset($_GET['removed']))  { $toastMsg = '✓ Relación eliminada correctamente'; }
+    elseif (isset($_GET['toggled']))  { $toastMsg = '✓ Tipo de representante actualizado'; }
+    elseif (isset($_GET['error']))    { $toastMsg = '✗ Error al procesar la solicitud'; $toastType = 'danger'; }
+    ?>
+
+    <!-- Header -->
+    <div class="page-header blue">
+        <div class="ph-icon">👥</div>
+        <div>
+            <h1>Gestión de Representantes</h1>
+            <p>Vincula representantes con sus estudiantes</p>
+        </div>
+        <div style="margin-left:auto;">
+            <button class="btn btn-success" onclick="openModalNuevaRelacion()">➕ Nueva Relación</button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters" style="margin-bottom:12px;">
+        <h3 style="font-size:0.85rem;font-weight:600;color:#555;margin-bottom:8px;">🔍 Buscar</h3>
+        <div class="filter-grid">
+            <div>
+                <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Representante</label>
+                <input type="text" id="filterRep" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
+            </div>
+            <div>
+                <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Estudiante</label>
+                <input type="text" id="filterStu" class="form-control" placeholder="Nombre..." oninput="applyFilters()">
+            </div>
+            <div>
+                <label style="font-size:0.78rem;color:#666;display:block;margin-bottom:4px;">Curso</label>
+                <select id="filterCourse" class="form-control" onchange="applyFilters()">
+                    <option value="">Todos los cursos...</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="clearFilters()">🗑️ Limpiar</button>
+    </div>
+
+    <!-- Relaciones -->
+    <div id="rep-list">
+        <?php
+        $hasRelations = false;
+        foreach($representatives as $rep):
+            $children = $this->representativeModel->getStudentsByRepresentative($rep['id']);
+            if(!count($children)) continue;
+            $hasRelations = true;
+        ?>
+        <div class="rep-block"
+             data-repname="<?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>">
+            <div class="rep-block-header">
+                <div>
+                    <div class="rep-name">👤 <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?></div>
+                    <div class="rep-email"><?= htmlspecialchars($rep['email']) ?></div>
+                </div>
+                <span class="badge badge-blue"><?= count($children) ?> representado(s)</span>
+            </div>
+            <div class="table-wrap" style="margin-bottom:0;">
+                <table style="table-layout:fixed;width:100%;">
+                    <colgroup>
+                        <col style="width:25%;">
+                        <col style="width:13%;">
+                        <col style="width:32%;">
+                        <col style="width:15%;">
+                        <col style="width:15%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Parentesco</th>
+                            <th>Curso</th>
+                            <th>Tipo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($children as $child): ?>
+                        <tr class="student-row"
+                            data-student="<?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?>"
+                            data-course="<?= htmlspecialchars($child['course_name'] ?? '') ?>">
+                            <td><strong><?= htmlspecialchars($child['last_name'] . ' ' . $child['first_name']) ?></strong></td>
+                            <td><?= htmlspecialchars($child['relationship']) ?></td>
+                            <td>
+                                <?php if($child['course_name']): ?>
+                                    <span class="badge badge-teal"><?= htmlspecialchars($child['course_name']) ?></span>
+                                <?php else: ?>
+                                    <span style="color:#ccc;">Sin curso</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if($child['is_primary']): ?>
+                                    <span class="badge badge-blue">⭐Principal</span>
+                                <?php else: ?>
+                                    <span class="badge badge-red">📌Secundario</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    <!-- Toggle Principal / Secundario -->
+                                    <a href="?action=toggle_primary_representative&rep_id=<?= $rep['id'] ?>&student_id=<?= $child['id'] ?>"
+                                       class="btn-toggle-primary btn-toggle-on"
+                                       title="<?= $child['is_primary'] ? 'Cambiar a Secundario' : 'Cambiar a Principal' ?>">
+                                        <?= $child['is_primary'] ? '📌' : '⭐' ?>
+                                    </a>
+                                    <!-- Editar -->
+                                    <button class="btn btn-warning btn-sm"
+                                        onclick="openEdit(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                            '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                            '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>',
+                                            '<?= addslashes(htmlspecialchars($child['relationship'])) ?>',
+                                            <?= $child['is_primary'] ? 1 : 0 ?>)"
+                                        title="Editar relación">✏️</button>
+                                    <!-- Eliminar -->
+                                    <button class="btn btn-danger btn-sm"
+                                        onclick="confirmRemove(<?= $rep['id'] ?>, <?= $child['id'] ?>,
+                                            '<?= addslashes(htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name'])) ?>',
+                                            '<?= addslashes(htmlspecialchars($child['last_name'] . ' ' . $child['first_name'])) ?>')"
+                                        title="Eliminar relación">✕</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php endforeach; ?>
+
+        <?php if(!$hasRelations): ?>
+        <div class="empty-state">
+            <div class="icon">📂</div>
+            <p>No hay relaciones representante-estudiante registradas.</p>
+            <button class="btn btn-success" style="margin-top:12px;" onclick="openModalNuevaRelacion()">➕ Crear primera relación</button>
+        </div>
+        <?php endif; ?>
+    </div>
+
+</div>
+
+<!-- ===== MODAL: Nueva Relación ===== -->
+<div class="modal-overlay" id="modalNuevaRelacion">
+    <div class="modal-box" style="max-width:480px;">
+        <h3>➕ Nueva Relación</h3>
+        <form method="POST" style="margin-top:16px;">
+            <div class="form-group">
+                <label>Representante *</label>
+                <select name="representative_id" class="form-control" required>
+                    <option value="">Seleccionar representante...</option>
+                    <?php foreach($representatives as $rep): ?>
+                        <option value="<?= $rep['id'] ?>">
+                            <?= htmlspecialchars($rep['last_name'] . ' ' . $rep['first_name']) ?>
+                            (<?= htmlspecialchars($rep['dni'] ?? 'Sin cédula') ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Parentesco *</label>
+                <select name="relationship" class="form-control" required>
+                    <option value="">Seleccionar...</option>
+                    <?php foreach(['Padre','Madre','Tutor Legal','Abuelo/a','Tío/a','Hermano/a','Otro'] as $rel): ?>
+                        <option><?= $rel ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <small style="color:#888;font-size:0.77rem;">
+                    ⚠️ Solo puede haber un Padre y una Madre por estudiante.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>Estudiante *</label>
+                <select name="student_id" class="form-control" required>
+                    <option value="">Seleccionar estudiante...</option>
+                    <?php foreach($students as $s): ?>
+                        <option value="<?= $s['id'] ?>">
+                            <?= htmlspecialchars($s['last_name'] . ' ' . $s['first_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" name="is_primary" value="1"> Representante Principal
+                </label>
+                <small style="color:#888;font-size:0.77rem;">
+                    El representante principal recibe las notificaciones prioritarias.
+                </small>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalNuevaRelacion')">Cancelar</button>
+                <button type="submit" class="btn btn-success">➕ Asignar Relación</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal confirmar eliminar -->
+<div class="modal-overlay" id="modalRemove">
+    <div class="modal-box" style="max-width:460px;">
+        <h3>⚠️ Eliminar Relación</h3>
+        <div id="modalRemoveBody" style="margin:12px 0;color:#555;font-size:0.88rem;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modalRemove')">Cancelar</button>
+            <a id="confirmRemoveLink" href="#" class="btn btn-danger">✗ Sí, Eliminar</a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal editar relación -->
+<div class="modal-overlay" id="modalEdit">
+    <div class="modal-box" style="max-width:460px;">
+        <h3>✏️ Editar Relación</h3>
+        <form method="POST" id="formEdit">
+            <input type="hidden" name="representative_id" id="editRepId">
+            <input type="hidden" name="student_id" id="editStuId">
+            <div style="margin:12px 0;padding:10px;background:#f8f9fa;border-radius:6px;font-size:0.88rem;">
+                <strong>Representante:</strong> <span id="editRepName"></span><br>
+                <strong>Estudiante:</strong> <span id="editStuName"></span>
+            </div>
+            <div class="form-group">
+                <label>Parentesco *</label>
+                <select name="relationship" id="editRelationship" class="form-control" required>
+                    <option>Padre</option>
+                    <option>Madre</option>
+                    <option>Tutor Legal</option>
+                    <option>Abuelo/a</option>
+                    <option>Tío/a</option>
+                    <option>Hermano/a</option>
+                    <option>Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" name="is_primary" id="editIsPrimary" value="1"> Representante Principal
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalEdit')">Cancelar</button>
+                <button type="submit" class="btn btn-success">✓ Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+function showToast(msg, type, isHtml = false) {
+    if (!msg) return;
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.innerHTML = (isHtml ? msg : msg.replace(/</g,'&lt;')) + '<button class="toast-close" onclick="removeToast(this.parentElement)">✕</button>';
+    c.appendChild(t);
+    requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
+    setTimeout(() => removeToast(t), 4000);
+}
+function removeToast(t) {
+    t.classList.add('hide');
+    setTimeout(() => t.remove(), 350);
+}
+<?php if($toastMsg): ?>
+document.addEventListener('DOMContentLoaded', () => {
+    showToast(<?= json_encode($toastMsg) ?>, <?= json_encode($toastType) ?>, true);
+    if (window.location.search) {
+        const url = window.location.pathname + '?action=manage_representatives';
+        history.replaceState(null, '', url);
+    }
+});
+<?php endif; ?>
+
+function openModalNuevaRelacion() {
+    document.getElementById('modalNuevaRelacion').classList.add('on');
+}
+
+function openEdit(repId, stuId, repName, stuName, relationship, isPrimary) {
+    document.getElementById('editRepId').value        = repId;
+    document.getElementById('editStuId').value        = stuId;
+    document.getElementById('editRepName').textContent = repName;
+    document.getElementById('editStuName').textContent = stuName;
+    const sel = document.getElementById('editRelationship');
+    for (let o of sel.options) o.selected = (o.value === relationship);
+    document.getElementById('editIsPrimary').checked = isPrimary == 1;
+    document.getElementById('modalEdit').classList.add('on');
+}
+
+// ── Normaliza: minúsculas + sin tildes ────────────────────────────
+function norm(str) {
+    const map = {
+        'á':'a','à':'a','ä':'a','â':'a','ã':'a',
+        'é':'e','è':'e','ë':'e','ê':'e',
+        'í':'i','ì':'i','ï':'i','î':'i',
+        'ó':'o','ò':'o','ö':'o','ô':'o','õ':'o',
+        'ú':'u','ù':'u','ü':'u','û':'u',
+        'ñ':'n','ç':'c',
+        'Á':'a','À':'a','Ä':'a','Â':'a','Ã':'a',
+        'É':'e','È':'e','Ë':'e','Ê':'e',
+        'Í':'i','Ì':'i','Ï':'i','Î':'i',
+        'Ó':'o','Ò':'o','Ö':'o','Ô':'o','Õ':'o',
+        'Ú':'u','Ù':'u','Ü':'u','Û':'u',
+        'Ñ':'n','Ç':'c'
+    };
+    return (str || '').replace(/[áàäâãéèëêíìïîóòöôõúùüûñçÁÀÄÂÃÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑÇ]/g,
+        c => map[c] || c).toLowerCase();
+}
+
+// ── Filtros ───────────────────────────────────────────────────────
+function applyFilters() {
+    const rep    = norm(document.getElementById('filterRep').value);
+    const stu    = norm(document.getElementById('filterStu').value);
+    const course = document.getElementById('filterCourse').value;
+    document.querySelectorAll('.rep-block').forEach(block => {
+        const repName = norm(block.dataset.repname);
+        const rows = block.querySelectorAll('.student-row');
+        let vis = false;
+        rows.forEach(row => {
+            const ok = (!rep    || repName.includes(rep)) &&
+                       (!stu    || norm(row.dataset.student).includes(stu)) &&
+                       (!course || row.dataset.coursenorm === course);
+            row.style.display = ok ? '' : 'none';
+            if(ok) vis = true;
+        });
+        block.style.display = vis ? '' : 'none';
+    });
+}
+
+// ── Poblar select de cursos desde el DOM ──────────────────────────
+function populateCourseSelect() {
+    const seen = new Set();
+    const sel  = document.getElementById('filterCourse');
+    document.querySelectorAll('.student-row').forEach(row => {
+        const raw  = row.dataset.course || '';
+        const nrm  = norm(raw);
+        if (!raw.trim() || seen.has(nrm)) return;
+        seen.add(nrm);
+        row.dataset.coursenorm = nrm;
+        const o = document.createElement('option');
+        o.value = nrm;
+        o.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
+        sel.appendChild(o);
+    });
+    document.querySelectorAll('.student-row').forEach(row => {
+        if (!row.dataset.coursenorm) row.dataset.coursenorm = norm(row.dataset.course || '');
+    });
+    const opts = Array.from(sel.options).slice(1).sort((a,b) => a.text.localeCompare(b.text));
+    while(sel.options.length > 1) sel.remove(1);
+    opts.forEach(o => sel.appendChild(o));
+}
+document.addEventListener('DOMContentLoaded', populateCourseSelect);
+
+function clearFilters() {
+    document.getElementById('filterRep').value = '';
+    document.getElementById('filterStu').value = '';
+    document.getElementById('filterCourse').selectedIndex = 0;
+    applyFilters();
+}
+function confirmRemove(repId, stuId, repName, stuName) {
+    document.getElementById('modalRemoveBody').innerHTML =
+        '<p>¿Eliminar la relación entre:</p>' +
+        '<p style="margin:10px 0;padding:10px;background:#f8f9fa;border-radius:6px;">' +
+        '<strong>Representante:</strong> ' + repName + '<br>' +
+        '<strong>Estudiante:</strong> ' + stuName + '</p>' +
+        '<p style="color:#dc3545;font-size:0.82rem;">El representante ya no podrá ver la información del estudiante.</p>';
+    document.getElementById('confirmRemoveLink').href =
+        '?action=remove_representative&rep_id=' + repId + '&student_id=' + stuId;
+    document.getElementById('modalRemove').classList.add('on');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if(e.target === m) closeModal(m.id); });
+});
+</script>
+</body>
+</html>

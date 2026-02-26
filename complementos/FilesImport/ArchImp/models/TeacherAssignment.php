@@ -1,0 +1,251 @@
+<?php
+class TeacherAssignment {
+    private $db;
+
+    public function __construct($database) {
+        $this->db = $database->connect();
+    }
+
+    public function assign($data) {
+        // Verificar si ya existe asignación curso-materia
+        $checksql = 'SELECT ta.id, ta.teacher_id, CONCAT(u.last_name, " ", u.first_name) as teacher_name
+                    FROM teacher_assignments ta
+                    INNER JOIN users u ON ta.teacher_id = u.id
+                    WHERE ta.course_id = :course_id
+                    AND ta.subject_id = :subject_id
+                    AND ta.school_year_id = :school_year_id';
+
+        $checkStmt = $this->db->prepare($checksql);
+        $checkStmt->execute([
+            'course_id' => $data['course_id'],
+            'subject_id' => $data['subject_id'],
+            'school_year_id' => $data['school_year_id']
+        ]);
+
+        $existing = $checkStmt->fetch();
+
+        if ($existing) {
+            // SOLUCIÓN: Si ya existe, actualizar y también actualizar el horario
+            if ($existing['teacher_id'] != $data['teacher_id']) {
+                // Actualizar horario con el nuevo teacher_id
+                $updateSchedule = $this->db->prepare(
+                    'UPDATE class_schedule 
+                    SET teacher_id = :teacher_id 
+                    WHERE course_id = :course_id 
+                    AND subject_id = :subject_id 
+                    AND school_year_id = :school_year_id'
+                );
+                $updateSchedule->execute([
+                    'teacher_id' => $data['teacher_id'],
+                    'course_id' => $data['course_id'],
+                    'subject_id' => $data['subject_id'],
+                    'school_year_id' => $data['school_year_id']
+                ]);
+            }
+
+            // Actualizar la asignación existente
+            $sql = 'UPDATE teacher_assignments 
+                    SET teacher_id = :teacher_id 
+                    WHERE id = :id';
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([
+                'teacher_id' => $data['teacher_id'],
+                'id' => $existing['id']
+            ]);
+
+            return [
+                'success' => $result,
+                'message' => 'Asignación actualizada correctamente'
+            ];
+        }
+
+        // Si no existe, insertar nueva
+        $sql = 'INSERT INTO teacher_assignments
+                (teacher_id, course_id, subject_id, school_year_id, is_tutor)
+                VALUES (:teacher_id, :course_id, :subject_id, :school_year_id, :is_tutor)';
+
+        $stmt = $this->db->prepare($sql);
+        $result = $stmt->execute($data);
+
+        return [
+            'success' => $result,
+            'message' => 'Asignación creada correctamente'
+        ];
+    }
+
+    public function getByTeacher($teacherId) {
+        $sql = "SELECT ta.*, c.name as course_name, s.name as subject_name, 
+                sh.name as shift_name, sy.name as year_name
+                FROM teacher_assignments ta
+                INNER JOIN courses c ON ta.course_id = c.id
+                INNER JOIN subjects s ON ta.subject_id = s.id
+                INNER JOIN shifts sh ON c.shift_id = sh.id
+                INNER JOIN school_years sy ON ta.school_year_id = sy.id
+                WHERE ta.teacher_id = :teacher_id
+                ORDER BY c.name, s.name";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':teacher_id' => $teacherId]);
+        return $stmt->fetchAll();
+    }
+
+    public function getByCourse($courseId) {
+        $sql = "SELECT ta.*, 
+                CONCAT(u.last_name, ' ', u.first_name) as teacher_name,
+                s.name as subject_name
+                FROM teacher_assignments ta
+                INNER JOIN users u ON ta.teacher_id = u.id
+                INNER JOIN subjects s ON ta.subject_id = s.id
+                WHERE ta.course_id = :course_id
+                ORDER BY s.name";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':course_id' => $courseId]);
+        return $stmt->fetchAll();
+    }
+
+    public function getTutorByCourse($courseId, $schoolYearId) {
+        $sql = "SELECT u.*, ta.id as assignment_id
+                FROM teacher_assignments ta
+                INNER JOIN users u ON ta.teacher_id = u.id
+                WHERE ta.course_id = :course_id 
+                AND ta.school_year_id = :school_year_id
+                AND ta.is_tutor = 1
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':course_id' => $courseId,
+            ':school_year_id' => $schoolYearId
+        ]);
+        return $stmt->fetch();
+    }
+
+    public function setTutor($courseId, $teacherId, $schoolYearId) {
+        // Verificar si el docente ya es tutor de otro curso en el mismo año lectivo
+        $checkSql = "SELECT c.name 
+                    FROM teacher_assignments ta
+                    INNER JOIN courses c ON ta.course_id = c.id
+                    WHERE ta.teacher_id = :teacher_id 
+                    AND ta.school_year_id = :school_year_id 
+                    AND ta.is_tutor = 1
+                    AND ta.course_id != :course_id";
+        
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([
+            ':teacher_id' => $teacherId,
+            ':school_year_id' => $schoolYearId,
+            ':course_id' => $courseId
+        ]);
+        
+        $existingTutor = $checkStmt->fetch();
+        
+        if ($existingTutor) {
+            return [
+                'success' => false,
+                'message' => 'Este docente ya es tutor del curso: ' . $existingTutor['name']
+            ];
+        }
+        
+        // Quitar tutor actual del curso
+        $sql1 = "UPDATE teacher_assignments 
+                SET is_tutor = 0 
+                WHERE course_id = :course_id AND school_year_id = :school_year_id";
+        $stmt1 = $this->db->prepare($sql1);
+        $stmt1->execute([
+            ':course_id' => $courseId,
+            ':school_year_id' => $schoolYearId
+        ]);
+
+        // Verificar si docente tiene asignación en el curso
+        $checkAssignment = "SELECT id FROM teacher_assignments 
+                           WHERE course_id = :course_id 
+                           AND teacher_id = :teacher_id 
+                           AND school_year_id = :school_year_id 
+                           LIMIT 1";
+        $stmt = $this->db->prepare($checkAssignment);
+        $stmt->execute([
+            ':course_id' => $courseId,
+            ':teacher_id' => $teacherId,
+            ':school_year_id' => $schoolYearId
+        ]);
+        $existing = $stmt->fetch();
+        
+        if ($existing) {
+            // Actualizar asignación existente
+            $sql2 = "UPDATE teacher_assignments 
+                    SET is_tutor = 1 
+                    WHERE id = :id";
+            $stmt2 = $this->db->prepare($sql2);
+            $result = $stmt2->execute([':id' => $existing['id']]);
+        } else {
+            return [
+                'success' => false,
+                'message' => 'El docente debe tener al menos una asignatura en el curso antes de ser tutor'
+            ];
+        }
+        
+        return [
+            'success' => $result,
+            'message' => 'Tutor asignado correctamente'
+        ];
+    }
+
+    public function remove($assignmentId) {
+        // Verificar si es tutor antes de eliminar
+        $checkSql = "SELECT is_tutor, teacher_id, course_id, subject_id, school_year_id FROM teacher_assignments WHERE id = :id";
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([':id' => $assignmentId]);
+        $assignment = $checkStmt->fetch();
+
+        if ($assignment && $assignment['is_tutor'] == 1) {
+            return [
+                'success' => false,
+                'message' => 'No se puede eliminar: este docente es tutor del curso. Quite primero la tutoría.'
+            ];
+        }
+
+        // SOLUCIÓN: Antes de eliminar la asignación, actualizar el horario
+        if ($assignment) {
+            // Poner a NULL los teacher_id en class_schedule para esta materia y curso
+            $updateSchedule = $this->db->prepare(
+                'UPDATE class_schedule 
+                SET teacher_id = NULL 
+                WHERE course_id = :course_id 
+                AND subject_id = :subject_id 
+                AND school_year_id = :school_year_id'
+            );
+            $updateSchedule->execute([
+                'course_id' => $assignment['course_id'],
+                'subject_id' => $assignment['subject_id'],
+                'school_year_id' => $assignment['school_year_id']
+            ]);
+        }
+
+        $sql = "DELETE FROM teacher_assignments WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $result = $stmt->execute([':id' => $assignmentId]);
+
+        return [
+            'success' => $result,
+            'message' => 'Asignación eliminada correctamente. El horario se ha actualizado.'
+        ];
+    }
+
+    public function getAll() {
+        $sql = "SELECT ta.*, 
+                CONCAT(u.last_name, ' ', u.first_name) as teacher_name,
+                c.name as course_name,
+                s.name as subject_name,
+                sy.name as year_name
+                FROM teacher_assignments ta
+                INNER JOIN users u ON ta.teacher_id = u.id
+                INNER JOIN courses c ON ta.course_id = c.id
+                INNER JOIN subjects s ON ta.subject_id = s.id
+                INNER JOIN school_years sy ON ta.school_year_id = sy.id
+                ORDER BY c.name, s.name";
+        
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll();
+    }
+}
