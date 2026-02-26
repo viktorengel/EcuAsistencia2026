@@ -32,7 +32,7 @@ WHERE cs.teacher_id != ta.teacher_id
 
 Total horas asignadas: 60 de 35 disponibles (7 horas/día × 5 días)
 
-No es obligatorio el correo
+No debe ser obligatorio el correo para crear un nuevo usuario por el administrador pero si debe ser obligatorio si el usuario se registra
 
 Corregir mensaje y fecha actualizar asistencia: 
 ⚠ Importante:
