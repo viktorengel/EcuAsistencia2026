@@ -325,14 +325,15 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             </div>
             <?php endif; ?>
 
-            <?php if(Security::hasRole(['estudiante','autoridad','inspector','docente'])): ?>
+            <?php if(Security::hasRole(['estudiante','representante','autoridad','inspector','docente'])): ?>
             <div class="ec-item">
                 <span class="ec-item__btn <?= in_array($current_page,['my_justifications','pending_justifications','reviewed_justifications','tutor_pending_justifications'])?'active':'' ?>">
                     <span class="ec-item__icon">📝</span> Justificaciones <span class="ec-item__caret">▼</span>
                 </span>
                 <div class="ec-dropdown">
-                    <?php if(Security::hasRole('estudiante')): ?>
+                    <?php if(Security::hasRole(['estudiante','representante'])): ?>
                     <a href="?action=my_justifications" class="<?= $current_page==='my_justifications'?'active':'' ?>">📄 Mis Justificaciones</a>
+                    <a href="?action=submit_justification" class="<?= $current_page==='submit_justification'?'active':'' ?>">✏️ Justificar Ausencia</a>
                     <?php endif; ?>
                     <?php if(Security::hasRole(['autoridad','inspector','docente'])): ?>
                     <a href="?action=pending_justifications"  class="<?= $current_page==='pending_justifications'?'active':'' ?>">✅ Revisar Justificaciones</a>
@@ -478,7 +479,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
     <?php endif; ?>
 
     <!-- ── Justificaciones ── -->
-    <?php if(Security::hasRole(['estudiante','autoridad','inspector','docente'])): ?>
+    <?php if(Security::hasRole(['estudiante','representante','autoridad','inspector','docente'])): ?>
     <div class="ec-acc" data-section="justificaciones">
         <div class="ec-acc__head <?= $_activeSection==='justificaciones'?'has-active':'' ?>">
             <span class="ec-acc__head__icon">📝</span>
@@ -486,8 +487,9 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             <span class="ec-acc__head__arrow">▼</span>
         </div>
         <div class="ec-acc__body" style="display:none;">
-            <?php if(Security::hasRole('estudiante')): ?>
+            <?php if(Security::hasRole(['estudiante','representante'])): ?>
             <a href="?action=my_justifications"      class="ec-acc__link <?= $current_page==='my_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">📄</span> Mis Justificaciones</a>
+            <a href="?action=submit_justification"   class="ec-acc__link <?= $current_page==='submit_justification'?'active':'' ?>"><span class="ec-acc__link__icon">✏️</span> Justificar Ausencia</a>
             <?php endif; ?>
             <?php if(Security::hasRole(['autoridad','inspector','docente'])): ?>
             <a href="?action=pending_justifications"  class="ec-acc__link <?= $current_page==='pending_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">✅</span> Revisar Justificaciones</a>

@@ -86,7 +86,11 @@
             <div class="icon">📄</div>
             <p>No tienes justificaciones enviadas aún.</p>
             <p style="font-size:13px;color:#aaa;margin-top:6px;">Puedes justificar ausencias desde "Mi Asistencia".</p>
+            <?php if(Security::hasRole('representante')): ?>
+            <a href="?action=my_children" class="btn btn-primary" style="margin-top:16px;">← Ir a Mis Representados</a>
+        <?php else: ?>
             <a href="?action=my_attendance" class="btn btn-primary" style="margin-top:16px;">← Ir a Mi Asistencia</a>
+        <?php endif; ?>
         </div>
 
     <?php else: ?>
@@ -179,7 +183,11 @@
         </div>
 
         <div style="margin-top:16px;">
+            <?php if(Security::hasRole('representante')): ?>
+            <a href="?action=my_children" class="btn btn-outline">← Volver a Mis Representados</a>
+        <?php else: ?>
             <a href="?action=my_attendance" class="btn btn-outline">← Volver a Mi Asistencia</a>
+        <?php endif; ?>
         </div>
 
     <?php endif; ?>

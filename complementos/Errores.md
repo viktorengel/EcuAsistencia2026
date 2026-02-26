@@ -18,11 +18,8 @@ Corregir mensaje y fecha actualizar asistencia:
 Puede registrar asistencia de hoy o corregir registros anteriores hasta el
 27/02/2026
 
-Como representante no hay el menú para justificar pero si puede ver la asistencia
-
 Como inspector no tiene el menú para acceder a reportes y estadisticas y tambien mis justificaciones
 
 En el Login debe hacer un boton para registrarse como nuevo usuario y por defecto debe ir con el rol de representante
 
 Revisar la campana que no se activa si se envia una justificacion
-

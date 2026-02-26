@@ -32,15 +32,41 @@
         .approver-note { padding: 10px 14px; border-radius: 6px; font-size: 13px;
             margin-top: 10px; display: none; }
         .step-title { font-size: .95rem; color: #555; margin-bottom: 14px; font-weight: 600; }
+
+        /* Selector de hijo */
+        .child-selector { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+        .child-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 18px; border: 2px solid #e0e0e0; border-radius: 8px;
+            cursor: pointer; transition: all .2s; background: #fff; text-decoration: none; color: #333;
+            font-size: 14px; font-weight: 500;
+        }
+        .child-card:hover  { border-color: #007bff; background: #f0f7ff; }
+        .child-card.active { border-color: #007bff; background: #e8f2ff; font-weight: 700; }
+        .child-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #1e40af; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
 
 <?php include BASE_PATH . '/views/partials/navbar.php'; ?>
 
+<?php
+/* ── Definir URL de "volver" según rol ── */
+$backUrl = Security::hasRole('representante')
+    ? '?action=my_children'
+    : '?action=my_attendance';
+?>
+
 <div class="breadcrumb">
     <a href="?action=dashboard">🏠 Inicio</a> &rsaquo;
-    <a href="?action=my_attendance">Mi Asistencia</a> &rsaquo;
+    <a href="<?= $backUrl ?>">
+        <?= Security::hasRole('representante') ? 'Mis Representados' : 'Mi Asistencia' ?>
+    </a> &rsaquo;
     Justificar Ausencia
 </div>
 
@@ -60,14 +86,55 @@
         </div>
     </div>
 
-    <?php if(empty($absences)): ?>
+    <?php if(Security::hasRole('representante') && empty($myChildren)): ?>
+    <!-- Representante sin hijos asignados -->
+    <div class="empty-state">
+        <div class="icon">👨‍👩‍👧‍👦</div>
+        <p>No tienes estudiantes asignados como representado.</p>
+        <a href="?action=my_children" class="btn btn-primary" style="margin-top:12px;">← Volver</a>
+    </div>
+
+    <?php elseif(Security::hasRole('representante') && !isset($_GET['student_id'])): ?>
+    <!-- Representante debe seleccionar hijo primero -->
+    <div class="panel" style="margin-bottom:16px;">
+        <p class="step-title">👤 Selecciona el estudiante a justificar</p>
+        <div class="child-selector">
+            <?php foreach($myChildren as $child): ?>
+            <a href="?action=submit_justification&student_id=<?= $child['id'] ?>" class="child-card">
+                <div class="child-avatar"><?= strtoupper(substr($child['full_name'], 0, 2)) ?></div>
+                <?= htmlspecialchars($child['full_name']) ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <a href="?action=my_children" class="btn btn-outline">← Volver</a>
+
+    <?php elseif(empty($absences)): ?>
     <div class="empty-state">
         <div class="icon">🎉</div>
-        <p>No tienes ausencias pendientes de justificar.</p>
-        <a href="?action=my_attendance" class="btn btn-primary" style="margin-top:12px;">← Volver</a>
+        <?php if(Security::hasRole('representante')): ?>
+            <p>Este estudiante no tiene ausencias pendientes de justificar.</p>
+            <a href="?action=submit_justification" class="btn btn-outline" style="margin-top:12px;">← Elegir otro estudiante</a>
+        <?php else: ?>
+            <p>No tienes ausencias pendientes de justificar.</p>
+        <?php endif; ?>
+        <a href="<?= $backUrl ?>" class="btn btn-primary" style="margin-top:12px;">← Volver</a>
     </div>
 
     <?php else: ?>
+
+    <?php if(Security::hasRole('representante')): ?>
+    <!-- Indicador del hijo seleccionado -->
+    <div class="alert alert-info" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        👤 Justificando ausencias de: <strong>
+        <?php
+            $selChild = array_filter($myChildren, fn($c) => $c['id'] == $_GET['student_id']);
+            echo htmlspecialchars(reset($selChild)['full_name'] ?? 'Estudiante');
+        ?>
+        </strong>
+        &nbsp;·&nbsp; <a href="?action=submit_justification" style="font-size:13px;">Cambiar</a>
+    </div>
+    <?php endif; ?>
 
     <div class="alert alert-info">
         📌 Selecciona uno o varios días. <strong>Hasta 3 días</strong> → revisa el <strong>Docente Tutor</strong>. <strong>Más de 3</strong> → revisa <strong>Inspector o Autoridad</strong>.
@@ -76,7 +143,7 @@
     <form method="POST" enctype="multipart/form-data" id="justForm">
 
         <?php if(Security::hasRole('representante')): ?>
-        <input type="hidden" name="student_id" value="<?= isset($_GET['student_id']) ? (int)$_GET['student_id'] : '' ?>">
+        <input type="hidden" name="student_id" value="<?= (int)$_GET['student_id'] ?>">
         <?php endif; ?>
 
         <!-- ── PASO 1: Seleccionar días ── -->
@@ -95,7 +162,6 @@
             </div>
 
             <?php
-            // Agrupar registros por fecha (un día puede tener varias horas)
             $byDate = [];
             foreach ($absences as $a) {
                 $byDate[$a['date']][] = $a;
@@ -119,7 +185,6 @@
             </div>
             <?php endforeach; ?>
 
-            <!-- Aviso quién aprueba -->
             <div class="approver-note" id="note-tutor" style="background:#e8f5e9;color:#2e7d32;">
                 ✅ Con <strong id="lbl-t">0</strong> día(s), revisará el <strong>Docente Tutor</strong>.
             </div>
@@ -171,7 +236,7 @@
 
         <div style="display:flex;gap:10px;">
             <button type="submit" class="btn btn-success" id="submitBtn" disabled>📤 Enviar Justificación</button>
-            <a href="?action=my_attendance" class="btn btn-outline">Cancelar</a>
+            <a href="<?= $backUrl ?>" class="btn btn-outline">Cancelar</a>
         </div>
 
     </form>
@@ -216,7 +281,6 @@ function updateCount() {
         noteInsp.style.display  = 'block';
     }
 
-    // Estado del master checkbox
     var all = document.querySelectorAll('.absence-item input[type=checkbox]');
     var masterCb = document.getElementById('select-all');
     masterCb.indeterminate = (n > 0 && n < all.length);
