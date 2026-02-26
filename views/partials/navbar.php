@@ -559,9 +559,11 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
 
 <script>
 (function () {
-    /* ── Polling notificaciones ── */
+/* ── Polling notificaciones ── */
     var nb  = document.getElementById('notif-badge');
     var nbm = document.getElementById('notif-badge-mob');
+    var _lastCount = <?= $_notifCount ?>;
+
     function updateBadges(n) {
         [nb, nbm].forEach(function(b) {
             if (!b) return;
@@ -569,12 +571,30 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             else b.style.display = 'none';
         });
     }
+
+    function ringBell() {
+        var bell = document.querySelector('.ec-icon-btn[title="Notificaciones"]');
+        if (!bell) return;
+        bell.style.transition = 'transform 0.1s';
+        var i = 0, seq = [8,-8,6,-6,4,-4,0];
+        var iv = setInterval(function() {
+            bell.style.transform = 'rotate(' + (seq[i] || 0) + 'deg)';
+            i++;
+            if (i >= seq.length) { clearInterval(iv); bell.style.transform = ''; }
+        }, 80);
+    }
+
     setInterval(function() {
         fetch('?action=notifications_unread_json', { credentials: 'same-origin' })
             .then(function(r){ return r.json(); })
-            .then(function(d){ if (typeof d.count !== 'undefined') updateBadges(d.count); })
+            .then(function(d){
+                if (typeof d.count === 'undefined') return;
+                if (d.count > _lastCount) ringBell();
+                _lastCount = d.count;
+                updateBadges(d.count);
+            })
             .catch(function(){});
-    }, 30000);
+    }, 10000);
 
     /* ── Drawer ── */
     var btn    = document.getElementById('ec-hamburger');

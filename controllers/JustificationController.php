@@ -99,7 +99,16 @@ class JustificationController {
 
             $this->justificationModel->createForAttendances($attendanceIds, $data);
 
-            // Notificar
+            // Notificar — siempre al inspector/autoridad Y al tutor si aplica
+            // Inspector y autoridad siempre deben saber de cualquier justificación
+            $this->_notifyReviewers(
+                '📝 Nueva justificación pendiente',
+                "Justificación de $workingDays día(s) requiere revisión.",
+                'info',
+                '?action=pending_justifications'
+            );
+
+            // Si corresponde al tutor (≤3 días), notificarle también
             if ($canApprove === 'tutor') {
                 $stmt = $pdo->prepare(
                     "SELECT ta.teacher_id FROM teacher_assignments ta
@@ -117,13 +126,6 @@ class JustificationController {
                         '?action=tutor_pending_justifications'
                     );
                 }
-            } else {
-                $this->_notifyReviewers(
-                    '📝 Nueva justificación pendiente',
-                    "Justificación de $workingDays día(s) requiere revisión.",
-                    'info',
-                    '?action=pending_justifications'
-                );
             }
 
             header('Location: ?action=my_justifications&success=1');
