@@ -42,3 +42,5 @@ Como inspector no tiene el menú para acceder a reportes y estadisticas y tambie
 En el Login debe hacer un boton para registrarse como nuevo usuario y por defecto debe ir con el rol de representante
 
 Revisar la campana que no se activa si se envia una justificacion
+
+Un estudiante al querer revisar el documento de justificacion se va a http://localhost/dashboard/ y en produccion https://www.ecuasys.com/uploads/justifications/69a06379a78b5.jpg?action=dashboard
