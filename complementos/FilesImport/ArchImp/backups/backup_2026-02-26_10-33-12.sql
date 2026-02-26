@@ -83,7 +83,7 @@ CREATE TABLE `attendances` (
   CONSTRAINT `attendances_ibfk_4` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`),
   CONSTRAINT `attendances_ibfk_5` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`),
   CONSTRAINT `attendances_ibfk_6` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -92,7 +92,7 @@ CREATE TABLE `attendances` (
 
 LOCK TABLES `attendances` WRITE;
 /*!40000 ALTER TABLE `attendances` DISABLE KEYS */;
-INSERT INTO `attendances` VALUES (1,54,16,2,52,1,1,'2026-02-25','3ra hora','presente','','2026-02-25 19:49:39','2026-02-25 19:49:39'),(2,55,16,2,52,1,1,'2026-02-25','3ra hora','presente','','2026-02-25 19:49:39','2026-02-25 19:49:39'),(3,54,16,2,52,1,1,'2026-02-24','3ra hora','presente','','2026-02-25 19:49:53','2026-02-25 19:52:15'),(4,55,16,2,52,1,1,'2026-02-24','3ra hora','ausente','','2026-02-25 19:49:53','2026-02-25 19:52:15'),(5,54,16,2,52,1,1,'2026-02-23','3ra hora','ausente','','2026-02-25 19:50:10','2026-02-25 19:50:35'),(6,55,16,2,52,1,1,'2026-02-23','3ra hora','presente','','2026-02-25 19:50:10','2026-02-25 19:50:35');
+INSERT INTO `attendances` VALUES (1,54,16,2,52,1,1,'2026-02-25','3ra hora','presente','','2026-02-25 19:49:39','2026-02-25 19:49:39'),(2,55,16,2,52,1,1,'2026-02-25','3ra hora','presente','','2026-02-25 19:49:39','2026-02-25 19:49:39'),(3,54,16,2,52,1,1,'2026-02-24','3ra hora','presente','','2026-02-25 19:49:53','2026-02-25 19:52:15'),(4,55,16,2,52,1,1,'2026-02-24','3ra hora','justificado','','2026-02-25 19:49:53','2026-02-26 15:06:21'),(5,54,16,2,52,1,1,'2026-02-23','3ra hora','justificado','','2026-02-25 19:50:10','2026-02-26 15:06:42'),(6,55,16,2,52,1,1,'2026-02-23','3ra hora','presente','','2026-02-25 19:50:10','2026-02-25 19:50:35'),(7,54,16,2,52,1,1,'2026-02-26','2ra hora','justificado','','2026-02-26 14:47:13','2026-02-26 15:21:25'),(8,55,16,2,52,1,1,'2026-02-26','2ra hora','presente','','2026-02-26 14:47:13','2026-02-26 14:47:13'),(9,54,16,1,59,1,1,'2026-02-26','3ra hora','ausente','','2026-02-26 15:13:20','2026-02-26 15:22:31'),(10,55,16,1,59,1,1,'2026-02-26','3ra hora','ausente','','2026-02-26 15:13:20','2026-02-26 15:22:31'),(11,54,16,3,53,1,1,'2026-02-26','1ra hora','ausente','','2026-02-26 15:24:51','2026-02-26 15:24:51'),(12,55,16,3,53,1,1,'2026-02-26','1ra hora','ausente','','2026-02-26 15:24:51','2026-02-26 15:24:51');
 /*!40000 ALTER TABLE `attendances` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -132,7 +132,7 @@ CREATE TABLE `class_schedule` (
 
 LOCK TABLES `class_schedule` WRITE;
 /*!40000 ALTER TABLE `class_schedule` DISABLE KEYS */;
-INSERT INTO `class_schedule` VALUES (19,16,1,59,1,'lunes','00:00:00','00:00:00',1,'2026-02-25 19:47:56'),(20,16,3,53,1,'martes','00:00:00','00:00:00',2,'2026-02-25 19:47:58'),(21,16,2,52,1,'miercoles','00:00:00','00:00:00',3,'2026-02-25 19:48:00');
+INSERT INTO `class_schedule` VALUES (19,16,1,59,1,'jueves','00:00:00','00:00:00',3,'2026-02-25 19:47:56'),(20,16,3,53,1,'jueves','00:00:00','00:00:00',1,'2026-02-25 19:47:58'),(21,16,2,52,1,'jueves','00:00:00','00:00:00',2,'2026-02-25 19:48:00');
 /*!40000 ALTER TABLE `class_schedule` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -341,7 +341,7 @@ CREATE TABLE `justifications` (
   CONSTRAINT `justifications_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`),
   CONSTRAINT `justifications_ibfk_3` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`id`),
   CONSTRAINT `justifications_ibfk_4` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -350,7 +350,7 @@ CREATE TABLE `justifications` (
 
 LOCK TABLES `justifications` WRITE;
 /*!40000 ALTER TABLE `justifications` DISABLE KEYS */;
-INSERT INTO `justifications` VALUES (1,5,'2026-02-23','2026-02-23',1,'tutor',54,54,'Cita médica o examen','Cita médica o examen','uploads/justifications/699f545922f58.png','pendiente',NULL,NULL,'2026-02-25 19:58:17','2026-02-25 19:58:17');
+INSERT INTO `justifications` VALUES (1,5,'2026-02-23','2026-02-23',1,'tutor',54,54,'Cita médica o examen','Cita médica o examen','uploads/justifications/699f545922f58.png','aprobado',56,'ok','2026-02-25 19:58:17','2026-02-26 15:06:42'),(2,4,'2026-02-24','2026-02-24',1,'tutor',55,55,'Causas climáticas','Causas climáticas','uploads/justifications/69a05d17baf64.png','aprobado',52,'Ok','2026-02-26 14:47:51','2026-02-26 15:06:21'),(3,7,'2026-02-26','2026-02-26',1,'tutor',54,54,'Trámites legales / judiciales','Trámites legales / judiciales','uploads/justifications/69a0634f87fc6.png','aprobado',56,'','2026-02-26 15:14:23','2026-02-26 15:21:31'),(4,9,'2026-02-26','2026-02-26',1,'tutor',54,54,'Evento deportivo o académico oficial','Evento deportivo o académico oficial','uploads/justifications/69a06379a78b5.jpg','aprobado',59,'','2026-02-26 15:15:05','2026-02-26 15:21:25'),(5,10,'2026-02-26','2026-02-26',1,'tutor',55,55,'Trámites legales / judiciales','Trámites legales / judiciales','uploads/justifications/69a0638c70ba4.png','aprobado',56,'','2026-02-26 15:15:24','2026-02-26 15:21:18'),(6,12,'2026-02-26','2026-02-26',1,'tutor',55,55,'Causas climáticas','Causas climáticas','uploads/justifications/69a065e188e76.jpg','pendiente',NULL,NULL,'2026-02-26 15:25:21','2026-02-26 15:25:21'),(7,11,'2026-02-26','2026-02-26',1,'tutor',54,54,'xdfdfsad','Otro','uploads/justifications/69a0666defe34.jpg','pendiente',NULL,NULL,'2026-02-26 15:27:41','2026-02-26 15:27:41');
 /*!40000 ALTER TABLE `justifications` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -373,7 +373,7 @@ CREATE TABLE `notifications` (
   PRIMARY KEY (`id`),
   KEY `idx_user_read` (`user_id`,`is_read`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -382,7 +382,7 @@ CREATE TABLE `notifications` (
 
 LOCK TABLES `notifications` WRITE;
 /*!40000 ALTER TABLE `notifications` DISABLE KEYS */;
-INSERT INTO `notifications` VALUES (1,54,'📅 Ausencia registrada','Se registró una ausencia el 24/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:49:53'),(2,55,'📅 Ausencia registrada','Se registró una ausencia el 24/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:49:53'),(3,54,'📅 Ausencia registrada','Se registró una ausencia el 23/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:50:10'),(4,54,'📅 Ausencia registrada','Se registró una ausencia el 23/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:50:35'),(5,55,'📅 Ausencia registrada','Se registró una ausencia el 24/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:52:15'),(6,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',1,'2026-02-25 19:58:17');
+INSERT INTO `notifications` VALUES (1,54,'📅 Ausencia registrada','Se registró una ausencia el 24/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:49:53'),(2,55,'📅 Ausencia registrada','Se registró una ausencia el 24/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:49:53'),(3,54,'📅 Ausencia registrada','Se registró una ausencia el 23/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:50:10'),(4,54,'📅 Ausencia registrada','Se registró una ausencia el 23/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:50:35'),(5,55,'📅 Ausencia registrada','Se registró una ausencia el 24/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-25 19:52:15'),(6,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',1,'2026-02-25 19:58:17'),(7,54,'📅 Ausencia registrada','Se registró una ausencia el 26/02/2026 en Expresión y Comunicación. Puedes justificarla.','','?action=my_attendance',0,'2026-02-26 14:47:13'),(8,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',1,'2026-02-26 14:47:51'),(9,55,'✅ Justificación aprobada','Tu justificación fue aprobada. Nota: Ok','success','?action=my_justifications',0,'2026-02-26 15:06:21'),(10,54,'✅ Justificación aprobada','Tu justificación fue aprobada. Nota: ok','success','?action=my_justifications',0,'2026-02-26 15:06:42'),(11,54,'📅 Ausencia registrada','Se registró una ausencia el 26/02/2026 en Desarrollo Personal y Social. Puedes justificarla.','','?action=my_attendance',0,'2026-02-26 15:13:20'),(12,55,'📅 Ausencia registrada','Se registró una ausencia el 26/02/2026 en Desarrollo Personal y Social. Puedes justificarla.','','?action=my_attendance',0,'2026-02-26 15:13:20'),(13,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',0,'2026-02-26 15:14:23'),(14,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',0,'2026-02-26 15:15:05'),(15,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',0,'2026-02-26 15:15:24'),(16,55,'✅ Justificación aprobada','Tu justificación fue aprobada.','success','?action=my_justifications',0,'2026-02-26 15:21:18'),(17,54,'✅ Justificación aprobada','Tu justificación fue aprobada.','success','?action=my_justifications',0,'2026-02-26 15:21:25'),(18,54,'✅ Justificación aprobada','Tu justificación fue aprobada.','success','?action=my_justifications',0,'2026-02-26 15:21:31'),(19,54,'📅 Ausencia registrada','Se registró una ausencia el 26/02/2026 en Desarrollo Personal y Social. Puedes justificarla.','','?action=my_attendance',0,'2026-02-26 15:22:31'),(20,55,'📅 Ausencia registrada','Se registró una ausencia el 26/02/2026 en Desarrollo Personal y Social. Puedes justificarla.','','?action=my_attendance',0,'2026-02-26 15:22:31'),(21,54,'📅 Ausencia registrada','Se registró una ausencia el 26/02/2026 en Relación con el Entorno Natural y Cultural. Puedes justificarla.','','?action=my_attendance',0,'2026-02-26 15:24:51'),(22,55,'📅 Ausencia registrada','Se registró una ausencia el 26/02/2026 en Relación con el Entorno Natural y Cultural. Puedes justificarla.','','?action=my_attendance',0,'2026-02-26 15:24:51'),(23,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',0,'2026-02-26 15:25:21'),(24,52,'📝 Justificación pendiente (tutor)','Un estudiante de tu curso necesita justificación por 1 día(s).','info','?action=tutor_pending_justifications',0,'2026-02-26 15:27:41');
 /*!40000 ALTER TABLE `notifications` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -585,7 +585,7 @@ CREATE TABLE `teacher_assignments` (
   CONSTRAINT `teacher_assignments_ibfk_2` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`),
   CONSTRAINT `teacher_assignments_ibfk_3` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`),
   CONSTRAINT `teacher_assignments_ibfk_4` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -594,7 +594,7 @@ CREATE TABLE `teacher_assignments` (
 
 LOCK TABLES `teacher_assignments` WRITE;
 /*!40000 ALTER TABLE `teacher_assignments` DISABLE KEYS */;
-INSERT INTO `teacher_assignments` VALUES (11,59,16,1,1,0,'2026-02-25 19:47:43'),(12,52,16,2,1,1,'2026-02-25 19:47:48'),(13,53,16,3,1,0,'2026-02-25 19:47:52');
+INSERT INTO `teacher_assignments` VALUES (11,59,16,1,1,0,'2026-02-25 19:47:43'),(12,52,16,2,1,1,'2026-02-25 19:47:48'),(13,53,16,3,1,0,'2026-02-25 19:47:52'),(14,52,16,2,1,0,'2026-02-26 14:46:50');
 /*!40000 ALTER TABLE `teacher_assignments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -615,7 +615,7 @@ CREATE TABLE `user_roles` (
   KEY `role_id` (`role_id`),
   CONSTRAINT `user_roles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_roles_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -624,7 +624,7 @@ CREATE TABLE `user_roles` (
 
 LOCK TABLES `user_roles` WRITE;
 /*!40000 ALTER TABLE `user_roles` DISABLE KEYS */;
-INSERT INTO `user_roles` VALUES (1,1,4,'2026-02-19 17:49:20'),(2,1,1,'2026-02-19 17:49:20'),(3,1,2,'2026-02-19 17:49:20'),(4,1,3,'2026-02-19 17:49:20'),(5,1,5,'2026-02-19 17:49:20'),(28,52,1,'2026-02-25 19:39:35'),(29,53,1,'2026-02-25 19:40:17'),(30,54,2,'2026-02-25 19:41:07'),(31,55,2,'2026-02-25 19:42:11'),(32,56,3,'2026-02-25 19:43:38'),(33,57,5,'2026-02-25 19:44:30'),(34,58,5,'2026-02-25 19:45:26'),(35,59,1,'2026-02-25 19:47:15');
+INSERT INTO `user_roles` VALUES (1,1,4,'2026-02-19 17:49:20'),(2,1,1,'2026-02-19 17:49:20'),(3,1,2,'2026-02-19 17:49:20'),(4,1,3,'2026-02-19 17:49:20'),(5,1,5,'2026-02-19 17:49:20'),(28,52,1,'2026-02-25 19:39:35'),(29,53,1,'2026-02-25 19:40:17'),(30,54,2,'2026-02-25 19:41:07'),(31,55,2,'2026-02-25 19:42:11'),(32,56,3,'2026-02-25 19:43:38'),(33,57,5,'2026-02-25 19:44:30'),(34,58,5,'2026-02-25 19:45:26'),(35,59,1,'2026-02-25 19:47:15'),(36,60,1,'2026-02-26 14:24:23'),(37,61,1,'2026-02-26 14:42:50');
 /*!40000 ALTER TABLE `user_roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -639,7 +639,7 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `institution_id` int(11) NOT NULL,
   `username` varchar(50) NOT NULL,
-  `email` varchar(100) NOT NULL,
+  `email` varchar(191) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `first_name` varchar(100) NOT NULL,
   `last_name` varchar(100) NOT NULL,
@@ -657,7 +657,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `dni` (`dni`),
   KEY `institution_id` (`institution_id`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`institution_id`) REFERENCES `institutions` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -666,7 +666,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,1,'admin','admin@uep.edu.ec','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','Administrador','Sistema','1700000000','0999999999',NULL,NULL,1,1,'2026-02-11 23:56:54','2026-02-19 17:49:20'),(52,1,'victor','victor@uep.com','$2y$10$wmQH8.2yEIw8arrl18raXOPb2bp0DzQeyVnvIRKf1F.PI5blsBJCS','Victor','Rengel','1709613788','0998368685',NULL,NULL,1,0,'2026-02-25 19:39:35','2026-02-25 19:39:35'),(53,1,'pilar','pilar@uep.com','$2y$10$v3bWTXupUebcriFh1ZylRu8Bdoh4.Y4q7OwHNzxTTqycWhaon0F6S','Pilar','Serrano','1234567890','0998368685',NULL,NULL,1,0,'2026-02-25 19:40:11','2026-02-25 19:40:11'),(54,1,'Romina','romina@uep.com','$2y$10$CpcfGgXYSFJk0aVbht9LpOlOW9vHVb9C.vPwq9jf7hDDIN9MmU5Pm','Romina','Racines','1234567892',NULL,NULL,NULL,1,0,'2026-02-25 19:41:07','2026-02-25 19:42:29'),(55,1,'emilia','emilia@uep.com','$2y$10$WIFBPEsB7DPoH05574LkZupqo6pMr9q9sqMOaKotFE2RTWGYrpY3e','Emilia','Rengel','1234567891','0981145721',NULL,NULL,1,0,'2026-02-25 19:42:11','2026-02-25 19:42:11'),(56,1,'marco','marco@uep.com','$2y$10$XKRwq/5xOUIFthorbBspPeGpvBlvlpiYE3VAL0PYBoUr9M2v9Mqbq','Marco','Loachamin','1234567893','0981145722',NULL,NULL,1,0,'2026-02-25 19:43:38','2026-02-25 19:43:38'),(57,1,'rocio','rocio@uep.com','$2y$10$e0660tk.HSD75YwkI8eB0.RzN3YRRcF2nq0yVu.8wCiGDsdiEx/6O','Rocio','Rengel','1234567894',NULL,NULL,NULL,1,0,'2026-02-25 19:44:24','2026-02-25 19:44:24'),(58,1,'grace','grace@abc.com','$2y$10$QvLnNRjINAZIryJtl46BmuVBRi7Exj4R0KEjCSKkZWbXoFMKfKD72','Grace','Tito',NULL,NULL,NULL,NULL,1,0,'2026-02-25 19:45:26','2026-02-25 19:45:26'),(59,1,'mario','mario@abc.com','$2y$10$hyBbahMmiaofhP/qaTy9hePWBDHZoUEOurlsKDoLDOqSdjXpI6v9O','Mario','Muñoz',NULL,NULL,NULL,NULL,1,0,'2026-02-25 19:47:15','2026-02-25 19:47:15');
+INSERT INTO `users` VALUES (1,1,'admin','admin@uep.edu.ec','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','Administrador','Sistema','1700000000','0999999999',NULL,NULL,1,1,'2026-02-11 23:56:54','2026-02-19 17:49:20'),(52,1,'victor','victor@uep.com','$2y$10$wmQH8.2yEIw8arrl18raXOPb2bp0DzQeyVnvIRKf1F.PI5blsBJCS','Victor','Rengel','1709613788','0998368685',NULL,NULL,1,0,'2026-02-25 19:39:35','2026-02-25 19:39:35'),(53,1,'pilar','pilar@uep.com','$2y$10$v3bWTXupUebcriFh1ZylRu8Bdoh4.Y4q7OwHNzxTTqycWhaon0F6S','Pilar','Serrano','1234567890','0998368685',NULL,NULL,1,0,'2026-02-25 19:40:11','2026-02-25 19:40:11'),(54,1,'Romina','romina@uep.com','$2y$10$CpcfGgXYSFJk0aVbht9LpOlOW9vHVb9C.vPwq9jf7hDDIN9MmU5Pm','Romina','Racines','1234567892',NULL,NULL,NULL,1,0,'2026-02-25 19:41:07','2026-02-25 19:42:29'),(55,1,'emilia','emilia@uep.com','$2y$10$WIFBPEsB7DPoH05574LkZupqo6pMr9q9sqMOaKotFE2RTWGYrpY3e','Emilia','Rengel','1234567891','0981145721',NULL,NULL,1,0,'2026-02-25 19:42:11','2026-02-25 19:42:11'),(56,1,'marco','marco@uep.com','$2y$10$XKRwq/5xOUIFthorbBspPeGpvBlvlpiYE3VAL0PYBoUr9M2v9Mqbq','Marco','Loachamin','1234567893','0981145722',NULL,NULL,1,0,'2026-02-25 19:43:38','2026-02-25 19:43:38'),(57,1,'rocio','rocio@uep.com','$2y$10$e0660tk.HSD75YwkI8eB0.RzN3YRRcF2nq0yVu.8wCiGDsdiEx/6O','Rocio','Rengel','1234567894',NULL,NULL,NULL,1,0,'2026-02-25 19:44:24','2026-02-25 19:44:24'),(58,1,'grace','grace@abc.com','$2y$10$QvLnNRjINAZIryJtl46BmuVBRi7Exj4R0KEjCSKkZWbXoFMKfKD72','Grace','Tito',NULL,NULL,NULL,NULL,1,0,'2026-02-25 19:45:26','2026-02-25 19:45:26'),(59,1,'mario','mario@abc.com','$2y$10$hyBbahMmiaofhP/qaTy9hePWBDHZoUEOurlsKDoLDOqSdjXpI6v9O','Mario','Muñoz',NULL,NULL,NULL,NULL,1,0,'2026-02-25 19:47:15','2026-02-25 19:47:15'),(60,1,'pamela',NULL,'$2y$10$AzE9jXPL19qck.axHZbCfuNrbiPUV6dN8WZVMgTJp5Fqvy.Sa7ne6','Pamela','Cortez',NULL,NULL,NULL,NULL,1,0,'2026-02-26 14:24:23','2026-02-26 14:24:23'),(61,1,'sandra',NULL,'$2y$10$KvxxLmMYRAbsPWEbogxicu.QqEh/gWVl2cPfi3IAIp9Oxptc4wG3K','Sandra','Flores',NULL,NULL,NULL,NULL,1,0,'2026-02-26 14:42:50','2026-02-26 14:42:50');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -679,4 +679,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-25 15:08:25
+-- Dump completed on 2026-02-26 10:33:13

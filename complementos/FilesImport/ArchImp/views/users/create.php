@@ -79,26 +79,34 @@ if (!Security::hasRole('autoridad')) die('Acceso denegado');
                     <div class="field-error" id="err-username"></div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label required">Correo Electrónico</label>
+                    <label class="form-label">Correo Electrónico <span class="text-muted" style="font-size:11px;">(opcional)</span></label>
                     <div class="input-wrap">
                         <input type="email" name="email" id="email" class="form-control"
                                value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                               autocomplete="off" required>
+                               autocomplete="off">
                         <span class="feedback-icon" id="icon-email"></span>
                     </div>
                     <div class="field-error" id="err-email"></div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label required">Contraseña</label>
-                    <input type="password" name="password" id="password" class="form-control"
-                           minlength="6" required>
+                    <div class="input-group">
+                        <input type="password" name="password" id="password" class="form-control"
+                               data-val="<?= htmlspecialchars($_POST['password'] ?? '') ?>"
+                               minlength="6" required>
+                        <button type="button" class="btn btn-outline-secondary btn-toggle-pass" data-target="password" tabindex="-1">👁</button>
+                    </div>
                     <div class="field-hint">Mínimo 6 caracteres</div>
                     <div class="field-error" id="err-password"></div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label required">Confirmar Contraseña</label>
-                    <input type="password" name="confirm_password" id="confirm_password" class="form-control"
-                           minlength="6" required>
+                    <div class="input-group">
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control"
+                               data-val="<?= htmlspecialchars($_POST['confirm_password'] ?? '') ?>"
+                               minlength="6" required>
+                        <button type="button" class="btn btn-outline-secondary btn-toggle-pass" data-target="confirm_password" tabindex="-1">👁</button>
+                    </div>
                     <div class="field-error" id="err-confirm"></div>
                 </div>
             </div>
@@ -326,9 +334,9 @@ function toggleDoc() {
 document.getElementById('createUserForm').addEventListener('submit', function(e) {
     var ok = true;
 
-    // Email
+    // Email (opcional - validar formato solo si tiene valor)
     var email = document.getElementById('email').value.trim();
-    if (!validarEmail(email)) {
+    if (email !== '' && !validarEmail(email)) {
         setInvalid('email','icon-email','err-email','Correo electrónico inválido'); ok = false;
     }
 
@@ -362,6 +370,24 @@ document.getElementById('createUserForm').addEventListener('submit', function(e)
 });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
+// ── Restaurar contraseñas tras error de servidor ───────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[data-val]').forEach(function(el) {
+        if (el.getAttribute('data-val') !== '') {
+            el.value = el.getAttribute('data-val');
+        }
+    });
+});
+
+// ── Toggle mostrar/ocultar contraseña ──────────────────────────────────────
+document.querySelectorAll('.btn-toggle-pass').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var input = document.getElementById(this.getAttribute('data-target'));
+        input.type = input.type === 'password' ? 'text' : 'password';
+        this.textContent = input.type === 'password' ? '👁' : '🙈';
+    });
+});
+</script>
 </body>
 </html>

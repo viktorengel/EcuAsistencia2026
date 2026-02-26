@@ -74,7 +74,7 @@ class UserController {
             if (empty($_POST['username'])) {
                 $errors[] = "El nombre de usuario es obligatorio";
             }
-            if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+            if (!empty($_POST['email']) && !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
                 $errors[] = "Email inválido";
             }
             if (empty($_POST['password']) || strlen($_POST['password']) < 6) {
@@ -95,8 +95,8 @@ class UserController {
                 $errors[] = "El nombre de usuario ya está registrado";
             }
 
-            // Verificar email único
-            if ($this->userModel->findByEmail($_POST['email'])) {
+            // Verificar email único (solo si se ingresó)
+            if (!empty($_POST['email']) && $this->userModel->findByEmail($_POST['email'])) {
                 $errors[] = "El email ya está registrado";
             }
 
@@ -135,7 +135,7 @@ class UserController {
             $userData = [
                 'institution_id' => $_SESSION['institution_id'],
                 'username'   => Security::sanitize($_POST['username']),
-                'email'      => Security::sanitize($_POST['email']),
+                'email'      => !empty($_POST['email']) ? Security::sanitize($_POST['email']) : null,
                 'password'   => $_POST['password'],
                 'first_name' => Security::sanitize($_POST['first_name']),
                 'last_name'  => Security::sanitize($_POST['last_name']),
@@ -373,13 +373,13 @@ class UserController {
 
         $errors = [];
         if (empty($_POST['username']))                                          $errors[] = "El usuario es obligatorio";
-        if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $errors[] = "Email inválido";
+        if (!empty($_POST['email']) && !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $errors[] = "Email inválido";
         if (empty($_POST['password']) || strlen($_POST['password']) < 6)       $errors[] = "La contraseña debe tener al menos 6 caracteres";
         if ($_POST['password'] !== $_POST['confirm_password'])                  $errors[] = "Las contraseñas no coinciden";
         if (empty($_POST['first_name']))                                        $errors[] = "El nombre es obligatorio";
         if (empty($_POST['last_name']))                                         $errors[] = "El apellido es obligatorio";
         if ($this->userModel->findByUsername($_POST['username']))               $errors[] = "El usuario ya está registrado";
-        if ($this->userModel->findByEmail($_POST['email']))                     $errors[] = "El email ya está registrado";
+        if (!empty($_POST['email']) && $this->userModel->findByEmail($_POST['email'])) $errors[] = "El email ya está registrado";
 
         $dniResult = $this->validateDniInput($_POST['dni'] ?? '');
         if ($dniResult['error']) $errors[] = $dniResult['error'];
@@ -403,7 +403,7 @@ class UserController {
         $userData = [
             'institution_id' => $_SESSION['institution_id'],
             'username'   => Security::sanitize($_POST['username']),
-            'email'      => Security::sanitize($_POST['email']),
+            'email'      => !empty($_POST['email']) ? Security::sanitize($_POST['email']) : null,
             'password'   => $_POST['password'],
             'first_name' => Security::sanitize($_POST['first_name']),
             'last_name'  => Security::sanitize($_POST['last_name']),

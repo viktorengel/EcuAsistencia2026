@@ -13,6 +13,43 @@
                     box-shadow:0 2px 8px rgba(0,0,0,.08); flex:1; }
         .stat-box .num { font-size:28px; font-weight:700; }
         .stat-box .lbl { font-size:12px; color:#888; margin-top:4px; }
+
+        /* Modal documento */
+        .modal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,.75); z-index:9999;
+            align-items:center; justify-content:center;
+        }
+        .modal-overlay.on { display:flex; }
+        .modal-doc-box {
+            background:#fff; border-radius:10px;
+            width:90%; max-width:860px; max-height:90vh;
+            display:flex; flex-direction:column; overflow:hidden;
+            box-shadow:0 8px 40px rgba(0,0,0,.4);
+        }
+        .modal-doc-header {
+            padding:14px 20px; background:#1a237e; color:#fff;
+            display:flex; justify-content:space-between; align-items:center;
+            font-size:15px; font-weight:600;
+        }
+        .modal-doc-header a {
+            color:#fff; font-size:12px; text-decoration:none;
+            padding:5px 12px; border:1px solid rgba(255,255,255,.5);
+            border-radius:4px;
+        }
+        .modal-doc-header a:hover { background:rgba(255,255,255,.15); }
+        .modal-doc-body {
+            flex:1; overflow:auto; padding:16px;
+            display:flex; align-items:center; justify-content:center;
+            background:#f5f5f5; min-height:400px;
+        }
+        .modal-doc-body img  { max-width:100%; max-height:70vh; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+        .modal-doc-body iframe { width:100%; height:70vh; border:none; border-radius:4px; }
+        .modal-close-btn {
+            background:none; border:none; color:#fff;
+            font-size:22px; cursor:pointer; line-height:1; padding:0 4px;
+        }
+        .modal-close-btn:hover { opacity:.7; }
     </style>
 </head>
 <body>
@@ -99,12 +136,17 @@
                         <td><?= htmlspecialchars($just['reason']) ?></td>
                         <td>
                             <?php if($just['document_path']): ?>
-                                <a href="<?= BASE_URL ?>/<?= ltrim($just['document_path'],'/') ?>"
-                                   target="_blank"
-                                   style="padding:5px 10px;background:#007bff;color:white;border-radius:4px;
-                                          text-decoration:none;font-size:12px;display:inline-block;">
+                                <?php
+                                    $filePart = preg_replace('/^uploads\//', '', $just['document_path']);
+                                    $docUrl   = BASE_URL . '/img.php?f=' . urlencode($filePart);
+                                    $ext      = strtolower(pathinfo($filePart, PATHINFO_EXTENSION));
+                                ?>
+                                <button type="button"
+                                        onclick="openDocModal('<?= addslashes($docUrl) ?>','<?= $ext ?>')"
+                                        style="padding:5px 10px;background:#007bff;color:white;border-radius:4px;
+                                               border:none;font-size:12px;cursor:pointer;">
                                     📎 Ver
-                                </a>
+                                </button>
                             <?php else: ?>
                                 <span style="color:#aaa;font-size:12px;">Sin documento</span>
                             <?php endif; ?>
@@ -143,5 +185,52 @@
     <?php endif; ?>
 
 </div>
+
+<!-- Modal Documento -->
+<div class="modal-overlay" id="modalDoc">
+    <div class="modal-doc-box">
+        <div class="modal-doc-header">
+            <span>📎 Documento adjunto</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <a id="doc-open-link" href="#" target="_blank">⬇ Abrir en nueva pestaña</a>
+                <button class="modal-close-btn" onclick="closeDocModal()">✕</button>
+            </div>
+        </div>
+        <div class="modal-doc-body" id="doc-container">
+            <!-- contenido inyectado por JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+function openDocModal(url, ext) {
+    var container = document.getElementById('doc-container');
+    document.getElementById('doc-open-link').href = url;
+
+    if (ext === 'pdf') {
+        container.innerHTML = '<iframe src="' + url + '"></iframe>';
+    } else {
+        container.innerHTML = '<img src="' + url + '" alt="Documento de justificación">';
+    }
+
+    document.getElementById('modalDoc').classList.add('on');
+}
+
+function closeDocModal() {
+    document.getElementById('modalDoc').classList.remove('on');
+    document.getElementById('doc-container').innerHTML = '';
+}
+
+// Cerrar al hacer clic fuera del modal
+document.getElementById('modalDoc').addEventListener('click', function(e) {
+    if (e.target === this) closeDocModal();
+});
+
+// Cerrar con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDocModal();
+});
+</script>
+
 </body>
 </html>

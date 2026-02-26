@@ -175,7 +175,7 @@ class JustificationController {
     }
 
     public function pending() {
-        if (!Security::hasRole(['autoridad', 'inspector'])) {
+        if (!Security::hasRole(['autoridad', 'inspector', 'docente'])) {
             die('Acceso denegado');
         }
         $justifications = $this->justificationModel->getPending();
@@ -183,7 +183,7 @@ class JustificationController {
     }
 
     public function review() {
-        if (!Security::hasRole(['autoridad', 'inspector'])) {
+        if (!Security::hasRole(['autoridad', 'inspector', 'docente'])) {
             die('Acceso denegado');
         }
 

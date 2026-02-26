@@ -1,6 +1,0 @@
-# Proteger directorio uploads
-Options -Indexes
-<FilesMatch "\.(pdf|jpg|jpeg|png)$">
-    Order Allow,Deny
-    Allow from all
-</FilesMatch>

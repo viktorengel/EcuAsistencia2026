@@ -95,14 +95,13 @@
                     <td style="font-size:13px;color:#666;"><?= htmlspecialchars($just['submitted_by_name']) ?></td>
                     <td style="font-size:12px;color:#999;"><?= date('d/m/Y H:i', strtotime($just['created_at'])) ?></td>
                     <td>
-                        <button class="btn btn-primary btn-sm"
-                            onclick="openReview(
-                                <?= $just['id'] ?>,
-                                <?= json_encode($just['reason'] ?? '') ?>,
-                                <?= json_encode($just['document_path'] ?? '') ?>,
-                                <?= json_encode($period) ?>,
-                                <?= $days ?>
-                            )">👁 Revisar</button>
+                        <button class="btn btn-primary btn-sm btn-review"
+                            data-id="<?= $just['id'] ?>"
+                            data-reason="<?= htmlspecialchars($just['reason'] ?? '', ENT_QUOTES) ?>"
+                            data-doc="<?= htmlspecialchars($just['document_path'] ?? '', ENT_QUOTES) ?>"
+                            data-period="<?= htmlspecialchars($period, ENT_QUOTES) ?>"
+                            data-days="<?= $days ?>"
+                            >👁 Revisar</button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -111,6 +110,21 @@
     </div>
     <?php endif; ?>
 
+</div>
+
+<!-- Modal documento -->
+<div id="modalDoc" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;max-width:780px;width:95%;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.4);">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#1a237e;color:#fff;">
+            <span style="font-weight:700;font-size:14px;">📎 Documento adjunto</span>
+            <button type="button" onclick="closeDocModal()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;">×</button>
+        </div>
+        <div id="doc-container" style="width:100%;height:70vh;background:#f0f0f0;"></div>
+        <div style="padding:10px 18px;text-align:right;background:#f8f9fa;border-top:1px solid #e0e0e0;">
+            <a id="doc-download-link" href="#" target="_blank" class="btn btn-outline btn-sm" style="margin-right:8px;">⬇ Abrir en nueva pestaña</a>
+            <button type="button" onclick="closeDocModal()" class="btn btn-primary btn-sm">✓ Cerrar</button>
+        </div>
+    </div>
 </div>
 
 <!-- Modal revisar -->
@@ -131,7 +145,7 @@
         <div id="rv-doc" style="margin-bottom:14px;display:none;">
             <strong style="font-size:13px;">Documento adjunto:</strong>
             <div style="margin-top:6px;">
-                <a id="rv-doc-link" href="#" target="_blank" class="btn btn-info btn-sm">📎 Ver documento</a>
+                <button type="button" id="rv-doc-btn" class="btn btn-info btn-sm" onclick="openDocModal()">📎 Ver documento</button>
             </div>
         </div>
 
@@ -151,23 +165,55 @@
 </div>
 
 <script>
-function openReview(id, reason, docPath, period, days) {
-    document.getElementById('rv-id').value       = id;
-    document.getElementById('rv-period').textContent = period;
-    document.getElementById('rv-days').textContent   = days + ' día' + (days !== 1 ? 's' : '');
-    document.getElementById('rv-reason').textContent = reason || '(sin descripción)';
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-review').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id      = this.dataset.id;
+            var reason  = this.dataset.reason;
+            var docPath = this.dataset.doc;
+            var period  = this.dataset.period;
+            var days    = parseInt(this.dataset.days);
 
-    var docBlock = document.getElementById('rv-doc');
-    if (docPath) {
-        document.getElementById('rv-doc-link').href = '<?= BASE_URL ?>/' + docPath;
-        docBlock.style.display = 'block';
-    } else {
-        docBlock.style.display = 'none';
-    }
-    document.getElementById('modalReview').classList.add('on');
-}
+            document.getElementById('rv-id').value           = id;
+            document.getElementById('rv-period').textContent = period;
+            document.getElementById('rv-days').textContent   = days + ' día' + (days !== 1 ? 's' : '');
+            document.getElementById('rv-reason').textContent = reason || '(sin descripción)';
+
+            var docBlock = document.getElementById('rv-doc');
+            if (docPath) {
+                var filePart = docPath.replace(/^uploads\//, '');
+                var docUrl = '<?= BASE_URL ?>/img.php?f=' + encodeURIComponent(filePart);
+                document.getElementById('rv-doc-btn').dataset.url = docUrl;
+                document.getElementById('doc-download-link').href = docUrl;
+                docBlock.style.display = 'block';
+            } else {
+                docBlock.style.display = 'none';
+            }
+            document.getElementById('modalReview').classList.add('on');
+        });
+    });
+});
 function openModal(id)  { document.getElementById(id).classList.add('on'); }
-function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+function closeModal(id) {
+    document.getElementById(id).classList.remove('on');
+}
+function closeDocModal() {
+    var m = document.getElementById('modalDoc');
+    m.style.display = 'none';
+    document.getElementById('doc-container').innerHTML = '';
+}
+function openDocModal() {
+    var url = document.getElementById('rv-doc-btn').dataset.url;
+    var ext = url.split('?')[0].split('.').pop().toLowerCase();
+    var container = document.getElementById('doc-container');
+    if (ext === 'pdf') {
+        container.innerHTML = '<iframe src="' + url + '" style="width:100%;height:100%;border:none;"></iframe>';
+    } else {
+        container.innerHTML = '<img src="' + url + '" style="max-width:100%;max-height:100%;display:block;margin:auto;padding:10px;">';
+    }
+    var m = document.getElementById('modalDoc');
+    m.style.display = 'flex';
+}
 document.querySelectorAll('.modal-overlay').forEach(function(m) {
     m.addEventListener('click', function(e){ if(e.target === m) closeModal(m.id); });
 });

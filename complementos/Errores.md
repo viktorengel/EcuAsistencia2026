@@ -13,23 +13,6 @@ Popup de Notificaciones al dar clic en limpiar quiero el que estamos trabajando 
 en Configiración academica en la sección Cursos registrados mostrar el filtro que hay en 📚
 Asignaciones Docente — Materia y eliminar este modulo por que está de mas
 
-ALTER TABLE course_subjects
-ADD COLUMN hours_per_week INT NOT NULL DEFAULT 1;
-ALTER TABLE institutions 
-ADD COLUMN working_days_list VARCHAR(100) DEFAULT '["lunes","martes","miercoles","jueves","viernes"]';
-ALTER TABLE `class_schedule` 
-MODIFY COLUMN `teacher_id` INT NULL;
--- Actualizar todos los horarios con el docente actual de teacher_assignments
-UPDATE class_schedule cs
-INNER JOIN teacher_assignments ta 
-    ON cs.course_id = ta.course_id 
-    AND cs.subject_id = ta.subject_id 
-    AND cs.school_year_id = ta.school_year_id
-    AND ta.is_tutor = 0
-SET cs.teacher_id = ta.teacher_id
-WHERE cs.teacher_id != ta.teacher_id 
-   OR cs.teacher_id IS NULL;
-
 Corregir mensaje y fecha actualizar asistencia: 
 ⚠ Importante:
 Puede registrar asistencia de hoy o corregir registros anteriores hasta el
@@ -43,4 +26,5 @@ En el Login debe hacer un boton para registrarse como nuevo usuario y por defect
 
 Revisar la campana que no se activa si se envia una justificacion
 
-Un estudiante al querer revisar el documento de justificacion se va a http://localhost/dashboard/ y en produccion https://www.ecuasys.com/uploads/justifications/69a06379a78b5.jpg?action=dashboard
+Las faltas justificadas deben mostrase tambien en la estadistica
+Mejorar las estadisticas en la asistencia sale el % y luego la Cantidad y en Ausencia primero la cantidad y luego el % 
