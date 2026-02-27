@@ -63,6 +63,13 @@ class JustificationController {
             $workingDays = count($attendanceIds); // cada ausencia = 1 día (pueden ser no consecutivos)
             $canApprove  = Justification::resolveApprover($workingDays);
 
+            // Nombre del estudiante y fecha para los mensajes de notificación
+            $stuRow = $pdo->query("SELECT CONCAT(last_name,' ',first_name) as full_name FROM users WHERE id = $studentId")->fetch();
+            $stuName   = $stuRow ? $stuRow['full_name'] : 'Estudiante';
+            $dateLabel = $workingDays === 1
+                ? date('d/m/Y', strtotime($dateFrom))
+                : date('d/m/Y', strtotime($dateFrom)) . ' al ' . date('d/m/Y', strtotime($dateTo));
+
             // Subir documento
             $documentPath = null;
             if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
@@ -99,16 +106,14 @@ class JustificationController {
 
             $this->justificationModel->createForAttendances($attendanceIds, $data);
 
-            // Notificar — siempre al inspector/autoridad Y al tutor si aplica
-            // Inspector y autoridad siempre deben saber de cualquier justificación
+            // Notificar — siempre a inspector/autoridad + tutor si aplica
             $this->_notifyReviewers(
                 '📝 Nueva justificación pendiente',
-                "Justificación de $workingDays día(s) requiere revisión.",
+                "$stuName justificó $workingDays día(s) ($dateLabel).",
                 'info',
                 '?action=pending_justifications'
             );
 
-            // Si corresponde al tutor (≤3 días), notificarle también
             if ($canApprove === 'tutor') {
                 $stmt = $pdo->prepare(
                     "SELECT ta.teacher_id FROM teacher_assignments ta
@@ -121,7 +126,7 @@ class JustificationController {
                     $this->notificationModel->create(
                         $tutorId,
                         '📝 Justificación pendiente (tutor)',
-                        "Un estudiante de tu curso necesita justificación por $workingDays día(s).",
+                        "$stuName justificó $workingDays día(s) ($dateLabel).",
                         'info',
                         '?action=tutor_pending_justifications'
                     );
@@ -201,7 +206,11 @@ class JustificationController {
                 $this->justificationModel->approveRange($justificationId, $_SESSION['user_id'], $notes);
 
                 if ($justification) {
-                    // Notificar al estudiante — enlace a sus justificaciones
+                    // Borrar notificaciones de revisión para todos los demás revisores
+                    $this->notificationModel->deleteByLinkExcept('?action=pending_justifications', $_SESSION['user_id']);
+                    $this->notificationModel->deleteByLinkExcept('?action=tutor_pending_justifications', $_SESSION['user_id']);
+
+                    // Notificar al estudiante
                     $this->notificationModel->create(
                         $justification['student_id'],
                         '✅ Justificación aprobada',
@@ -224,7 +233,11 @@ class JustificationController {
                 $this->justificationModel->reject($justificationId, $_SESSION['user_id'], $notes);
 
                 if ($justification) {
-                    // Notificar al estudiante — puede enviar una nueva justificación
+                    // Borrar notificaciones de revisión para todos los demás revisores
+                    $this->notificationModel->deleteByLinkExcept('?action=pending_justifications', $_SESSION['user_id']);
+                    $this->notificationModel->deleteByLinkExcept('?action=tutor_pending_justifications', $_SESSION['user_id']);
+
+                    // Notificar al estudiante
                     $this->notificationModel->create(
                         $justification['student_id'],
                         '❌ Justificación rechazada',
