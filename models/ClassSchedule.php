@@ -38,19 +38,54 @@ class ClassSchedule {
         // SOLUCIÓN: Si teacher_id está vacío, usar NULL
         $teacherId = !empty($data['teacher_id']) ? $data['teacher_id'] : null;
 
-        $sql = 'INSERT INTO class_schedule
-                (course_id, subject_id, teacher_id, school_year_id, day_of_week, period_number)
-                VALUES (:course_id, :subject_id, :teacher_id, :school_year_id, :day_of_week, :period_number)';
+        // Calcular start_time / end_time según periodo (45 min c/u, inicio 07:00)
+        $periodMinutes = [
+            1 => ['07:00', '07:45'], 2 => ['07:45', '08:30'],
+            3 => ['08:30', '09:15'], 4 => ['09:15', '10:00'],
+            5 => ['10:15', '11:00'], 6 => ['11:00', '11:45'],
+            7 => ['11:45', '12:30'], 8 => ['12:30', '13:15'],
+        ];
+        $pn = (int)$data['period_number'];
+        $startTime = $periodMinutes[$pn][0] ?? '07:00';
+        $endTime   = $periodMinutes[$pn][1] ?? '07:45';
 
-        $stmt = $this->db->prepare($sql);
-        $result = $stmt->execute([
-            'course_id' => $data['course_id'],
-            'subject_id' => $data['subject_id'],
-            'teacher_id' => $teacherId,
-            'school_year_id' => $data['school_year_id'],
-            'day_of_week' => $data['day_of_week'],
-            'period_number' => $data['period_number']
-        ]);
+        // Verificar si la tabla tiene columnas start_time/end_time
+        try {
+            $cols = $this->db->query("SHOW COLUMNS FROM class_schedule LIKE 'start_time'")->fetchAll();
+            $hasTime = count($cols) > 0;
+        } catch (Exception $e) {
+            $hasTime = false;
+        }
+
+        if ($hasTime) {
+            $sql = 'INSERT INTO class_schedule
+                    (course_id, subject_id, teacher_id, school_year_id, day_of_week, period_number, start_time, end_time)
+                    VALUES (:course_id, :subject_id, :teacher_id, :school_year_id, :day_of_week, :period_number, :start_time, :end_time)';
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([
+                'course_id'     => $data['course_id'],
+                'subject_id'    => $data['subject_id'],
+                'teacher_id'    => $teacherId,
+                'school_year_id'=> $data['school_year_id'],
+                'day_of_week'   => $data['day_of_week'],
+                'period_number' => $data['period_number'],
+                'start_time'    => $startTime,
+                'end_time'      => $endTime,
+            ]);
+        } else {
+            $sql = 'INSERT INTO class_schedule
+                    (course_id, subject_id, teacher_id, school_year_id, day_of_week, period_number)
+                    VALUES (:course_id, :subject_id, :teacher_id, :school_year_id, :day_of_week, :period_number)';
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([
+                'course_id'     => $data['course_id'],
+                'subject_id'    => $data['subject_id'],
+                'teacher_id'    => $teacherId,
+                'school_year_id'=> $data['school_year_id'],
+                'day_of_week'   => $data['day_of_week'],
+                'period_number' => $data['period_number'],
+            ]);
+        }
 
         return [
             'success' => $result,

@@ -44,6 +44,11 @@ class ScheduleController {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $activeYear = $this->schoolYearModel->getActive();
 
+            if (!$activeYear) {
+                header('Location: ?action=manage_schedule&course_id=' . $courseId . '&error=' . urlencode('No hay un año escolar activo. Configure el año escolar primero.'));
+                exit;
+            }
+
             // Verificar si la materia tiene un docente asignado en teacher_assignments
             $teacherCheck = $this->db->connect()->prepare(
                 'SELECT teacher_id FROM teacher_assignments 
@@ -85,8 +90,13 @@ class ScheduleController {
 
         $activeYear = $this->schoolYearModel->getActive();
         $courses = $this->courseModel->getAll();
-        $course = array_filter($courses, fn($c) => $c['id'] == $courseId);
+        $course = array_filter($courses, function($c) use ($courseId) { return $c['id'] == $courseId; });
         $course = reset($course);
+
+        if (!$activeYear) {
+            header('Location: ?action=schedule&error=' . urlencode('No hay un año escolar activo. Configure el año escolar primero.'));
+            exit;
+        }
 
         $schedule = $this->scheduleModel->getByCourse($courseId, $activeYear['id']);
         $subjects = $this->subjectModel->getAll();

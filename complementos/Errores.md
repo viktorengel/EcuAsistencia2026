@@ -18,8 +18,4 @@ Corregir mensaje y fecha actualizar asistencia:
 Puede registrar asistencia de hoy o corregir registros anteriores hasta el
 27/02/2026
 
-En el Login debe hacer un boton para registrarse como nuevo usuario y por defecto debe ir con el rol de representante
-
 Revisar la campana que no se activa si se envia una justificacion
-
-No hay el menú para aceptar Solicitudes de Vinculación
