@@ -94,16 +94,30 @@ class AttendanceController {
 
             $scheduleId = (int)$_POST['schedule_id'];
 
-            // Obtener datos del horario incluyendo nombre de asignatura
+            // Obtener datos del horario — verificar que pertenece al docente logueado
             $db   = new Database();
             $pdo  = $db->connect();
-            $sql  = "SELECT cs.*, s.name as subject_name 
+            // autoridad puede registrar en cualquier horario; docente solo en los suyos
+            $teacherFilter = Security::hasRole('autoridad')
+                ? ''
+                : 'AND cs.teacher_id = :teacher_id';
+            $sql  = "SELECT cs.*, s.name as subject_name
                      FROM class_schedule cs
                      INNER JOIN subjects s ON cs.subject_id = s.id
-                     WHERE cs.id = :id";
+                     WHERE cs.id = :id {$teacherFilter}";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([':id' => $scheduleId]);
+            $params = [':id' => $scheduleId];
+            if (!Security::hasRole('autoridad')) {
+                $params[':teacher_id'] = $_SESSION['user_id'];
+            }
+            $stmt->execute($params);
             $scheduleData = $stmt->fetch();
+
+            // Si el horario no existe o no le pertenece → acceso denegado
+            if (!$scheduleData) {
+                header('Location: ?action=attendance_register&error=unauthorized');
+                exit;
+            }
 
             $subjectName   = $scheduleData['subject_name'] ?? 'clase';
             $dateFormatted = date('d/m/Y', strtotime($date));

@@ -2,7 +2,7 @@
 El sistema tiene una base sólida. MVC limpio, seguridad básica correcta, flujos principales funcionando (asistencia, justificaciones, reportes, horarios). Para PHP sin framework es un trabajo bien estructurado y ya está en producción real.
 
 🔴 Lo que falta y considero crítico
-1. Recuperación de contraseña — está en el menú pero el SMTP no está configurado. Si un usuario olvida su clave, no hay forma de recuperarla. En producción esto es un problema real.
+ok 1. Recuperación de contraseña — está en el menú pero el SMTP no está configurado. Si un usuario olvida su clave, no hay forma de recuperarla. En producción esto es un problema real.
 2. Validación de asistencia desde horario — el docente registra asistencia pero no hay verificación de que ese horario realmente le corresponde ese día. Un docente podría registrar en clases que no son suyas.
 3. Edición de asistencia — existe la lógica de 48 horas pero no hay una vista clara donde el docente pueda editar un registro ya guardado. Solo puede crear.
 4. La tabla notifications se llena para siempre — no hay limpieza automática. En 6 meses de uso tendrás miles de registros. Falta un cron o limpieza automática de notificaciones leídas con más de X días.
