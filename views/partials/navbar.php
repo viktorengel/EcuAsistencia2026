@@ -15,7 +15,7 @@ if (isset($_SESSION['user_id'])) {
 $_activeSection = '';
 if (in_array($current_page, ['attendance_register','attendance_view','attendance_calendar','my_attendance','tutor_course_attendance'])) $_activeSection = 'asistencia';
 elseif (in_array($current_page, ['my_justifications','pending_justifications','reviewed_justifications','tutor_pending_justifications'])) $_activeSection = 'justificaciones';
-elseif (in_array($current_page, ['institution','academic','users','assignments','tutor_management','manage_representatives','schedules','backups'])) $_activeSection = 'administracion';
+elseif (in_array($current_page, ['institution','academic','users','assignments','tutor_management','manage_representatives','link_requests','schedules','backups'])) $_activeSection = 'administracion';
 elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reportes';
 ?>
 <style>
@@ -407,7 +407,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
 
             <?php if(Security::hasRole('autoridad')): ?>
             <div class="ec-item">
-                <span class="ec-item__btn <?= in_array($current_page,['institution','academic','users','assignments','tutor_management','manage_representatives','schedules','backups'])?'active':'' ?>">
+                <span class="ec-item__btn <?= in_array($current_page,['institution','academic','users','assignments','tutor_management','manage_representatives','link_requests','schedules','backups'])?'active':'' ?>">
                     <span class="ec-item__icon">⚙️</span> Administración <span class="ec-item__caret">▼</span>
                 </span>
                 <div class="ec-dropdown">
@@ -416,6 +416,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
                     <a href="?action=users"        class="<?= $current_page==='users'?'active':'' ?>">👥 Gestión de Usuarios</a>
                     <div class="ec-dropdown__divider"></div>
                     <a href="?action=manage_representatives" class="<?= $current_page==='manage_representatives'?'active':'' ?>">👨‍👩‍👧‍👦 Representantes</a>
+                    <a href="?action=link_requests" class="<?= $current_page==='link_requests'?'active':'' ?>">🔗 Solicitudes de Vinculación</a>
                     <div class="ec-dropdown__divider"></div>
                     <a href="?action=schedules" class="<?= $current_page==='schedules'?'active':'' ?>">📅 Horarios de Clases</a>
                     <a href="?action=backups"   class="<?= $current_page==='backups'?'active':'' ?>">💾 Respaldos del Sistema</a>
@@ -587,6 +588,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             <a href="?action=academic"               class="ec-acc__link <?= $current_page==='academic'?'active':'' ?>"><span class="ec-acc__link__icon">🏫</span> Configuración Académica</a>
             <a href="?action=users"                  class="ec-acc__link <?= $current_page==='users'?'active':'' ?>"><span class="ec-acc__link__icon">👥</span> Gestión de Usuarios</a>
             <a href="?action=manage_representatives" class="ec-acc__link <?= $current_page==='manage_representatives'?'active':'' ?>"><span class="ec-acc__link__icon">👨‍👩‍👧‍👦</span> Representantes</a>
+            <a href="?action=link_requests" class="ec-acc__link <?= $current_page==='link_requests'?'active':'' ?>"><span class="ec-acc__link__icon">🔗</span> Solicitudes de Vinculación</a>
             <a href="?action=schedules"              class="ec-acc__link <?= $current_page==='schedules'?'active':'' ?>"><span class="ec-acc__link__icon">📅</span> Horarios de Clases</a>
             <a href="?action=backups"                class="ec-acc__link <?= $current_page==='backups'?'active':'' ?>"><span class="ec-acc__link__icon">💾</span> Respaldos del Sistema</a>
         </div>
