@@ -327,6 +327,12 @@ class RepresentativeController {
         );
         $upd->execute([':status' => $decision, ':rev' => $reviewerId, ':notes' => $reviewNotes, ':id' => $requestId]);
 
+        // Borrar notificaciones de vinculación para todos los revisores
+        require_once BASE_PATH . '/models/Notification.php';
+        $notifDb    = new Database();
+        $notifModel = new Notification($notifDb);
+        $notifModel->deleteByLinkExcept('?action=link_requests', $reviewerId);
+
         // Si aprobado, crear la vinculación
         if ($decision === 'aprobado') {
             $ins = $pdo->prepare(

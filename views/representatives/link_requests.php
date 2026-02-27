@@ -28,6 +28,19 @@
         .tab { padding:9px 18px; font-size:13px; font-weight:600; color:#888; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; text-decoration:none; }
         .tab.active { color:#1a237e; border-bottom-color:#1a237e; }
         .tab:hover { color:#1a237e; }
+
+        /* ── Toast flotante ── */
+        .ec-toast {
+            position: fixed; bottom: 28px; right: 28px; z-index: 99999;
+            padding: 14px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.18); display: flex; align-items: center; gap: 10px;
+            animation: ecToastIn 0.35s ease, ecToastOut 0.4s ease 3.5s forwards;
+            max-width: 380px;
+        }
+        .ec-toast--success { background: #d1fae5; color: #065f46; border-left: 5px solid #10b981; }
+        .ec-toast--warning { background: #fff3cd; color: #856404; border-left: 5px solid #ffc107; }
+        @keyframes ecToastIn  { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes ecToastOut { from { opacity:1; } to { opacity:0; pointer-events:none; } }
     </style>
 </head>
 <body>
@@ -43,10 +56,10 @@
 <div class="container">
 
     <?php if(isset($_GET['approved'])): ?>
-    <div class="alert alert-success">✓ Solicitud aprobada. El representante ha sido vinculado al estudiante.</div>
+    <div id="ec-toast" class="ec-toast ec-toast--success">✓ Solicitud aprobada. El representante ha sido vinculado al estudiante.</div>
     <?php endif; ?>
     <?php if(isset($_GET['rejected'])): ?>
-    <div class="alert alert-warning">Solicitud rechazada.</div>
+    <div id="ec-toast" class="ec-toast ec-toast--warning">✗ Solicitud rechazada.</div>
     <?php endif; ?>
 
     <div class="page-header" style="background:linear-gradient(135deg,#1a237e,#283593);">
@@ -143,5 +156,10 @@
     <?php endif; ?>
 
 </div>
+
+<script>
+var t = document.getElementById('ec-toast');
+if (t) setTimeout(function(){ t.style.display = 'none'; }, 4000);
+</script>
 </body>
 </html>
