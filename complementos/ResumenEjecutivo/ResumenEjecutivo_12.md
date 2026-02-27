@@ -1,4 +1,146 @@
 📋 RESUMEN EJECUTIVO — ECUASIST 2026
+Chat 04 — Correcciones y Mejoras
+Fecha: 27 de Febrero de 2026
+Versión: v1.5.2
+Estado: En progreso
+
+
+12 cambios aplicados · 9 archivos modificados · 2 bugs pendientes de verificar
+
+
+✅ CAMBIOS IMPLEMENTADOS
+1. 📧 Email opcional al crear usuario (Admin)
+
+Email NO obligatorio cuando autoridad crea usuario
+Aplica en create() y createFromModal()
+Registro propio sigue siendo obligatorio
+Archivos: controllers/UserController.php, views/users/create.php
+
+2. 🔑 Password no se borra al mostrar errores
+
+Campos password usan data-val + JS DOMContentLoaded
+Botón 👁 para mostrar/ocultar en ambos campos
+Archivo: views/users/create.php
+
+3. 📝 Permisos Justificaciones — Inspector y Docente
+
+pending() y review() aceptan ['autoridad','inspector','docente']
+Navbar muestra menú Justificaciones para docente
+Ruta tutor_pending_justifications agregada
+Link "🎓 Justificaciones de mi Curso" solo si docente es tutor
+Archivos: controllers/JustificationController.php, views/partials/navbar.php, public/index.php
+
+4. 🔔 Session is_tutor al hacer login
+
+Se setea $_SESSION['is_tutor'] al autenticar
+Evita error fatal $attModel null en navbar
+Archivo: controllers/AuthController.php
+
+5. 👁 Modal "Revisar Justificación" — botón funcionando
+
+Datos pasados por data-* con htmlspecialchars(ENT_QUOTES)
+JS usa addEventListener en lugar de onclick inline
+Archivo: views/justifications/pending.php
+
+6. 📎 Documento adjunto en modal (sin salir de página)
+
+Modal independiente con z-index:9999
+PDFs en <iframe>, imágenes en <img>
+img.php extendido para servir PDFs
+Archivos: views/justifications/pending.php, public/img.php
+
+7. 🔔 Notificación al Docente/Tutor al justificar
+
+Tutor del curso siempre recibe notificación
+Sin auto-notificación si el tutor envía la justificación
+Archivo: controllers/JustificationController.php
+
+8. 🔐 Recuperación de contraseña
+
+CSRF en forgotPassword() y resetPassword()
+Validación formato email y longitud mínima contraseña
+Token inválido/expirado muestra error antes del formulario
+Vistas rediseñadas consistentes con el sistema
+Email HTML con botón y texto plano como fallback
+Archivos: controllers/AuthController.php, views/auth/forgot.php, views/auth/reset.php
+
+9. 📬 Mailer — compatibilidad hosting sin fsockopen/mail()
+
+Diagnóstico del hosting ecuasys.com:
+
+mail() → ❌ bloqueada
+fsockopen() → ❌ bloqueada
+curl_exec() → ❌ bloqueada
+curl_init() → ✅ disponible
+socket_create() → ✅ disponible
+proc_open + sendmail → ✅ disponible
+
+
+Solución: proc_open('/usr/sbin/sendmail -t -i') directo
+Sin dependencia de PHPMailer para el envío
+Email multipart (HTML + texto plano)
+Archivo: helpers/Mailer.php
+
+10. 🛡 Validación de asistencia por horario
+
+Docente solo puede registrar en clases que le pertenecen
+Query agrega AND cs.teacher_id = :teacher_id
+Autoridad queda exenta — puede registrar en cualquier horario
+Si schedule_id no pertenece al docente → redirige con error
+Mensaje: "⛔ No tienes permiso para registrar asistencia en esa clase"
+Archivos: controllers/AttendanceController.php, views/attendance/register.php
+
+
+🔴 PENDIENTE — CONTINUAR EN NUEVO CHAT
+Bug: Docente ve solo 1 clase cuando debería ver 2 (viernes)
+Contexto:
+
+Curso: Inicial 1 (0-3 años) "A" - Matutina
+Docente: Rengel Victor (user_id = 52)
+Horario viernes: Hora 2 → Expresión y Comunicación, Hora 3 → Desarrollo Personal y Social
+Hoy es viernes 27/02/2026 y solo aparece 1 clase
+
+Hipótesis:
+
+El fix de validación teacher_id está bloqueando una de las clases
+En class_schedule solo hay 1 registro para el viernes con teacher_id=52
+
+Query de diagnóstico pendiente ejecutar:
+sqlSELECT cs.id, cs.day_of_week, cs.period_number,
+       s.name as asignatura, cs.teacher_id
+FROM class_schedule cs
+INNER JOIN subjects s ON cs.subject_id = s.id
+WHERE cs.teacher_id = 52
+AND cs.day_of_week = 'viernes'
+ORDER BY cs.period_number;
+Si devuelve 2 filas → el fix de validación está filtrando mal → revisar AttendanceController.php
+Si devuelve 1 fila → el horario en BD está incompleto → agregar la clase faltante en el horario
+
+📁 ARCHIVOS MODIFICADOS EN ESTE CHAT
+ArchivoCambiocontrollers/UserController.phpEmail opcional en create y createFromModalcontrollers/AuthController.phpis_tutor session + recuperación contraseñacontrollers/JustificationController.phpPermisos + notificación tutorcontrollers/AttendanceController.phpValidación teacher_id en registroviews/users/create.phpPassword restore + toggle + email opcionalviews/auth/forgot.phpRediseño + validacionesviews/auth/reset.phpRediseño + toggle + validación tiempo realviews/justifications/pending.phpModal revisar + modal documentoviews/attendance/register.phpMensaje error unauthorizedviews/partials/navbar.phpJustificaciones para docente + is_tutorpublic/index.phpRuta tutor_pending_justificationspublic/img.phpSoporte PDFhelpers/Mailer.phpproc_open + sendmail (sin fsockopen/mail)
+
+⚙️ NOTAS TÉCNICAS CLAVE
+Mailer — Hosting ecuasys.com
+php// Usar proc_open con sendmail — única opción disponible
+// SMTP_FROM debe ser correo del dominio ecuasys.com
+// Configurar SPF/DKIM en cPanel para evitar spam
+Validación horario docente
+php// En AttendanceController::register()
+// La query usa AND cs.teacher_id = :teacher_id
+// Autoridad exenta: Security::hasRole('autoridad') omite el filtro
+Session is_tutor
+php// Seteado en AuthController::login()
+// Usuarios con sesión activa deben re-loguearse para aplicar
+
+🔗 ARCHIVOS CLAVE PARA INICIAR NUEVO CHAT
+/controllers/AttendanceController.php  — Bug pendiente: clases viernes
+/models/ClassSchedule.php              — getTeacherScheduleToday()
+/controllers/AuthController.php        — Login + recuperación contraseña
+/helpers/Mailer.php                    — proc_open sendmail
+/views/justifications/pending.php      — Modal revisar + documento
+/public/index.php                      — Todas las rutas
+
+📋 RESUMEN EJECUTIVO — ECUASIST 2026
 Sesión Chat 03 — Correcciones y Mejoras
 Fecha: 27 de Febrero de 2026
 Versión: v1.5.1
