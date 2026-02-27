@@ -80,7 +80,7 @@
                 <p>Estudiantes vinculados a tu cuenta</p>
             </div>
         </div>
-        <button onclick="openModal()" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,.5);white-space:nowrap;">
+        <button onclick="openModal()" style="background:#fff;color:#0e7490;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
             ➕ Solicitar Vinculación
         </button>
     </div>
@@ -232,28 +232,41 @@ document.getElementById('modalRequest').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
 
 var searchTimeout;
+var _searchBase = '<?= rtrim(BASE_URL, '/') ?>/?action=search_students_json';
+
 function searchStudents(q) {
     clearTimeout(searchTimeout);
     var results = document.getElementById('search-results');
     if (q.length < 2) { results.innerHTML = ''; return; }
+
+    results.innerHTML = '<div style="padding:10px 14px;color:#aaa;font-size:13px;">Buscando...</div>';
+
     searchTimeout = setTimeout(function() {
-        fetch('?action=search_students_json&q=' + encodeURIComponent(q))
-            .then(function(r) { return r.json(); })
+        fetch(_searchBase + '&q=' + encodeURIComponent(q), { credentials: 'same-origin' })
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
             .then(function(data) {
                 if (!data.length) {
                     results.innerHTML = '<div style="padding:12px 14px;color:#aaa;font-size:13px;">No se encontraron estudiantes.</div>';
                     return;
                 }
                 results.innerHTML = data.map(function(s) {
-                    var initials = (s.last_name.charAt(0) + s.first_name.charAt(0)).toUpperCase();
-                    return '<div class="result-item" onclick="selectStudent(' + s.id + ',\'' +
-                        (s.last_name + ' ' + s.first_name).replace(/'/g, "\\'") + '\')">' +
+                    var initials = ((s.last_name||'').charAt(0) + (s.first_name||'').charAt(0)).toUpperCase();
+                    var safeName = (s.last_name + ' ' + s.first_name).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                    return '<div class="result-item" onclick="selectStudent(' + s.id + ', \'' + safeName + '\')">' +
                         '<div class="result-avatar">' + initials + '</div>' +
-                        '<div><div class="result-name">' + s.last_name + ' ' + s.first_name + '</div>' +
-                        '<div class="result-meta">CI: ' + (s.dni || 'Sin cédula') + ' · ' + (s.course_name || 'Sin curso') + '</div></div>' +
-                        '</div>';
+                        '<div>' +
+                            '<div class="result-name">' + s.last_name + ' ' + s.first_name + '</div>' +
+                            '<div class="result-meta">CI: ' + (s.dni || 'Sin cédula') + ' &middot; ' + (s.course_name || 'Sin curso') + '</div>' +
+                        '</div>' +
+                    '</div>';
                 }).join('');
-            }).catch(function() {});
+            })
+            .catch(function(err) {
+                results.innerHTML = '<div style="padding:12px 14px;color:#dc3545;font-size:13px;">Error al buscar: ' + err.message + '</div>';
+            });
     }, 350);
 }
 

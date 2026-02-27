@@ -19,8 +19,8 @@ session_set_cookie_params([
 ]);
 session_start();
 
-// Timeout 30 minutos
-$inactive_timeout = 1800;
+// Timeout 8 horas
+$inactive_timeout = 28800;
 if (isset($_SESSION['last_activity']) &&
     (time() - $_SESSION['last_activity'] > $inactive_timeout)) {
     session_unset();

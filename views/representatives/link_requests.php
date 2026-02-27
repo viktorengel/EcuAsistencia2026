@@ -116,19 +116,25 @@
 
         <?php if($req['status'] === 'pendiente'): ?>
         <div class="req-actions">
-            <form method="POST" action="?action=review_link_request" style="display:contents;">
+            <form id="form-approve-<?= $req['id'] ?>" method="POST" action="?action=review_link_request">
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                 <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
                 <input type="hidden" name="decision" value="aprobado">
                 <input type="hidden" name="is_primary" value="0">
-                <button type="submit" class="btn-approve" onclick="return confirm('¿Aprobar esta solicitud?')">✅ Aprobar</button>
+                <button type="button" class="btn-approve"
+                        onclick="ecConfirm({icon:'✅',title:'Aprobar solicitud',message:'Se vinculará al representante con el estudiante.',okText:'Aprobar',onOk:function(){ document.getElementById('form-approve-<?= $req['id'] ?>').submit(); }})">
+                    ✅ Aprobar
+                </button>
             </form>
-            <form method="POST" action="?action=review_link_request" style="display:contents;">
+            <form id="form-reject-<?= $req['id'] ?>" method="POST" action="?action=review_link_request" style="display:flex;gap:8px;align-items:center;">
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                 <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
                 <input type="hidden" name="decision" value="rechazado">
-                <input type="text" name="review_notes" placeholder="Motivo del rechazo (opcional)...">
-                <button type="submit" class="btn-reject">✗ Rechazar</button>
+                <input type="text" name="review_notes" id="notes-<?= $req['id'] ?>" placeholder="Motivo del rechazo (opcional)...">
+                <button type="button" class="btn-reject"
+                        onclick="ecConfirm({icon:'❌',title:'Rechazar solicitud',message:'¿Confirmas el rechazo de esta vinculación?',okText:'Rechazar',onOk:function(){ document.getElementById('form-reject-<?= $req['id'] ?>').submit(); }})">
+                    ✗ Rechazar
+                </button>
             </form>
         </div>
         <?php endif; ?>

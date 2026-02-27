@@ -172,7 +172,7 @@ class RepresentativeController {
 
     // ── Buscar estudiantes (JSON para autocomplete) ───────────────────────
     public function searchStudentsJson() {
-        if (!Security::hasRole('representante')) { http_response_code(403); echo '[]'; exit; }
+        if (!Security::hasRole(['representante','autoridad','inspector'])) { http_response_code(403); echo '[]'; exit; }
         $q = Security::sanitize($_GET['q'] ?? '');
         if (strlen($q) < 2) { echo '[]'; exit; }
 
@@ -186,11 +186,11 @@ class RepresentativeController {
               LEFT JOIN course_students cs ON u.id = cs.student_id
               LEFT JOIN courses c ON cs.course_id = c.id
               WHERE u.is_active = 1
-                AND (u.last_name LIKE :q OR u.first_name LIKE :q OR u.dni LIKE :q)
+                AND (u.last_name LIKE :q1 OR u.first_name LIKE :q2 OR u.dni LIKE :q3)
               ORDER BY u.last_name, u.first_name
               LIMIT 10"
         );
-        $stmt->execute([':q' => '%' . $q . '%']);
+        $stmt->execute([':q1' => '%'.$q.'%', ':q2' => '%'.$q.'%', ':q3' => '%'.$q.'%']);
         header('Content-Type: application/json');
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         exit;
@@ -235,9 +235,37 @@ class RepresentativeController {
         $stmt = $pdo->prepare(
             "INSERT INTO link_requests (representative_id, student_id, relationship, message, status)
               VALUES (:rid, :sid, :rel, :msg, 'pendiente')
-              ON DUPLICATE KEY UPDATE relationship = :rel, message = :msg, status = 'pendiente', reviewed_by = NULL, reviewed_at = NULL, review_notes = NULL"
+              ON DUPLICATE KEY UPDATE relationship = :rel2, message = :msg2, status = 'pendiente', reviewed_by = NULL, reviewed_at = NULL, review_notes = NULL"
         );
-        $stmt->execute([':rid' => $repId, ':sid' => $studentId, ':rel' => $relationship, ':msg' => $message]);
+        $stmt->execute([':rid' => $repId, ':sid' => $studentId, ':rel' => $relationship, ':msg' => $message, ':rel2' => $relationship, ':msg2' => $message]);
+
+        // Nombre del representante y del estudiante para la notificación
+        $repRow = $pdo->query("SELECT CONCAT(last_name,' ',first_name) as name FROM users WHERE id = $repId")->fetch();
+        $stuRow = $pdo->query("SELECT CONCAT(last_name,' ',first_name) as name FROM users WHERE id = $studentId")->fetch();
+        $repName = $repRow ? $repRow['name'] : 'Un representante';
+        $stuName = $stuRow ? $stuRow['name'] : 'un estudiante';
+
+        // Notificar a autoridad e inspector
+        require_once BASE_PATH . '/models/Notification.php';
+        $notifDb    = new Database();
+        $notifModel = new Notification($notifDb);
+
+        $reviewers = $pdo->query(
+            "SELECT DISTINCT u.id FROM users u
+             INNER JOIN user_roles ur ON u.id = ur.user_id
+             INNER JOIN roles r ON ur.role_id = r.id
+             WHERE r.name IN ('autoridad','inspector') AND u.is_active = 1"
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($reviewers as $reviewerId) {
+            $notifModel->create(
+                $reviewerId,
+                '🔗 Nueva solicitud de vinculación',
+                "$repName solicita ser representante de $stuName.",
+                'info',
+                '?action=link_requests'
+            );
+        }
 
         header('Location: ?action=my_children&request_sent=1');
         exit;

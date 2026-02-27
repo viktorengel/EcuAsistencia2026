@@ -29,7 +29,7 @@ class Security {
 
     public static function requireLogin() {
         if (!isset($_SESSION['user_id'])) {
-            header('Location: ' . BASE_URL . '/public/index.php?action=login');
+            header('Location: ' . BASE_URL . '/?action=login');
             exit;
         }
     }

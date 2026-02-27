@@ -34,6 +34,8 @@ class AuthController {
                 return;
             }
 
+            $dniRaw = trim(Security::sanitize($_POST['dni'] ?? ''));
+
             $data = [
                 'institution_id' => 1,
                 'username'   => Security::sanitize($_POST['username']),
@@ -41,16 +43,18 @@ class AuthController {
                 'password'   => $password,
                 'first_name' => Security::sanitize($_POST['first_name']),
                 'last_name'  => Security::sanitize($_POST['last_name']),
-                'dni'        => Security::sanitize($_POST['dni']   ?? ''),
-                'phone'      => Security::sanitize($_POST['phone'] ?? '')
+                'dni'        => $dniRaw !== '' ? $dniRaw : null,
+                'phone'      => Security::sanitize($_POST['phone'] ?? '') ?: null
             ];
 
             if ($this->userModel->create($data)) {
-                // Obtener el ID del usuario recién creado
-                $newUser = $this->userModel->findByEmailOrUsername($data['username']);
-                if ($newUser) {
-                    // Asignar rol representante (id=5)
-                    $this->userModel->assignRole($newUser['id'], 5);
+                // Obtener el ID del usuario recién creado y asignar rol representante
+                $db  = new Database();
+                $row = $db->connect()->query(
+                    "SELECT id FROM users WHERE username = '" . $data['username'] . "' LIMIT 1"
+                )->fetch();
+                if ($row) {
+                    $this->userModel->assignRole($row['id'], 5);
                 }
                 header('Location: ' . BASE_URL . '/?action=login&registered=1');
                 exit;

@@ -15,7 +15,7 @@ if (isset($_SESSION['user_id'])) {
 $_activeSection = '';
 if (in_array($current_page, ['attendance_register','attendance_view','attendance_calendar','my_attendance','tutor_course_attendance'])) $_activeSection = 'asistencia';
 elseif (in_array($current_page, ['my_justifications','pending_justifications','reviewed_justifications','tutor_pending_justifications'])) $_activeSection = 'justificaciones';
-elseif (in_array($current_page, ['institution','academic','users','assignments','tutor_management','manage_representatives','schedules','backups','link_requests'])) $_activeSection = 'administracion';
+elseif (in_array($current_page, ['institution','academic','users','assignments','tutor_management','manage_representatives','schedules','backups'])) $_activeSection = 'administracion';
 elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reportes';
 ?>
 <style>
@@ -283,6 +283,66 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
 @media (min-width: 993px) {
     .ec-hamburger { display: none !important; }
 }
+
+        /* ── Panel popup notificaciones ── */
+        .ec-notif-wrap { position: relative; }
+        .ec-notif-panel {
+            position: absolute; top: calc(100% + 10px); right: 0;
+            width: 340px; background: #fff; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18); z-index: 10000;
+            border: 1px solid #e5e7eb; overflow: hidden;
+        }
+        .ec-notif-panel__head {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 16px; background: #1e3a8a; color: #fff;
+            font-size: 13px; font-weight: 700;
+        }
+        .ec-notif-panel__head a { color: #93c5fd; font-size: 12px; font-weight: 500; text-decoration: none; }
+        .ec-notif-panel__body { max-height: 340px; overflow-y: auto; }
+        .ec-notif-panel__loading { padding: 20px; text-align: center; color: #999; font-size: 13px; }
+        .ec-notif-panel__empty  { padding: 28px 16px; text-align: center; color: #aaa; font-size: 13px; }
+        .ec-notif-item {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 12px 16px; border-bottom: 1px solid #f3f4f6;
+            cursor: pointer; transition: background 0.15s; text-decoration: none; color: inherit;
+        }
+        .ec-notif-item:hover { background: #f0f4ff; }
+        .ec-notif-item.unread { background: #f8fbff; border-left: 3px solid #3b82f6; }
+        .ec-notif-item.unread:hover { background: #e8f0fe; }
+        .ec-notif-item__icon { font-size: 18px; flex-shrink: 0; line-height: 1.2; margin-top: 1px; }
+        .ec-notif-item__body { flex: 1; min-width: 0; }
+        .ec-notif-item__title { font-size: 12.5px; font-weight: 700; color: #1e3a8a; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ec-notif-item__msg { font-size: 12px; color: #555; line-height: 1.35;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .ec-notif-item__time { font-size: 10.5px; color: #aaa; margin-top: 3px; }
+        .ec-notif-item__dot { width: 7px; height: 7px; border-radius: 50%; background: #3b82f6;
+            flex-shrink: 0; margin-top: 6px; }
+        .ec-notif-panel__foot { padding: 10px 16px; text-align: center; border-top: 1px solid #f0f0f0; }
+        .ec-notif-panel__foot a { font-size: 12px; color: #3b82f6; text-decoration: none; font-weight: 600; }
+        .ec-notif-panel__foot a:hover { text-decoration: underline; }
+
+        /* ── Modal confirmación global ── */
+        .ec-confirm-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55); z-index: 99999;
+            align-items: center; justify-content: center;
+        }
+        .ec-confirm-overlay.on { display: flex; }
+        .ec-confirm-box {
+            background: #fff; border-radius: 12px; padding: 28px 28px 22px;
+            max-width: 380px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.22); text-align: center;
+        }
+        .ec-confirm-icon { font-size: 2.2rem; margin-bottom: 10px; }
+        .ec-confirm-title { font-size: 15px; font-weight: 700; color: #111; margin-bottom: 8px; }
+        .ec-confirm-msg { font-size: 13px; color: #666; margin-bottom: 22px; line-height: 1.5; }
+        .ec-confirm-btns { display: flex; gap: 10px; justify-content: center; }
+        .ec-confirm-cancel { padding: 9px 22px; background: #f3f4f6; color: #555; border: none;
+            border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .ec-confirm-cancel:hover { background: #e5e7eb; }
+        .ec-confirm-ok { padding: 9px 22px; background: #dc3545; color: #fff; border: none;
+            border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .ec-confirm-ok:hover { background: #c82333; }
 </style>
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/global.css">
 
@@ -325,15 +385,14 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             </div>
             <?php endif; ?>
 
-            <?php if(Security::hasRole(['estudiante','representante','autoridad','inspector','docente'])): ?>
+            <?php if(Security::hasRole(['estudiante','autoridad','inspector','docente'])): ?>
             <div class="ec-item">
                 <span class="ec-item__btn <?= in_array($current_page,['my_justifications','pending_justifications','reviewed_justifications','tutor_pending_justifications'])?'active':'' ?>">
                     <span class="ec-item__icon">📝</span> Justificaciones <span class="ec-item__caret">▼</span>
                 </span>
                 <div class="ec-dropdown">
-                    <?php if(Security::hasRole(['estudiante','representante'])): ?>
+                    <?php if(Security::hasRole('estudiante')): ?>
                     <a href="?action=my_justifications" class="<?= $current_page==='my_justifications'?'active':'' ?>">📄 Mis Justificaciones</a>
-                    <a href="?action=submit_justification" class="<?= $current_page==='submit_justification'?'active':'' ?>">✏️ Justificar Ausencia</a>
                     <?php endif; ?>
                     <?php if(Security::hasRole(['autoridad','inspector','docente'])): ?>
                     <a href="?action=pending_justifications"  class="<?= $current_page==='pending_justifications'?'active':'' ?>">✅ Revisar Justificaciones</a>
@@ -357,16 +416,12 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
                     <a href="?action=users"        class="<?= $current_page==='users'?'active':'' ?>">👥 Gestión de Usuarios</a>
                     <div class="ec-dropdown__divider"></div>
                     <a href="?action=manage_representatives" class="<?= $current_page==='manage_representatives'?'active':'' ?>">👨‍👩‍👧‍👦 Representantes</a>
-                    <a href="?action=link_requests" class="<?= $current_page==='link_requests'?'active':'' ?>">🔗 Solicitudes Vinculación</a>
                     <div class="ec-dropdown__divider"></div>
                     <a href="?action=schedules" class="<?= $current_page==='schedules'?'active':'' ?>">📅 Horarios de Clases</a>
                     <a href="?action=backups"   class="<?= $current_page==='backups'?'active':'' ?>">💾 Respaldos del Sistema</a>
                 </div>
             </div>
 
-            <?php endif; ?>
-
-            <?php if(Security::hasRole(['autoridad','inspector','docente'])): ?>
             <div class="ec-item">
                 <span class="ec-item__btn <?= in_array($current_page,['reports','stats'])?'active':'' ?>">
                     <span class="ec-item__icon">📊</span> Reportes <span class="ec-item__caret">▼</span>
@@ -389,14 +444,28 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
 
         <!-- Right desktop -->
         <div class="ec-right">
-            <a href="?action=notifications" class="ec-icon-btn" title="Notificaciones">
-                🔔
-                <?php if ($_notifCount > 0): ?>
-                    <span class="ec-notif-badge" id="notif-badge"><?= $_notifCount > 99 ? '99+' : $_notifCount ?></span>
-                <?php else: ?>
-                    <span class="ec-notif-badge" id="notif-badge" style="display:none;">0</span>
-                <?php endif; ?>
-            </a>
+            <div class="ec-notif-wrap" id="ec-notif-wrap">
+                <button class="ec-icon-btn" id="ec-notif-btn" onclick="toggleNotifPanel(event)" title="Notificaciones" style="background:none;border:none;cursor:pointer;">
+                    🔔
+                    <?php if ($_notifCount > 0): ?>
+                        <span class="ec-notif-badge" id="notif-badge"><?= $_notifCount > 99 ? '99+' : $_notifCount ?></span>
+                    <?php else: ?>
+                        <span class="ec-notif-badge" id="notif-badge" style="display:none;">0</span>
+                    <?php endif; ?>
+                </button>
+                <div class="ec-notif-panel" id="ec-notif-panel" style="display:none;">
+                    <div class="ec-notif-panel__head">
+                        <span>🔔 Notificaciones</span>
+                        <a href="?action=notifications">Ver todas</a>
+                    </div>
+                    <div class="ec-notif-panel__body" id="ec-notif-body">
+                        <div class="ec-notif-panel__loading">Cargando...</div>
+                    </div>
+                    <div class="ec-notif-panel__foot">
+                        <a href="?action=notifications">Ver todas las notificaciones →</a>
+                    </div>
+                </div>
+            </div>
             <div class="ec-divider-v"></div>
             <div class="ec-user-wrap">
                 <a href="?action=profile" class="ec-user-btn">
@@ -441,12 +510,12 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
         </div>
         <span class="ec-mob-user__name"><?= htmlspecialchars($_SESSION['last_name'] . ', ' . $_SESSION['first_name']) ?></span>
         <div class="ec-mob-user__actions">
-            <a href="?action=notifications" class="ec-icon-btn" style="position:relative;display:flex;" title="Notificaciones">
+            <button class="ec-icon-btn" style="position:relative;display:flex;background:none;border:none;cursor:pointer;" onclick="toggleNotifPanel(event)" title="Notificaciones">
                 🔔
                 <?php if ($_notifCount > 0): ?>
                     <span class="ec-notif-badge" id="notif-badge-mob"><?= $_notifCount > 99 ? '99+' : $_notifCount ?></span>
                 <?php endif; ?>
-            </a>
+            </button>
             <a href="?action=profile" class="ec-icon-btn" style="display:flex;" title="Mi perfil">👤</a>
         </div>
     </div>
@@ -483,7 +552,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
     <?php endif; ?>
 
     <!-- ── Justificaciones ── -->
-    <?php if(Security::hasRole(['estudiante','representante','autoridad','inspector','docente'])): ?>
+    <?php if(Security::hasRole(['estudiante','autoridad','inspector','docente'])): ?>
     <div class="ec-acc" data-section="justificaciones">
         <div class="ec-acc__head <?= $_activeSection==='justificaciones'?'has-active':'' ?>">
             <span class="ec-acc__head__icon">📝</span>
@@ -491,9 +560,8 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             <span class="ec-acc__head__arrow">▼</span>
         </div>
         <div class="ec-acc__body" style="display:none;">
-            <?php if(Security::hasRole(['estudiante','representante'])): ?>
+            <?php if(Security::hasRole('estudiante')): ?>
             <a href="?action=my_justifications"      class="ec-acc__link <?= $current_page==='my_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">📄</span> Mis Justificaciones</a>
-            <a href="?action=submit_justification"   class="ec-acc__link <?= $current_page==='submit_justification'?'active':'' ?>"><span class="ec-acc__link__icon">✏️</span> Justificar Ausencia</a>
             <?php endif; ?>
             <?php if(Security::hasRole(['autoridad','inspector','docente'])): ?>
             <a href="?action=pending_justifications"  class="ec-acc__link <?= $current_page==='pending_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">✅</span> Revisar Justificaciones</a>
@@ -519,16 +587,12 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             <a href="?action=academic"               class="ec-acc__link <?= $current_page==='academic'?'active':'' ?>"><span class="ec-acc__link__icon">🏫</span> Configuración Académica</a>
             <a href="?action=users"                  class="ec-acc__link <?= $current_page==='users'?'active':'' ?>"><span class="ec-acc__link__icon">👥</span> Gestión de Usuarios</a>
             <a href="?action=manage_representatives" class="ec-acc__link <?= $current_page==='manage_representatives'?'active':'' ?>"><span class="ec-acc__link__icon">👨‍👩‍👧‍👦</span> Representantes</a>
-            <a href="?action=link_requests"       class="ec-acc__link <?= $current_page==='link_requests'?'active':'' ?>"><span class="ec-acc__link__icon">🔗</span> Solicitudes Vinculación</a>
             <a href="?action=schedules"              class="ec-acc__link <?= $current_page==='schedules'?'active':'' ?>"><span class="ec-acc__link__icon">📅</span> Horarios de Clases</a>
             <a href="?action=backups"                class="ec-acc__link <?= $current_page==='backups'?'active':'' ?>"><span class="ec-acc__link__icon">💾</span> Respaldos del Sistema</a>
         </div>
     </div>
 
-    <?php endif; ?>
-
     <!-- ── Reportes ── -->
-    <?php if(Security::hasRole(['autoridad','inspector','docente'])): ?>
     <div class="ec-acc" data-section="reportes">
         <div class="ec-acc__head <?= $_activeSection==='reportes'?'has-active':'' ?>">
             <span class="ec-acc__head__icon">📊</span>
@@ -558,44 +622,121 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
 </div><!-- /#ec-mobile-drawer -->
 
 <script>
-(function () {
-/* ── Polling notificaciones ── */
-    var nb  = document.getElementById('notif-badge');
-    var nbm = document.getElementById('notif-badge-mob');
-    var _lastCount = <?= $_notifCount ?>;
+/* ── Notificaciones: funciones globales ── */
+var _nb  = document.getElementById('notif-badge');
+var _nbm = document.getElementById('notif-badge-mob');
+var _lastNotifCount = <?= $_notifCount ?>;
+var _panelOpen = false;
+var _notifBase = '<?= rtrim(BASE_URL, "/") ?>/';
 
-    function updateBadges(n) {
-        [nb, nbm].forEach(function(b) {
-            if (!b) return;
-            if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.style.display = 'flex'; }
-            else b.style.display = 'none';
-        });
+function updateBadges(n) {
+    [_nb, _nbm].forEach(function(b) {
+        if (!b) return;
+        if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.style.display = 'flex'; }
+        else b.style.display = 'none';
+    });
+}
+
+function ringBell() {
+    var btn = document.getElementById('ec-notif-btn');
+    if (!btn) return;
+    var i = 0, seq = [8,-8,6,-6,4,-4,0];
+    var iv = setInterval(function() {
+        btn.style.transform = 'rotate(' + (seq[i]||0) + 'deg)';
+        i++;
+        if (i >= seq.length) { clearInterval(iv); btn.style.transform = ''; }
+    }, 80);
+}
+
+var _icons = {info:'📋',success:'✅',warning:'⚠️',danger:'❌',ausente:'📅',justificacion:'📝'};
+function _esc(t) {
+    return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _ago(d) {
+    var s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+    if (s < 60) return 'hace ' + s + 's';
+    if (s < 3600) return 'hace ' + Math.floor(s/60) + 'min';
+    if (s < 86400) return 'hace ' + Math.floor(s/3600) + 'h';
+    return 'hace ' + Math.floor(s/86400) + 'd';
+}
+
+function renderPanel(data) {
+    var body = document.getElementById('ec-notif-body');
+    if (!body) return;
+    if (!data.notifications || !data.notifications.length) {
+        body.innerHTML = '<div class="ec-notif-panel__empty">🔔 Sin notificaciones nuevas</div>';
+        return;
     }
+    body.innerHTML = data.notifications.map(function(n) {
+        var icon = _icons[n.type] || '📋';
+        var unread = !parseInt(n.is_read);
+        var link = n.link || '?action=notifications';
+        return '<a class="ec-notif-item' + (unread ? ' unread' : '') + '" href="' + link + '" onclick="markPanelRead(' + n.id + ',this)">' +
+            '<div class="ec-notif-item__icon">' + icon + '</div>' +
+            '<div class="ec-notif-item__body">' +
+                '<div class="ec-notif-item__title">' + _esc(n.title) + '</div>' +
+                '<div class="ec-notif-item__msg">' + _esc(n.message) + '</div>' +
+                '<div class="ec-notif-item__time">' + _ago(n.created_at) + '</div>' +
+            '</div>' +
+            (unread ? '<div class="ec-notif-item__dot"></div>' : '') +
+        '</a>';
+    }).join('');
+}
 
-    function ringBell() {
-        var bell = document.querySelector('.ec-icon-btn[title="Notificaciones"]');
-        if (!bell) return;
-        bell.style.transition = 'transform 0.1s';
-        var i = 0, seq = [8,-8,6,-6,4,-4,0];
-        var iv = setInterval(function() {
-            bell.style.transform = 'rotate(' + (seq[i] || 0) + 'deg)';
-            i++;
-            if (i >= seq.length) { clearInterval(iv); bell.style.transform = ''; }
-        }, 80);
+function markPanelRead(id, el) {
+    fetch(_notifBase + '?action=notifications_mark_read&id=' + id, {credentials:'same-origin'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            if (typeof d.unread !== 'undefined') {
+                _lastNotifCount = d.unread;
+                updateBadges(d.unread);
+            }
+        })
+        .catch(function(){});
+    if (el) {
+        el.classList.remove('unread');
+        var dot = el.querySelector('.ec-notif-item__dot');
+        if (dot) dot.remove();
     }
+}
 
-    setInterval(function() {
-        fetch('?action=notifications_unread_json', { credentials: 'same-origin' })
+function toggleNotifPanel(e) {
+    if (e) e.stopPropagation();
+    var panel = document.getElementById('ec-notif-panel');
+    if (!panel) { window.location.href = '?action=notifications'; return; }
+    _panelOpen = !_panelOpen;
+    panel.style.display = _panelOpen ? 'block' : 'none';
+    if (_panelOpen) {
+        document.getElementById('ec-notif-body').innerHTML = '<div class="ec-notif-panel__loading">Cargando...</div>';
+        fetch(_notifBase + '?action=notifications_unread_json', {credentials:'same-origin'})
             .then(function(r){ return r.json(); })
-            .then(function(d){
-                if (typeof d.count === 'undefined') return;
-                if (d.count > _lastCount) ringBell();
-                _lastCount = d.count;
-                updateBadges(d.count);
-            })
-            .catch(function(){});
-    }, 10000);
+            .then(function(d){ renderPanel(d); updateBadges(d.count); _lastNotifCount = d.count; })
+            .catch(function(){ document.getElementById('ec-notif-body').innerHTML = '<div class="ec-notif-panel__empty">Error al cargar</div>'; });
+    }
+}
 
+document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('ec-notif-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+        var panel = document.getElementById('ec-notif-panel');
+        if (panel) { panel.style.display = 'none'; _panelOpen = false; }
+    }
+});
+
+/* Polling cada 10s */
+setInterval(function() {
+    if (_panelOpen) return;
+    fetch(_notifBase + '?action=notifications_unread_json', {credentials:'same-origin'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            if (typeof d.count === 'undefined') return;
+            if (d.count > _lastNotifCount) ringBell();
+            _lastNotifCount = d.count;
+            updateBadges(d.count);
+        }).catch(function(){});
+}, 10000);
+
+(function () {
     /* ── Drawer ── */
     var btn    = document.getElementById('ec-hamburger');
     var drawer = document.getElementById('ec-mobile-drawer');
@@ -669,4 +810,40 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
         });
     });
 })();
+
+/* ── Modal confirmación global (reemplaza confirm() nativo) ── */
+document.addEventListener('DOMContentLoaded', function() {
+    var ov = document.createElement('div');
+    ov.className = 'ec-confirm-overlay';
+    ov.id = 'ec-confirm-overlay';
+    ov.innerHTML =
+        '<div class="ec-confirm-box">' +
+            '<div class="ec-confirm-icon" id="ec-confirm-icon">⚠️</div>' +
+            '<div class="ec-confirm-title" id="ec-confirm-title">¿Estás seguro?</div>' +
+            '<div class="ec-confirm-msg" id="ec-confirm-msg"></div>' +
+            '<div class="ec-confirm-btns">' +
+                '<button class="ec-confirm-cancel" onclick="ecConfirmClose()">Cancelar</button>' +
+                '<button class="ec-confirm-ok" id="ec-confirm-ok">Confirmar</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(ov);
+});
+
+function ecConfirm(opts) {
+    var ov = document.getElementById('ec-confirm-overlay');
+    if (!ov) return;
+    document.getElementById('ec-confirm-icon').textContent  = opts.icon    || '⚠️';
+    document.getElementById('ec-confirm-title').textContent = opts.title   || '¿Estás seguro?';
+    document.getElementById('ec-confirm-msg').textContent   = opts.message || '';
+    var ok = document.getElementById('ec-confirm-ok');
+    ok.textContent = opts.okText || 'Confirmar';
+    ok.onclick = function() { ecConfirmClose(); if (opts.onOk) opts.onOk(); };
+    ov.classList.add('on');
+}
+function ecConfirmClose() {
+    var ov = document.getElementById('ec-confirm-overlay');
+    if (ov) ov.classList.remove('on');
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') ecConfirmClose(); });
+
 </script>

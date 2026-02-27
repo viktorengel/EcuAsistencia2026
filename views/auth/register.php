@@ -68,14 +68,14 @@ if(isset($_SESSION['user_id'])) {
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Apellidos *</label>
-                    <input type="text" name="last_name" required placeholder="Apellidos"
-                           value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
-                </div>
-                <div class="form-group">
                     <label>Nombres *</label>
                     <input type="text" name="first_name" required placeholder="Nombres"
                            value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
+                </div>
+                <div class="form-group">
+                    <label>Apellidos *</label>
+                    <input type="text" name="last_name" required placeholder="Apellidos"
+                           value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
                 </div>
             </div>
 
