@@ -33,8 +33,8 @@ $_SESSION['last_activity'] = time();
 // SMTP
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
-define('SMTP_USER', 'tu-email@gmail.com');
-define('SMTP_PASS', 'tu-password-app');
+define('SMTP_USER', 'viktorengel@gmail.com');
+define('SMTP_PASS', 'Orktvi.5/*83g');
 define('SMTP_FROM', 'noreply@ecuasist.edu.ec');
 define('SMTP_NAME', 'EcuAsistencia2026');
 
