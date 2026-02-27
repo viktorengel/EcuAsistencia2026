@@ -64,6 +64,9 @@
 
 <div class="container">
 
+    <?php if(isset($_GET['unlinked'])): ?>
+    <div class="alert alert-success">✓ Estudiante retirado de tu lista de representados.</div>
+    <?php endif; ?>
     <?php if(isset($_GET['request_sent'])): ?>
     <div class="alert alert-success">✓ Solicitud enviada. La autoridad revisará tu pedido pronto.</div>
     <?php endif; ?>
@@ -118,13 +121,24 @@
                     <span class="child-val"><?= $child['shift_name'] ? ucfirst($child['shift_name']) : '—' ?></span>
                 </div>
             </div>
-            <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-                <a href="?action=child_attendance&student_id=<?= $child['id'] ?>" class="btn btn-primary btn-sm">
-                    📋 Ver Asistencia
-                </a>
-                <a href="?action=submit_justification&student_id=<?= $child['id'] ?>" class="btn btn-warning btn-sm">
-                    ✏️ Justificar
-                </a>
+            <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <a href="?action=child_attendance&student_id=<?= $child['id'] ?>" class="btn btn-primary btn-sm">
+                        📋 Ver Asistencia
+                    </a>
+                    <a href="?action=submit_justification&student_id=<?= $child['id'] ?>" class="btn btn-warning btn-sm">
+                        ✏️ Justificar
+                    </a>
+                </div>
+                <form method="POST" action="?action=unlink_student" style="margin:0;">
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                    <input type="hidden" name="student_id" value="<?= $child['id'] ?>">
+                    <button type="button" class="btn btn-sm"
+                            style="background:#fff0f0;color:#dc3545;border:1px solid #f5c6cb;"
+                            onclick="ecConfirm({icon:'⚠️',title:'Retirar representado',message:'¿Quieres desvincular a <?= htmlspecialchars(addslashes($child['first_name'] . ' ' . $child['last_name'])) ?> de tu cuenta?',okText:'Retirar',onOk:function(){ this.closest('form').submit(); }.bind(this)})">
+                        🔗 Retirar
+                    </button>
+                </form>
             </div>
         </div>
         <?php endforeach; ?>

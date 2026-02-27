@@ -345,4 +345,24 @@ class RepresentativeController {
         exit;
     }
 
+
+    public function unlinkStudent() {
+        if (!Security::hasRole('representante')) die('Acceso denegado');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ?action=my_children'); exit; }
+        if (!Security::validateToken($_POST['csrf_token'] ?? '')) die('Token inválido');
+
+        $studentId = (int)($_POST['student_id'] ?? 0);
+        $repId     = $_SESSION['user_id'];
+
+        if ($studentId) {
+            $db  = new Database();
+            $pdo = $db->connect();
+            $stmt = $pdo->prepare("DELETE FROM representatives WHERE representative_id = :rid AND student_id = :sid");
+            $stmt->execute([':rid' => $repId, ':sid' => $studentId]);
+        }
+
+        header('Location: ?action=my_children&unlinked=1');
+        exit;
+    }
+
 }

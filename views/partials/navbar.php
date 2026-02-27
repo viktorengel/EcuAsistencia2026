@@ -684,20 +684,17 @@ function renderPanel(data) {
 }
 
 function markPanelRead(id, el) {
-    fetch(_notifBase + '?action=notifications_mark_read&id=' + id, {credentials:'same-origin'})
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-            if (typeof d.unread !== 'undefined') {
-                _lastNotifCount = d.unread;
-                updateBadges(d.unread);
-            }
-        })
-        .catch(function(){});
-    if (el) {
+    // Actualizar badge optimistamente antes de navegar
+    if (el && el.classList.contains('unread')) {
+        var newCount = Math.max(0, _lastNotifCount - 1);
+        _lastNotifCount = newCount;
+        updateBadges(newCount);
         el.classList.remove('unread');
         var dot = el.querySelector('.ec-notif-item__dot');
         if (dot) dot.remove();
     }
+    // Marcar en servidor en background
+    fetch(_notifBase + '?action=notifications_mark_read&id=' + id, {credentials:'same-origin'}).catch(function(){});
 }
 
 function toggleNotifPanel(e) {

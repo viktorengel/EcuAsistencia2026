@@ -607,6 +607,11 @@ switch ($action) {
         break;
 
 
+    case 'unlink_student':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        (new RepresentativeController())->unlinkStudent();
+        break;
+
     case 'search_students_json':
         require_once BASE_PATH . '/controllers/RepresentativeController.php';
         $repCtrl = new RepresentativeController();
