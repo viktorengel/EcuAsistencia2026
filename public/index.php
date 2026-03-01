@@ -69,6 +69,12 @@ switch ($action) {
         $attCtrl->getStudents();
         break;
     
+    case 'edit_attendance':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $attCtrl = new AttendanceController();
+        $attCtrl->editAttendance();
+        break;
+
     case 'attendance_view':
         require_once BASE_PATH . '/controllers/AttendanceController.php';
         $attCtrl = new AttendanceController();

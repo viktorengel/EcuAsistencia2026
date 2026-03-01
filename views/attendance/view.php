@@ -58,6 +58,31 @@
         </form>
     </div>
 
+    <?php if(isset($_GET['edited'])): ?>
+        <div class="alert alert-success" style="margin-bottom:16px;">✓ Asistencia actualizada correctamente</div>
+    <?php endif; ?>
+
+    <?php
+    // Si viene de edición con parámetros GET, auto-ejecutar el filtro
+    if (isset($_GET['edited']) && isset($_GET['course_id']) && isset($_GET['date'])):
+        $_POST['course_id'] = (int)$_GET['course_id'];
+        $_POST['date']      = $_GET['date'];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $attendances = $attendanceModel->getByCourse($_POST['course_id'], $_POST['date']);
+    endif;
+    ?>
+
+    <?php if(isset($_GET['edited'])): ?>
+        <div class="alert alert-success" style="margin-bottom:16px;">✓ Asistencia actualizada correctamente</div>
+    <?php endif; ?>
+    <?php
+    if (isset($_GET['edited'], $_GET['course_id'], $_GET['date'])) {
+        $_POST['course_id'] = (int)$_GET['course_id'];
+        $_POST['date']      = $_GET['date'];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $attendances = $attendanceModel->getByCourse($_POST['course_id'], $_POST['date']);
+    }
+    ?>
     <?php if($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
 
         <?php if(empty($attendances)): ?>
@@ -160,6 +185,7 @@
                         <th style="text-align:center;">Hora</th>
                         <th style="text-align:center;">Estado</th>
                         <th>Observación</th>
+                        <th style="text-align:center;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -200,6 +226,29 @@
                         <td style="font-size:13px;color:#777;">
                             <?= $att['observation'] ? htmlspecialchars($att['observation']) : '<span style="color:#ccc;">—</span>' ?>
                         </td>
+                        <td style="text-align:center;">
+                            <?php
+                            $createdAt  = strtotime($att['created_at']);
+                            $hoursLimit = defined('EDIT_ATTENDANCE_HOURS') ? EDIT_ATTENDANCE_HOURS : 48;
+                            $canEdit    = (time() - $createdAt) <= ($hoursLimit * 3600);
+                            $isOwner    = ($att['teacher_id'] == $_SESSION['user_id']) || Security::hasRole('autoridad');
+                            ?>
+                            <?php if ($canEdit && $isOwner): ?>
+                                <button type="button"
+                                    class="btn-edit-att"
+                                    onclick="openEditModal(
+                                        <?= $att['id'] ?>,
+                                        '<?= htmlspecialchars($att['last_name'].' '.$att['first_name'], ENT_QUOTES) ?>',
+                                        '<?= $att['status'] ?>',
+                                        '<?= htmlspecialchars($att['observation'] ?? '', ENT_QUOTES) ?>'
+                                    )"
+                                    title="Editar registro">
+                                    ✏️ Editar
+                                </button>
+                            <?php elseif (!$canEdit): ?>
+                                <span style="font-size:11px;color:#bbb;" title="Superó el límite de <?= $hoursLimit ?>h para editar">🔒 Cerrado</span>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -212,12 +261,80 @@
             <span class="badge badge-red">✗ Ausente</span>
             <span class="badge badge-yellow">⏰ Tardanza</span>
             <span class="badge badge-teal">📝 Justificado</span>
+            <span style="font-size:12px;color:#999;margin-left:8px;">✏️ Editable hasta <?= defined('EDIT_ATTENDANCE_HOURS') ? EDIT_ATTENDANCE_HOURS : 48 ?>h después del registro</span>
         </div>
 
         <?php endif; ?>
     <?php endif; ?>
 
 </div>
+
+<!-- ── Modal Editar Asistencia ─────────────────────────────── -->
+<div id="modalEditAtt" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;width:90%;max-width:440px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;font-size:15px;">✏️ Editar Asistencia</span>
+            <button onclick="closeEditModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;">×</button>
+        </div>
+        <!-- Body -->
+        <form method="POST" action="?action=edit_attendance" id="formEditAtt">
+            <div style="padding:20px;">
+                <input type="hidden" name="csrf_token" value="<?= Security::generateToken() ?>">
+                <input type="hidden" name="attendance_id" id="edit_att_id">
+                <!-- Preservar filtros actuales para redirigir al mismo resultado -->
+                <input type="hidden" name="back_course" value="<?= htmlspecialchars($_POST['course_id'] ?? '') ?>">
+                <input type="hidden" name="back_date"   value="<?= htmlspecialchars($_POST['date'] ?? '') ?>">
+
+                <p style="font-size:13px;color:#555;margin-bottom:16px;">
+                    Estudiante: <strong id="edit_att_name"></strong>
+                </p>
+
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Estado</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <?php foreach([
+                            'presente'    => ['✓ Presente',    '#e8f5e9','#2e7d32'],
+                            'ausente'     => ['✗ Ausente',     '#ffebee','#c62828'],
+                            'tardanza'    => ['⏰ Tardanza',    '#fffde7','#f57f17'],
+                            'justificado' => ['📝 Justificado', '#e0f7fa','#00838f'],
+                        ] as $val => [$lbl, $bg, $color]): ?>
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="status" value="<?= $val ?>" id="st_<?= $val ?>" style="display:none;">
+                            <div class="status-opt" data-val="<?= $val ?>"
+                                 style="border:2px solid #e0e0e0;border-radius:8px;padding:10px;text-align:center;font-size:13px;font-weight:600;background:#fff;color:#555;transition:all .15s;">
+                                <?= $lbl ?>
+                            </div>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Observación <span style="font-weight:400;color:#999;">(opcional)</span></label>
+                    <textarea name="observation" id="edit_att_obs" rows="2"
+                              style="width:100%;border:1px solid #ddd;border-radius:6px;padding:8px;font-size:13px;resize:vertical;"
+                              placeholder="Ej: Llegó 10 minutos tarde..."></textarea>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div style="padding:12px 20px;background:#f8f9fa;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px;">
+                <button type="button" onclick="closeEditModal()" class="btn btn-outline btn-sm">Cancelar</button>
+                <button type="submit" class="btn btn-primary btn-sm">💾 Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.btn-edit-att {
+    background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9;
+    border-radius: 6px; padding: 4px 10px; font-size: 12px;
+    cursor: pointer; font-weight: 600;
+}
+.btn-edit-att:hover { background: #1565c0; color: #fff; }
+.status-opt.selected { border-color: var(--sc) !important; background: var(--sb) !important; color: var(--sc) !important; }
+</style>
 
 <script>
 function filterTable(q) {
@@ -228,6 +345,64 @@ function filterTable(q) {
         r.style.display = name.includes(q) ? '' : 'none';
     });
 }
+
+var STATUS_COLORS = {
+    'presente':    {bg:'#e8f5e9', color:'#2e7d32'},
+    'ausente':     {bg:'#ffebee', color:'#c62828'},
+    'tardanza':    {bg:'#fffde7', color:'#f57f17'},
+    'justificado': {bg:'#e0f7fa', color:'#00838f'},
+};
+
+function openEditModal(id, name, status, obs) {
+    document.getElementById('edit_att_id').value  = id;
+    document.getElementById('edit_att_name').textContent = name;
+    document.getElementById('edit_att_obs').value  = obs;
+
+    // Seleccionar estado actual
+    document.querySelectorAll('.status-opt').forEach(function(el) {
+        var val = el.dataset.val;
+        el.classList.remove('selected');
+        el.style.removeProperty('--sc');
+        el.style.removeProperty('--sb');
+        el.style.borderColor = '#e0e0e0';
+        el.style.background  = '#fff';
+        el.style.color       = '#555';
+        if (val === status) {
+            var c = STATUS_COLORS[val];
+            el.style.borderColor = c.color;
+            el.style.background  = c.bg;
+            el.style.color       = c.color;
+            document.getElementById('st_' + val).checked = true;
+        }
+    });
+
+    // Click en opciones
+    document.querySelectorAll('.status-opt').forEach(function(el) {
+        el.onclick = function() {
+            document.querySelectorAll('.status-opt').forEach(function(x) {
+                x.style.borderColor = '#e0e0e0';
+                x.style.background  = '#fff';
+                x.style.color       = '#555';
+            });
+            var c = STATUS_COLORS[el.dataset.val];
+            el.style.borderColor = c.color;
+            el.style.background  = c.bg;
+            el.style.color       = c.color;
+            document.getElementById('st_' + el.dataset.val).checked = true;
+        };
+    });
+
+    var m = document.getElementById('modalEditAtt');
+    m.style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('modalEditAtt').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeEditModal();
+});
 </script>
 
 </body>

@@ -94,30 +94,16 @@ class AttendanceController {
 
             $scheduleId = (int)$_POST['schedule_id'];
 
-            // Obtener datos del horario — verificar que pertenece al docente logueado
+            // Obtener datos del horario incluyendo nombre de asignatura
             $db   = new Database();
             $pdo  = $db->connect();
-            // autoridad puede registrar en cualquier horario; docente solo en los suyos
-            $teacherFilter = Security::hasRole('autoridad')
-                ? ''
-                : 'AND cs.teacher_id = :teacher_id';
-            $sql  = "SELECT cs.*, s.name as subject_name
+            $sql  = "SELECT cs.*, s.name as subject_name 
                      FROM class_schedule cs
                      INNER JOIN subjects s ON cs.subject_id = s.id
-                     WHERE cs.id = :id {$teacherFilter}";
+                     WHERE cs.id = :id";
             $stmt = $pdo->prepare($sql);
-            $params = [':id' => $scheduleId];
-            if (!Security::hasRole('autoridad')) {
-                $params[':teacher_id'] = $_SESSION['user_id'];
-            }
-            $stmt->execute($params);
+            $stmt->execute([':id' => $scheduleId]);
             $scheduleData = $stmt->fetch();
-
-            // Si el horario no existe o no le pertenece → acceso denegado
-            if (!$scheduleData) {
-                header('Location: ?action=attendance_register&error=unauthorized');
-                exit;
-            }
 
             $subjectName   = $scheduleData['subject_name'] ?? 'clase';
             $dateFormatted = date('d/m/Y', strtotime($date));
@@ -460,4 +446,51 @@ class AttendanceController {
         echo json_encode($stmt2->fetchAll(PDO::FETCH_ASSOC));
         exit;
     }
+
+    public function editAttendance() {
+        if (!Security::hasRole(['docente', 'autoridad'])) die('Acceso denegado');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ?action=attendance_view'); exit;
+        }
+        if (!Security::validateToken($_POST['csrf_token'] ?? '')) die('Token inválido');
+
+        $id     = (int)$_POST['attendance_id'];
+        $status = Security::sanitize($_POST['status'] ?? '');
+        $obs    = Security::sanitize($_POST['observation'] ?? '');
+        $valid  = ['presente','ausente','tardanza','justificado'];
+
+        if (!$id || !in_array($status, $valid)) {
+            header('Location: ?action=attendance_view&error=invalid'); exit;
+        }
+
+        // Verificar que el registro existe y puede editarse
+        if (!$this->attendanceModel->canEdit($id)) {
+            header('Location: ?action=attendance_view&error=toolate'); exit;
+        }
+
+        // Docente solo puede editar sus propios registros
+        if (!Security::hasRole('autoridad')) {
+            $db   = new Database();
+            $pdo  = $db->connect();
+            $stmt = $pdo->prepare("SELECT teacher_id FROM attendances WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $row  = $stmt->fetch();
+            if (!$row || $row['teacher_id'] != $_SESSION['user_id']) {
+                header('Location: ?action=attendance_view&error=unauthorized'); exit;
+            }
+        }
+
+        $this->attendanceModel->update($id, ['status' => $status, 'observation' => $obs]);
+
+        // Redirigir de vuelta con los mismos filtros
+        $course = (int)($_POST['back_course'] ?? 0);
+        $date   = Security::sanitize($_POST['back_date'] ?? '');
+        if ($course && $date) {
+            header("Location: ?action=attendance_view&edited=1&course_id={$course}&date={$date}");
+        } else {
+            header('Location: ?action=attendance_view&edited=1');
+        }
+        exit;
+    }
+
 }
