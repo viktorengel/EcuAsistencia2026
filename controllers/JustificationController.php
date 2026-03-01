@@ -63,13 +63,6 @@ class JustificationController {
             $workingDays = count($attendanceIds); // cada ausencia = 1 día (pueden ser no consecutivos)
             $canApprove  = Justification::resolveApprover($workingDays);
 
-            // Nombre del estudiante y fecha para los mensajes de notificación
-            $stuRow = $pdo->query("SELECT CONCAT(last_name,' ',first_name) as full_name FROM users WHERE id = $studentId")->fetch();
-            $stuName   = $stuRow ? $stuRow['full_name'] : 'Estudiante';
-            $dateLabel = $workingDays === 1
-                ? date('d/m/Y', strtotime($dateFrom))
-                : date('d/m/Y', strtotime($dateFrom)) . ' al ' . date('d/m/Y', strtotime($dateTo));
-
             // Subir documento
             $documentPath = null;
             if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
@@ -106,14 +99,7 @@ class JustificationController {
 
             $this->justificationModel->createForAttendances($attendanceIds, $data);
 
-            // Notificar — siempre a inspector/autoridad + tutor si aplica
-            $this->_notifyReviewers(
-                '📝 Nueva justificación pendiente',
-                "$stuName justificó $workingDays día(s) ($dateLabel).",
-                'info',
-                '?action=pending_justifications'
-            );
-
+            // Notificar
             if ($canApprove === 'tutor') {
                 $stmt = $pdo->prepare(
                     "SELECT ta.teacher_id FROM teacher_assignments ta
@@ -126,11 +112,18 @@ class JustificationController {
                     $this->notificationModel->create(
                         $tutorId,
                         '📝 Justificación pendiente (tutor)',
-                        "$stuName justificó $workingDays día(s) ($dateLabel).",
+                        "Un estudiante de tu curso necesita justificación por $workingDays día(s).",
                         'info',
                         '?action=tutor_pending_justifications'
                     );
                 }
+            } else {
+                $this->_notifyReviewers(
+                    '📝 Nueva justificación pendiente',
+                    "Justificación de $workingDays día(s) requiere revisión.",
+                    'info',
+                    '?action=pending_justifications'
+                );
             }
 
             header('Location: ?action=my_justifications&success=1');
@@ -182,15 +175,36 @@ class JustificationController {
     }
 
     public function pending() {
-        if (!Security::hasRole(['autoridad', 'inspector', 'docente'])) {
+        $isTutor = Security::hasRole('docente') && !empty($_SESSION['is_tutor']);
+        if (!Security::hasRole(['autoridad', 'inspector']) && !$isTutor) {
             die('Acceso denegado');
         }
+
         $justifications = $this->justificationModel->getPending();
+
+        // Tutor: filtrar solo justificaciones de su curso
+        if ($isTutor && !Security::hasRole(['autoridad', 'inspector'])) {
+            $db   = new Database();
+            $pdo  = $db->connect();
+            $stmt = $pdo->prepare(
+                "SELECT cs.student_id FROM course_students cs
+                 INNER JOIN teacher_assignments ta ON cs.course_id = ta.course_id
+                 WHERE ta.teacher_id = :tid AND ta.is_tutor = 1
+                 AND ta.school_year_id = (SELECT id FROM school_years WHERE is_active=1 LIMIT 1)"
+            );
+            $stmt->execute([':tid' => $_SESSION['user_id']]);
+            $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $justifications = array_values(array_filter($justifications, function($j) use ($studentIds) {
+                return in_array($j['student_id'], $studentIds);
+            }));
+        }
+
         include BASE_PATH . '/views/justifications/pending.php';
     }
 
     public function review() {
-        if (!Security::hasRole(['autoridad', 'inspector', 'docente'])) {
+        $isTutor = Security::hasRole('docente') && !empty($_SESSION['is_tutor']);
+        if (!Security::hasRole(['autoridad', 'inspector']) && !$isTutor) {
             die('Acceso denegado');
         }
 
@@ -206,11 +220,7 @@ class JustificationController {
                 $this->justificationModel->approveRange($justificationId, $_SESSION['user_id'], $notes);
 
                 if ($justification) {
-                    // Borrar notificaciones de revisión para todos los demás revisores
-                    $this->notificationModel->deleteByLinkExcept('?action=pending_justifications', $_SESSION['user_id']);
-                    $this->notificationModel->deleteByLinkExcept('?action=tutor_pending_justifications', $_SESSION['user_id']);
-
-                    // Notificar al estudiante
+                    // Notificar al estudiante — enlace a sus justificaciones
                     $this->notificationModel->create(
                         $justification['student_id'],
                         '✅ Justificación aprobada',
@@ -233,11 +243,7 @@ class JustificationController {
                 $this->justificationModel->reject($justificationId, $_SESSION['user_id'], $notes);
 
                 if ($justification) {
-                    // Borrar notificaciones de revisión para todos los demás revisores
-                    $this->notificationModel->deleteByLinkExcept('?action=pending_justifications', $_SESSION['user_id']);
-                    $this->notificationModel->deleteByLinkExcept('?action=tutor_pending_justifications', $_SESSION['user_id']);
-
-                    // Notificar al estudiante
+                    // Notificar al estudiante — puede enviar una nueva justificación
                     $this->notificationModel->create(
                         $justification['student_id'],
                         '❌ Justificación rechazada',
@@ -263,11 +269,42 @@ class JustificationController {
     }
 
     public function reviewed() {
-        if (!Security::hasRole(['autoridad', 'inspector'])) {
+        // Autoridad e inspector ven todas; docente tutor ve solo las de su curso
+        $isTutor = Security::hasRole('docente') && !empty($_SESSION['is_tutor']);
+        if (!Security::hasRole(['autoridad', 'inspector']) && !$isTutor) {
             die('Acceso denegado');
         }
+
         $filter         = $_GET['filter'] ?? 'all';
         $justifications = $this->justificationModel->getReviewed();
+
+        // Tutor: filtrar solo justificaciones de estudiantes de su curso
+        if ($isTutor && !Security::hasRole(['autoridad', 'inspector'])) {
+            $db   = new Database();
+            $pdo  = $db->connect();
+            $stmt = $pdo->prepare(
+                "SELECT cs.course_id FROM teacher_assignments ta
+                 INNER JOIN course_students cs ON ta.course_id = cs.course_id
+                 WHERE ta.teacher_id = :tid AND ta.is_tutor = 1
+                 AND ta.school_year_id = (SELECT id FROM school_years WHERE is_active=1 LIMIT 1)"
+            );
+            $stmt->execute([':tid' => $_SESSION['user_id']]);
+            $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // Obtener estudiantes del curso del tutor
+            $stmt2 = $pdo->prepare(
+                "SELECT student_id FROM course_students cs
+                 INNER JOIN teacher_assignments ta ON cs.course_id = ta.course_id
+                 WHERE ta.teacher_id = :tid AND ta.is_tutor = 1
+                 AND ta.school_year_id = (SELECT id FROM school_years WHERE is_active=1 LIMIT 1)"
+            );
+            $stmt2->execute([':tid' => $_SESSION['user_id']]);
+            $studentIds = $stmt2->fetchAll(PDO::FETCH_COLUMN);
+
+            $justifications = array_values(array_filter($justifications, function($j) use ($studentIds) {
+                return in_array($j['student_id'], $studentIds);
+            }));
+        }
 
         if ($filter !== 'all') {
             $justifications = array_values(array_filter($justifications, function($j) use ($filter) {

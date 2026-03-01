@@ -396,7 +396,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
                     <?php endif; ?>
                     <?php if(Security::hasRole(['autoridad','inspector']) || (Security::hasRole('docente') && !empty($_SESSION['is_tutor']))): ?>
                     <a href="?action=pending_justifications"  class="<?= $current_page==='pending_justifications'?'active':'' ?>">✅ Revisar Justificaciones</a>
-                    <a href="?action=reviewed_justifications" class="<?= $current_page==='reviewed_justifications'?'active':'' ?>">📋 Historial Revisadas</a>
+                    <a href="?action=reviewed_justifications" class="<?= $current_page==='reviewed_justifications'?'active':'' ?>">📋 Justificaciones Revisadas</a>
                     <?php endif; ?>
                     <?php if(Security::hasRole('docente') && !empty($_SESSION['is_tutor'])): ?>
                     <a href="?action=tutor_pending_justifications" class="<?= $current_page==='tutor_pending_justifications'?'active':'' ?>">🎓 Justificaciones de mi Curso</a>
@@ -566,7 +566,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             <?php endif; ?>
             <?php if(Security::hasRole(['autoridad','inspector']) || (Security::hasRole('docente') && !empty($_SESSION['is_tutor']))): ?>
             <a href="?action=pending_justifications"  class="ec-acc__link <?= $current_page==='pending_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">✅</span> Revisar Justificaciones</a>
-            <a href="?action=reviewed_justifications" class="ec-acc__link <?= $current_page==='reviewed_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">📋</span> Historial Revisadas</a>
+            <a href="?action=reviewed_justifications" class="ec-acc__link <?= $current_page==='reviewed_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">📋</span> Justificaciones Revisadas</a>
             <?php endif; ?>
             <?php if(Security::hasRole('docente') && !empty($_SESSION['is_tutor'])): ?>
             <a href="?action=tutor_pending_justifications" class="ec-acc__link <?= $current_page==='tutor_pending_justifications'?'active':'' ?>"><span class="ec-acc__link__icon">🎓</span> Justificaciones de mi Curso</a>
