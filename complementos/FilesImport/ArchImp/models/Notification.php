@@ -94,4 +94,19 @@ class Notification {
         $stmt->execute([':user_id' => $userId]);
         return (int)$stmt->fetch()['count'];
     }
+
+    // Eliminar notificaciones por link para todos excepto un usuario (cuando otro ya revisó)
+    public function deleteByLinkExcept($link, $exceptUserId) {
+        $sql = "DELETE FROM notifications WHERE link = :link AND user_id != :uid";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':link' => $link, ':uid' => $exceptUserId]);
+    }
+
+    // Eliminar notificaciones por link para un usuario específico
+    public function deleteByLinkForUser($link, $userId) {
+        $sql = "DELETE FROM notifications WHERE link = :link AND user_id = :uid";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':link' => $link, ':uid' => $userId]);
+    }
+
 }

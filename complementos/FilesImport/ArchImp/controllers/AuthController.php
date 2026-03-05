@@ -62,8 +62,8 @@ class AuthController {
                 $_SESSION['is_tutor'] = false;
                 if (in_array('docente', $_SESSION['roles'])) {
                     require_once BASE_PATH . '/models/Attendance.php';
-                    $db = new Database();
-                    $attModel = new Attendance($db);
+                    $db2 = new Database();
+                    $attModel = new Attendance($db2);
                     $_SESSION['is_tutor'] = (bool)$attModel->getTutorCourseId($user['id']);
                 }
 
@@ -84,34 +84,71 @@ class AuthController {
     }
 
     public function forgotPassword() {
+        $message = null;
+        $error   = null;
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::validateToken($_POST['csrf_token'] ?? '')) die('Token inválido');
+
             $email = Security::sanitize($_POST['email']);
-            $user = $this->userModel->findByEmail($email);
 
-            if ($user) {
-                $token = bin2hex(random_bytes(32));
-                $this->userModel->setResetToken($email, $token);
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Ingresa un correo electrónico válido.';
+            } else {
+                $user = $this->userModel->findByEmail($email);
 
-                $resetLink = BASE_URL . "/?action=reset&token={$token}";
-                $body = "Haga clic aquí para restablecer su contraseña: <a href='{$resetLink}'>{$resetLink}</a>";
-                
-                Mailer::send($email, 'Restablecer contraseña', $body);
+                if ($user) {
+                    $token = bin2hex(random_bytes(32));
+                    $this->userModel->setResetToken($email, $token);
+                    $resetLink = BASE_URL . "/?action=reset&token={$token}";
+
+                    $body = "
+                        <div style='font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:30px;border:1px solid #e0e0e0;border-radius:8px;'>
+                            <h2 style='color:#1a237e;'>🔐 Restablecer contraseña</h2>
+                            <p style='color:#444;margin:16px 0;'>Haz clic en el botón para crear una nueva contraseña.<br>Este enlace expira en <strong>1 hora</strong>.</p>
+                            <a href='{$resetLink}' style='display:inline-block;padding:12px 28px;background:#1a237e;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;'>Restablecer contraseña</a>
+                            <p style='color:#888;font-size:12px;margin-top:20px;'>Si no solicitaste este cambio, ignora este correo.</p>
+                        </div>";
+
+                    $sent = Mailer::send($email, 'Restablecer contraseña — EcuAsist', $body);
+                    if (!$sent) {
+                        error_log("[EcuAsist] Fallo al enviar email de reset a: {$email}");
+                    }
+                }
+                // Siempre mismo mensaje (evita enumerar usuarios)
+                $message = '✓ Si el correo está registrado, recibirás un enlace en los próximos minutos.';
             }
-
-            $message = 'Si el correo existe, recibirá un enlace de recuperación';
         }
 
         include BASE_PATH . '/views/auth/forgot.php';
     }
 
     public function resetPassword() {
-        $token = $_GET['token'] ?? '';
-        
+        $token    = Security::sanitize($_GET['token'] ?? '');
+        $error    = null;
+        $success  = false;
+
+        // Validar token antes de mostrar el formulario
+        $user = $this->userModel->validateResetToken($token);
+
+        if (!$token || !$user) {
+            $error = 'El enlace es inválido o ha expirado. Solicita uno nuevo.';
+            include BASE_PATH . '/views/auth/reset.php';
+            return;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $user = $this->userModel->validateResetToken($token);
-            
-            if ($user && $_POST['password'] === $_POST['password_confirm']) {
-                $this->userModel->resetPassword($user['id'], $_POST['password']);
+            if (!Security::validateToken($_POST['csrf_token'] ?? '')) die('Token inválido');
+
+            $pass    = $_POST['password']         ?? '';
+            $confirm = $_POST['password_confirm'] ?? '';
+
+            if (strlen($pass) < 6) {
+                $error = 'La contraseña debe tener al menos 6 caracteres.';
+            } elseif ($pass !== $confirm) {
+                $error = 'Las contraseñas no coinciden.';
+            } else {
+                $this->userModel->resetPassword($user['id'], $pass);
                 header('Location: ' . BASE_URL . '/?action=login&reset=1');
                 exit;
             }

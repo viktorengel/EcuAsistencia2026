@@ -59,10 +59,10 @@
                     $jsonCourse  = json_encode($class['course_name'],  JSON_HEX_TAG | JSON_HEX_APOS);
                     $jsonSubject = json_encode($class['subject_name'],  JSON_HEX_TAG | JSON_HEX_APOS);
                 ?>
-                <div class="class-card" onclick='selectClass(event, <?= $class["id"] ?>, <?= $jsonCourse ?>, <?= $jsonSubject ?>, <?= $class["period_number"] ?>)'>
+                <div class="class-card" onclick='selectClass(event, <?= $class["id"] ?? 0 ?>, <?= $jsonCourse ?>, <?= $jsonSubject ?>, <?= $class["period_number"] ?? 0 ?>)'>
                     <div style="font-size:1.5rem;margin-bottom:6px;">📚</div>
                     <div style="font-weight:700;color:#007bff;font-size:0.95rem;margin-bottom:4px;">
-                        <?= $class['period_number'] ?>ra hora — <?= htmlspecialchars($class['subject_name']) ?>
+                        <?= $class['period_number'] ? $class['period_number'] . 'ra hora' : 'Sin hora asignada' ?> — <?= htmlspecialchars($class['subject_name']) ?>
                     </div>
                     <div style="font-size:0.83rem;color:#666;">Curso: <?= htmlspecialchars($class['course_name']) ?></div>
                     <div style="margin-top:10px;">

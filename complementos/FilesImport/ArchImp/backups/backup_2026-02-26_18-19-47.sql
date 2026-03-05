@@ -355,6 +355,43 @@ INSERT INTO `justifications` VALUES (1,5,'2026-02-23','2026-02-23',1,'tutor',54,
 UNLOCK TABLES;
 
 --
+-- Table structure for table `link_requests`
+--
+
+DROP TABLE IF EXISTS `link_requests`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `link_requests` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `representative_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `relationship` varchar(50) NOT NULL,
+  `message` text DEFAULT NULL,
+  `status` enum('pendiente','aprobado','rechazado') NOT NULL DEFAULT 'pendiente',
+  `reviewed_by` int(11) DEFAULT NULL,
+  `reviewed_at` datetime DEFAULT NULL,
+  `review_notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_request` (`representative_id`,`student_id`),
+  KEY `lr_stu_fk` (`student_id`),
+  KEY `lr_rev_fk` (`reviewed_by`),
+  CONSTRAINT `lr_rep_fk` FOREIGN KEY (`representative_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `lr_rev_fk` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `lr_stu_fk` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `link_requests`
+--
+
+LOCK TABLES `link_requests` WRITE;
+/*!40000 ALTER TABLE `link_requests` DISABLE KEYS */;
+/*!40000 ALTER TABLE `link_requests` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `notifications`
 --
 
@@ -679,4 +716,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-26 10:33:13
+-- Dump completed on 2026-02-26 18:19:47

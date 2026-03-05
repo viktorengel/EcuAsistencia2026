@@ -18,12 +18,13 @@
 <div class="container">
 
 <?php
-$total     = count($attendances);
-$presente  = count(array_filter($attendances, fn($a) => $a['status'] === 'presente'));
-$ausente   = count(array_filter($attendances, fn($a) => $a['status'] === 'ausente'));
-$tardanza  = count(array_filter($attendances, fn($a) => $a['status'] === 'tardanza'));
-$pctAsist  = $total > 0 ? round(($presente / $total) * 100, 1) : 0;
-$pct       = fn($v) => $total > 0 ? round($v / $total * 100, 1) : 0;
+$total       = count($attendances);
+$presente    = count(array_filter($attendances, fn($a) => $a['status'] === 'presente'));
+$ausente     = count(array_filter($attendances, fn($a) => $a['status'] === 'ausente'));
+$justificado = count(array_filter($attendances, fn($a) => $a['status'] === 'justificado'));
+$tardanza    = count(array_filter($attendances, fn($a) => $a['status'] === 'tardanza'));
+$pctAsist    = $total > 0 ? round(($presente / $total) * 100, 1) : 0;
+$pct         = fn($v) => $total > 0 ? round($v / $total * 100, 1) : 0;
 ?>
 
     <!-- Header -->
@@ -47,14 +48,19 @@ $pct       = fn($v) => $total > 0 ? round($v / $total * 100, 1) : 0;
             <div class="label">Total Registros</div>
         </div>
         <div class="stat-card green">
-            <div class="number"><?= $pctAsist ?>%</div>
-            <div class="label">Asistencia (<?= $presente ?> presentes)</div>
+            <div class="number"><?= $presente ?></div>
+            <div class="label">Asistencia (<?= $pctAsist ?>%)</div>
             <div class="progress-bar"><div class="progress-fill" style="width:<?= $pctAsist ?>%;background:#28a745;"></div></div>
         </div>
         <div class="stat-card red">
             <div class="number"><?= $ausente ?></div>
             <div class="label">Ausencias (<?= $pct($ausente) ?>%)</div>
             <div class="progress-bar"><div class="progress-fill" style="width:<?= $pct($ausente) ?>%;background:#dc3545;"></div></div>
+        </div>
+        <div class="stat-card" style="border-top:4px solid #17a2b8;">
+            <div class="number" style="color:#17a2b8;"><?= $justificado ?></div>
+            <div class="label">Justificadas (<?= $pct($justificado) ?>%)</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:<?= $pct($justificado) ?>%;background:#17a2b8;"></div></div>
         </div>
         <div class="stat-card yellow">
             <div class="number"><?= $tardanza ?></div>

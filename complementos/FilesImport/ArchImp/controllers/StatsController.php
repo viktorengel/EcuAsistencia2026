@@ -11,7 +11,7 @@ class StatsController {
 
     public function __construct() {
         Security::requireLogin();
-        if (!Security::hasRole('autoridad')) {
+        if (!Security::hasRole(['autoridad', 'inspector', 'docente'])) {
             die('Acceso denegado');
         }
 

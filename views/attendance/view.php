@@ -62,27 +62,9 @@
         <div class="alert alert-success" style="margin-bottom:16px;">✓ Asistencia actualizada correctamente</div>
     <?php endif; ?>
 
-    <?php
-    // Si viene de edición con parámetros GET, auto-ejecutar el filtro
-    if (isset($_GET['edited']) && isset($_GET['course_id']) && isset($_GET['date'])):
-        $_POST['course_id'] = (int)$_GET['course_id'];
-        $_POST['date']      = $_GET['date'];
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $attendances = $attendanceModel->getByCourse($_POST['course_id'], $_POST['date']);
-    endif;
-    ?>
-
     <?php if(isset($_GET['edited'])): ?>
         <div class="alert alert-success" style="margin-bottom:16px;">✓ Asistencia actualizada correctamente</div>
     <?php endif; ?>
-    <?php
-    if (isset($_GET['edited'], $_GET['course_id'], $_GET['date'])) {
-        $_POST['course_id'] = (int)$_GET['course_id'];
-        $_POST['date']      = $_GET['date'];
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $attendances = $attendanceModel->getByCourse($_POST['course_id'], $_POST['date']);
-    }
-    ?>
     <?php if($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
 
         <?php if(empty($attendances)): ?>
@@ -236,12 +218,10 @@
                             <?php if ($canEdit && $isOwner): ?>
                                 <button type="button"
                                     class="btn-edit-att"
-                                    onclick="openEditModal(
-                                        <?= $att['id'] ?>,
-                                        '<?= htmlspecialchars($att['last_name'].' '.$att['first_name'], ENT_QUOTES) ?>',
-                                        '<?= $att['status'] ?>',
-                                        '<?= htmlspecialchars($att['observation'] ?? '', ENT_QUOTES) ?>'
-                                    )"
+                                    data-id="<?= $att['id'] ?>"
+                                    data-name="<?= htmlspecialchars($att['last_name'].' '.$att['first_name'], ENT_QUOTES) ?>"
+                                    data-status="<?= $att['status'] ?>"
+                                    data-obs="<?= htmlspecialchars($att['observation'] ?? '', ENT_QUOTES) ?>"
                                     title="Editar registro">
                                     ✏️ Editar
                                 </button>
@@ -353,10 +333,23 @@ var STATUS_COLORS = {
     'justificado': {bg:'#e0f7fa', color:'#00838f'},
 };
 
+// Delegación de eventos — evita onclick inline con datos especiales
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-edit-att');
+    if (btn) {
+        openEditModal(
+            btn.dataset.id,
+            btn.dataset.name,
+            btn.dataset.status,
+            btn.dataset.obs
+        );
+    }
+});
+
 function openEditModal(id, name, status, obs) {
-    document.getElementById('edit_att_id').value  = id;
+    document.getElementById('edit_att_id').value       = id;
     document.getElementById('edit_att_name').textContent = name;
-    document.getElementById('edit_att_obs').value  = obs;
+    document.getElementById('edit_att_obs').value      = obs;
 
     // Seleccionar estado actual
     document.querySelectorAll('.status-opt').forEach(function(el) {

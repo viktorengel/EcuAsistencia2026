@@ -26,6 +26,8 @@
             <div class="alert alert-danger">✗ No se puede registrar asistencia de fechas futuras</div>
         <?php elseif($_GET['error'] == 'toolate'): ?>
             <div class="alert alert-danger">✗ Solo se puede registrar asistencia de hasta 48 horas hábiles atrás</div>
+        <?php elseif($_GET['error'] == 'unauthorized'): ?>
+            <div class="alert alert-danger">⛔ No tienes permiso para registrar asistencia en esa clase</div>
         <?php endif; ?>
     <?php endif; ?>
 

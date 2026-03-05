@@ -219,10 +219,19 @@ class AttendanceController {
         $courses     = $this->courseModel->getAll();
         $attendances = [];
 
+        // POST normal (búsqueda manual)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId    = (int)$_POST['course_id'];
             $date        = $_POST['date'];
             $attendances = $this->attendanceModel->getByCourse($courseId, $date);
+        }
+
+        // GET tras edición exitosa — recargar mismos resultados automáticamente
+        if (isset($_GET['edited'], $_GET['course_id'], $_GET['date'])) {
+            $_POST['course_id']        = (int)$_GET['course_id'];
+            $_POST['date']             = Security::sanitize($_GET['date']);
+            $_SERVER['REQUEST_METHOD'] = 'POST';
+            $attendances               = $this->attendanceModel->getByCourse($_POST['course_id'], $_POST['date']);
         }
 
         include BASE_PATH . '/views/attendance/view.php';

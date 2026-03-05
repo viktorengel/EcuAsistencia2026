@@ -69,6 +69,12 @@ switch ($action) {
         $attCtrl->getStudents();
         break;
     
+    case 'edit_attendance':
+        require_once BASE_PATH . '/controllers/AttendanceController.php';
+        $attCtrl = new AttendanceController();
+        $attCtrl->editAttendance();
+        break;
+
     case 'attendance_view':
         require_once BASE_PATH . '/controllers/AttendanceController.php';
         $attCtrl = new AttendanceController();
@@ -604,6 +610,36 @@ switch ($action) {
     case 'tutor_course_attendance_ajax':
         require_once BASE_PATH . '/controllers/TutorController.php';
         (new TutorController())->ajax();
+        break;
+
+
+    case 'unlink_student':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        (new RepresentativeController())->unlinkStudent();
+        break;
+
+    case 'search_students_json':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->searchStudentsJson();
+        break;
+
+    case 'request_link':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->requestLink();
+        break;
+
+    case 'link_requests':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->linkRequests();
+        break;
+
+    case 'review_link_request':
+        require_once BASE_PATH . '/controllers/RepresentativeController.php';
+        $repCtrl = new RepresentativeController();
+        $repCtrl->reviewLinkRequest();
         break;
 
     default:

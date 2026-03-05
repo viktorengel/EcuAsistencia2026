@@ -102,16 +102,29 @@ class Course {
     }
 
     public function delete($id) {
-        // 1. Desmatricular estudiantes
-        $this->db->prepare("DELETE FROM course_students WHERE course_id = :id")->execute([':id' => $id]);
-        // 2. Eliminar asignaciones docentes (incluye tutor)
-        $this->db->prepare("DELETE FROM teacher_assignments WHERE course_id = :id")->execute([':id' => $id]);
-        // 3. Eliminar horarios
-        $this->db->prepare("DELETE FROM class_schedule WHERE course_id = :id")->execute([':id' => $id]);
-        // 4. Eliminar asignaturas del curso
-        $this->db->prepare("DELETE FROM course_subjects WHERE course_id = :id")->execute([':id' => $id]);
-        // 5. Eliminar curso
-        return $this->db->prepare("DELETE FROM courses WHERE id = :id")->execute([':id' => $id]);
+        // Eliminar registros dependientes antes de borrar el curso
+// Justifications se relacionan por attendance_id, eliminar primero
+    $stmt = $this->db->prepare("
+        DELETE j FROM justifications j
+        INNER JOIN attendances a ON j.attendance_id = a.id
+        WHERE a.course_id = :id
+    ");
+    $stmt->execute([':id' => $id]);
+
+    // Resto de tablas con course_id directo
+    $tables = [
+        'attendances',
+        'class_schedule',
+        'teacher_assignments',
+        'course_students',
+    ];
+    foreach ($tables as $table) {
+        $stmt = $this->db->prepare("DELETE FROM {$table} WHERE course_id = :id");
+        $stmt->execute([':id' => $id]);
+    }
+        $sql  = "DELETE FROM courses WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $id]);
     }
 
     public function unenrollStudent($studentId, $schoolYearId) {

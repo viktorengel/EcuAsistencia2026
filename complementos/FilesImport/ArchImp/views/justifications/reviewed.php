@@ -151,8 +151,9 @@ function verDetalle(jsonStr) {
     }
 
     if (d.doc) {
+        const baseUrl = '<?= BASE_URL ?>';
         html += `<p style="margin-top:14px;"><strong>Documento:</strong>
-                 <a href="<?= BASE_URL ?>/${d.doc}" target="_blank"
+                 <a href="${baseUrl}/public/img.php?f=${d.doc}" target="_blank"
                     style="color:#007bff;">📎 Ver archivo adjunto</a></p>`;
     } else {
         html += `<p style="margin-top:14px;color:#999;"><em>Sin documento adjunto</em></p>`;

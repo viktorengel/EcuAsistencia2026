@@ -19,8 +19,8 @@ session_set_cookie_params([
 ]);
 session_start();
 
-// Timeout 30 minutos
-$inactive_timeout = 1800;
+// Timeout 8 horas
+$inactive_timeout = 28800;
 if (isset($_SESSION['last_activity']) &&
     (time() - $_SESSION['last_activity'] > $inactive_timeout)) {
     session_unset();
@@ -31,11 +31,11 @@ if (isset($_SESSION['last_activity']) &&
 $_SESSION['last_activity'] = time();
 
 // SMTP
-define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_PORT', 587);
-define('SMTP_USER', 'tu-email@gmail.com');
-define('SMTP_PASS', 'tu-password-app');
-define('SMTP_FROM', 'noreply@ecuasist.edu.ec');
+define('SMTP_HOST', 'mail.ecuasys.com');
+define('SMTP_PORT', 465);
+define('SMTP_USER', 'noreply@ecuasys.com');
+define('SMTP_PASS', 'Orktvi.5/*83m');
+define('SMTP_FROM', 'noreply@ecuasys.com');
 define('SMTP_NAME', 'EcuAsistencia2026');
 
 require_once BASE_PATH . '/config/database.php';

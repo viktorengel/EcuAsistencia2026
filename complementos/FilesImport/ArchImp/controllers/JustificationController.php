@@ -175,15 +175,36 @@ class JustificationController {
     }
 
     public function pending() {
-        if (!Security::hasRole(['autoridad', 'inspector', 'docente'])) {
+        $isTutor = Security::hasRole('docente') && !empty($_SESSION['is_tutor']);
+        if (!Security::hasRole(['autoridad', 'inspector']) && !$isTutor) {
             die('Acceso denegado');
         }
+
         $justifications = $this->justificationModel->getPending();
+
+        // Tutor: filtrar solo justificaciones de su curso
+        if ($isTutor && !Security::hasRole(['autoridad', 'inspector'])) {
+            $db   = new Database();
+            $pdo  = $db->connect();
+            $stmt = $pdo->prepare(
+                "SELECT cs.student_id FROM course_students cs
+                 INNER JOIN teacher_assignments ta ON cs.course_id = ta.course_id
+                 WHERE ta.teacher_id = :tid AND ta.is_tutor = 1
+                 AND ta.school_year_id = (SELECT id FROM school_years WHERE is_active=1 LIMIT 1)"
+            );
+            $stmt->execute([':tid' => $_SESSION['user_id']]);
+            $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $justifications = array_values(array_filter($justifications, function($j) use ($studentIds) {
+                return in_array($j['student_id'], $studentIds);
+            }));
+        }
+
         include BASE_PATH . '/views/justifications/pending.php';
     }
 
     public function review() {
-        if (!Security::hasRole(['autoridad', 'inspector', 'docente'])) {
+        $isTutor = Security::hasRole('docente') && !empty($_SESSION['is_tutor']);
+        if (!Security::hasRole(['autoridad', 'inspector']) && !$isTutor) {
             die('Acceso denegado');
         }
 
@@ -248,11 +269,42 @@ class JustificationController {
     }
 
     public function reviewed() {
-        if (!Security::hasRole(['autoridad', 'inspector'])) {
+        // Autoridad e inspector ven todas; docente tutor ve solo las de su curso
+        $isTutor = Security::hasRole('docente') && !empty($_SESSION['is_tutor']);
+        if (!Security::hasRole(['autoridad', 'inspector']) && !$isTutor) {
             die('Acceso denegado');
         }
+
         $filter         = $_GET['filter'] ?? 'all';
         $justifications = $this->justificationModel->getReviewed();
+
+        // Tutor: filtrar solo justificaciones de estudiantes de su curso
+        if ($isTutor && !Security::hasRole(['autoridad', 'inspector'])) {
+            $db   = new Database();
+            $pdo  = $db->connect();
+            $stmt = $pdo->prepare(
+                "SELECT cs.course_id FROM teacher_assignments ta
+                 INNER JOIN course_students cs ON ta.course_id = cs.course_id
+                 WHERE ta.teacher_id = :tid AND ta.is_tutor = 1
+                 AND ta.school_year_id = (SELECT id FROM school_years WHERE is_active=1 LIMIT 1)"
+            );
+            $stmt->execute([':tid' => $_SESSION['user_id']]);
+            $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // Obtener estudiantes del curso del tutor
+            $stmt2 = $pdo->prepare(
+                "SELECT student_id FROM course_students cs
+                 INNER JOIN teacher_assignments ta ON cs.course_id = ta.course_id
+                 WHERE ta.teacher_id = :tid AND ta.is_tutor = 1
+                 AND ta.school_year_id = (SELECT id FROM school_years WHERE is_active=1 LIMIT 1)"
+            );
+            $stmt2->execute([':tid' => $_SESSION['user_id']]);
+            $studentIds = $stmt2->fetchAll(PDO::FETCH_COLUMN);
+
+            $justifications = array_values(array_filter($justifications, function($j) use ($studentIds) {
+                return in_array($j['student_id'], $studentIds);
+            }));
+        }
 
         if ($filter !== 'all') {
             $justifications = array_values(array_filter($justifications, function($j) use ($filter) {

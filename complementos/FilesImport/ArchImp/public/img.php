@@ -1,13 +1,11 @@
 <?php
-// public/img.php — Sirve imágenes desde uploads/ (fuera del document root)
-// Depende de env.php para obtener BASE_PATH correcto en local y producción
+// public/img.php — Sirve imágenes y PDFs desde uploads/
+// NO incluir config.php para evitar redirecciones de sesión
 
-require_once __DIR__ . '/../config/env.php';
-
-$uploadsDir = realpath(BASE_PATH . '/uploads');
-
-if (!$uploadsDir) {
-    http_response_code(404); exit;
+if ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_NAME'] === '127.0.0.1') {
+    $basePath = realpath(__DIR__ . '/..');
+} else {
+    $basePath = '/home/ecuasysc/ecuasistencia';
 }
 
 $file = $_GET['f'] ?? '';
@@ -18,15 +16,21 @@ $file = ltrim($file, '/');
 
 if (!$file) { http_response_code(400); exit; }
 
-$fullPath = $uploadsDir . DIRECTORY_SEPARATOR . $file;
-$realFull = realpath($fullPath);
+// f puede venir como "uploads/justifications/x.png" o "justifications/x.png"
+if (strpos($file, 'uploads/') === 0) {
+    $fullPath = $basePath . '/' . $file;
+} else {
+    $fullPath = $basePath . '/uploads/' . $file;
+}
 
-// Verificar que el archivo está dentro de uploads/
-if (!$realFull || strpos($realFull, $uploadsDir) !== 0) {
+$realFull   = realpath($fullPath);
+$uploadsDir = realpath($basePath . '/uploads');
+
+if (!$realFull || !$uploadsDir || strpos($realFull, $uploadsDir) !== 0) {
     http_response_code(403); exit;
 }
 
-if (!file_exists($realFull) || !is_file($realFull)) {
+if (!is_file($realFull)) {
     http_response_code(404); exit;
 }
 
@@ -43,10 +47,8 @@ $mimes = [
 if (!isset($mimes[$ext])) { http_response_code(403); exit; }
 
 header('Content-Type: ' . $mimes[$ext]);
+header('Content-Disposition: inline; filename="' . basename($realFull) . '"');
 header('Content-Length: ' . filesize($realFull));
 header('Cache-Control: public, max-age=86400');
-if ($ext === 'pdf') {
-    header('Content-Disposition: inline; filename="' . basename($realFull) . '"');
-}
 readfile($realFull);
 exit;
