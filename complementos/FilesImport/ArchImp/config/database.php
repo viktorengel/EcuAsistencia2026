@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = 'localhost';
-    private $db = 'ecuasistencia2026';
+    private $db = 'ecuasistencia2026_db';
     private $user = 'root';
     private $pass = '';
     private $charset = 'utf8mb4';
