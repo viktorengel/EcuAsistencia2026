@@ -423,6 +423,9 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
                 </div>
             </div>
 
+            <?php endif; ?>
+
+            <?php if(Security::hasRole(['autoridad','docente','inspector'])): ?>
             <div class="ec-item">
                 <span class="ec-item__btn <?= in_array($current_page,['reports','stats'])?'active':'' ?>">
                     <span class="ec-item__icon">📊</span> Reportes <span class="ec-item__caret">▼</span>
@@ -595,6 +598,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
     </div>
 
     <!-- ── Reportes ── -->
+    <?php if(Security::hasRole(['autoridad','docente','inspector'])): ?>
     <div class="ec-acc" data-section="reportes">
         <div class="ec-acc__head <?= $_activeSection==='reportes'?'has-active':'' ?>">
             <span class="ec-acc__head__icon">📊</span>
@@ -606,6 +610,7 @@ elseif (in_array($current_page, ['reports','stats'])) $_activeSection = 'reporte
             <a href="?action=stats"   class="ec-acc__link <?= $current_page==='stats'?'active':'' ?>"><span class="ec-acc__link__icon">📈</span> Estadísticas</a>
         </div>
     </div>
+    <?php endif; ?>
     <?php endif; ?>
 
     <!-- Mis Representados (sin sub-menú) -->
