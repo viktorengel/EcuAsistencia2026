@@ -46,13 +46,26 @@ if(isset($_SESSION['user_id'])) {
         .divider-label { text-align: center; position: relative; margin: 20px 0; }
         .divider-label::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #eee; }
         .divider-label span { background: #fff; padding: 0 12px; color: #bbb; font-size: 0.8rem; position: relative; }
+        .remember-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+        .remember-check { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; color:#555; }
+        .remember-check input[type=checkbox] { display:none; }
+        .toggle-switch { position:relative; width:42px; height:24px; background:#ccc; border-radius:12px; cursor:pointer; transition:background .3s; flex-shrink:0; }
+        .toggle-switch::after { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:3px; left:3px; transition:left .3s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+        .remember-check input:checked + .toggle-switch { background:#0ea5e9; }
+        .remember-check input:checked + .toggle-switch::after { left:21px; }
+        .toggle-pass { background:none; border:none; cursor:pointer; font-size:1rem; padding:0 4px; color:#888; }
+        .input-wrap { position:relative; }
+        .input-wrap input { padding-right:38px; }
+        .input-wrap .toggle-pass { position:absolute; right:10px; top:50%; transform:translateY(-50%); }
     </style>
 </head>
 <body>
     <div class="login-card">
         <div class="login-logo">
             <div class="icon">🏫</div>
-            <h2>EcuAsistencia</h2>
+            <h2 style="font-size:1.8rem;letter-spacing:-0.5px;">
+                <span style="color:#0ea5e9;font-weight:900;">Ecu</span><span style="color:#0d9488;font-weight:900;font-size:2.1rem;vertical-align:-3px;">A</span><span style="color:#10b981;font-weight:700;">sistencia</span>
+            </h2>
             <p>Sistema de Asistencia Escolar</p>
         </div>
 
@@ -72,27 +85,56 @@ if(isset($_SESSION['user_id'])) {
             <?php Security::generateToken(); ?>
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
+            <?php
+            $rememberedUser = isset($_COOKIE['ec_remember_user']) ? htmlspecialchars($_COOKIE['ec_remember_user']) : '';
+            $rememberedPass = isset($_COOKIE['ec_remember_pass']) ? htmlspecialchars($_COOKIE['ec_remember_pass']) : '';
+            $isRemembered   = !empty($rememberedUser);
+            ?>
+
             <div class="form-group">
                 <label>👤 Usuario o Correo Electrónico</label>
-                <input type="text" name="email" required autofocus placeholder="Ingrese usuario o email">
+                <input type="text" name="email" required autofocus
+                       placeholder="Ingrese usuario o email"
+                       value="<?= $rememberedUser ?>">
             </div>
 
             <div class="form-group">
                 <label>🔒 Contraseña</label>
-                <input type="password" name="password" required placeholder="Ingrese contraseña">
+                <div class="input-wrap">
+                    <input type="password" name="password" id="inp_pass" required
+                           placeholder="Ingrese contraseña"
+                           value="<?= $rememberedPass ?>">
+                    <?php if (!$isRemembered): ?>
+                    <button type="button" class="toggle-pass" id="btn_toggle_pass" onclick="togglePass()">👁</button>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="remember-row">
+                <label class="remember-check">
+                    <input type="checkbox" name="remember_me" value="1" <?= $isRemembered ? 'checked' : '' ?>>
+                    <span class="toggle-switch"></span>
+                    Recordar mis datos
+                </label>
+                <a href="?action=forgot" style="font-size:0.85rem;color:#667eea;text-decoration:none;">¿Olvidó su contraseña?</a>
             </div>
 
             <button type="submit" class="btn-login">🔑 Iniciar Sesión</button>
         </form>
 
-        <div class="login-footer" style="margin-top:16px;">
-            <a href="?action=forgot">¿Olvidó su contraseña?</a>
-        </div>
+        <div class="login-footer" style="margin-top:16px;"></div>
 
         <div class="divider-label"><span>¿Eres representante?</span></div>
 
         <a href="?action=register" class="btn-register">👨‍👩‍👧‍👦 Registrarse como Representante</a>
 
     </div>
+    
+    <script>
+    function togglePass() {
+        var inp = document.getElementById('inp_pass');
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+    </script>
 </body>
 </html>

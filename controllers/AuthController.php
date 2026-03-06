@@ -67,6 +67,16 @@ class AuthController {
                     $_SESSION['is_tutor'] = (bool)$attModel->getTutorCourseId($user['id']);
                 }
 
+                // Recordar credenciales si el usuario marcó el checkbox
+                if (!empty($_POST['remember_me'])) {
+                    setcookie('ec_remember_user', $_POST['email'],    time() + (30 * 24 * 3600), '/');
+                    setcookie('ec_remember_pass', $_POST['password'], time() + (30 * 24 * 3600), '/');
+                } else {
+                    // Limpiar cookies si desmarcó el checkbox
+                    setcookie('ec_remember_user', '', time() - 3600, '/');
+                    setcookie('ec_remember_pass', '', time() - 3600, '/');
+                }
+
                 header('Location: ' . BASE_URL . '/?action=dashboard');
                 exit;
             } else {
