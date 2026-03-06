@@ -3,9 +3,11 @@ El sistema tiene una base sólida. MVC limpio, seguridad básica correcta, flujo
 
 🔴 Lo que falta y considero crítico
 ok 1. Recuperación de contraseña — está en el menú pero el SMTP no está configurado. Si un usuario olvida su clave, no hay forma de recuperarla. En producción esto es un problema real.
-2. Validación de asistencia desde horario — el docente registra asistencia pero no hay verificación de que ese horario realmente le corresponde ese día. Un docente podría registrar en clases que no son suyas.
+Ok 2. Validación de asistencia desde horario — el docente registra asistencia pero no hay verificación de que ese horario realmente le corresponde ese día. Un docente podría registrar en clases que no son suyas.
 3. Edición de asistencia — existe la lógica de 48 horas pero no hay una vista clara donde el docente pueda editar un registro ya guardado. Solo puede crear.
-4. La tabla notifications se llena para siempre — no hay limpieza automática. En 6 meses de uso tendrás miles de registros. Falta un cron o limpieza automática de notificaciones leídas con más de X días.
+Mover este mensaje "⚠ Importante: Puede registrar asistencia de hoy o corregir registros anteriores hasta el 10/03/2026" de dar clic en ficha en la siguiente sección
+
+Ok 4. La tabla notifications se llena para siempre — no hay limpieza automática. En 6 meses de uso tendrás miles de registros. Falta un cron o limpieza automática de notificaciones leídas con más de X días.
 
 🟡 Lo que está incompleto pero no bloquea
 5. Reportes — el PDF y Excel funcionan, pero los filtros son básicos. No hay reporte por estudiante individual, ni por rango de fechas flexible, ni exportación de todo el año lectivo.

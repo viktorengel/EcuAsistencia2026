@@ -77,7 +77,28 @@ class AuthController {
                     setcookie('ec_remember_pass', '', time() - 3600, '/');
                 }
 
+                // Limpiar notificaciones leídas con más de 30 días
+                $db   = new Database();
+                $pdo  = $db->connect();
+                $stmt = $pdo->prepare("
+                    DELETE FROM notifications 
+                    WHERE user_id = :user_id 
+                    AND is_read = 1 
+                    AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ");
+                $stmt->execute([':user_id' => $user['id']]);
+
                 header('Location: ' . BASE_URL . '/?action=dashboard');
+
+                // Limpiar notificaciones no leídas con más de 90 días
+                $stmt2 = $pdo->prepare("
+                    DELETE FROM notifications 
+                    WHERE user_id = :user_id 
+                    AND is_read = 0 
+                    AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ");
+                $stmt2->execute([':user_id' => $user['id']]);
+
                 exit;
             } else {
                 $error = 'Credenciales incorrectas';
